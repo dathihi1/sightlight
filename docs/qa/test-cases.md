@@ -1,6 +1,6 @@
 # Test Cases — SignLight
 
-| Phiên bản | **v0.2** | Ngày | 2026-09-20 | Trạng thái | DRAFT — **chưa chạy**, cột kết quả để trống cho B4 |
+| Phiên bản | **v0.3** | Ngày | 2026-09-20 | Trạng thái | DRAFT — **chưa chạy**, cột kết quả để trống cho B4 |
 |-----------|------|------|------------|------------|-----------------------------------------------------|
 
 **Tiền đề:** `docs/ba/SRS.md` (tiêu chí chấp nhận), `docs/sa/api-spec.md` (endpoint), `docs/ba/FSD.md` (màn hình)
@@ -420,4 +420,9 @@ FR-22, FR-26** → **phải bổ sung trước khi trình GATE-4** (đã ghi và
 - [x] Nhóm **bất biến INV-1→INV-5** có bộ case riêng, mức Blocker.
 - [ ] ⚠️ **4 FR còn mỏng case (FR-10, 19, 22, 26) — bổ sung ở B4.**
 - [x] ✅ Bộ case thanh toán đã viết theo VNPay + MoMo (Q3 đã chốt).
-- [ ] ⚠️ **Case 🤖 phụ thuộc quyết định Q8** — nếu chọn phương án C (gửi ảnh) thì TC-FR41-01/02 phải viết lại.
+- [x] ✅ **Q8 đã chốt phương án B (2026-09-20)** — TC-FR41-01/02/03 giữ nguyên, **đúng như đã viết**.
+- [ ] ⚠️ **Bổ sung ở v0.3 (chờ soạn case):**
+      (a) **DR-12** — gọi thẳng `ai:7860/api/infer/frames` từ mạng nội bộ, kỳ vọng **404** *(Blocker)*;
+      (b) **NFR-21 / SEED-5** — chạy script seed **hai lần liên tiếp**, kỳ vọng không nhân đôi bản ghi
+      (idempotent), và cổng phát hành **chặn** khi còn bản ghi `is_seed = true` *(Blocker)*;
+      (c) **SEED-4** — ký hiệu seed ngoài 30 nhãn phải rơi đúng nhánh AC-41.2.

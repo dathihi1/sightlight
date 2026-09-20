@@ -1,7 +1,13 @@
 # BRD — SignLight (Nền tảng học Ngôn ngữ Ký hiệu Việt Nam có AI luyện tập)
 
-| Phiên bản | **v0.2** | Ngày | 2026-09-20 | Người viết | BA | Trạng thái | DRAFT — chờ GATE-1 |
+| Phiên bản | **v0.3** | Ngày | 2026-09-20 | Người viết | BA | Trạng thái | DRAFT — chờ GATE-1 |
 |-----------|------|------|------------|------------|----|-----------|---------------------|
+
+**Thay đổi so với v0.2 — anh Bryan chốt TOÀN BỘ câu hỏi mở ngày 2026-09-20:**
+**Q8** = phương án B (trình duyệt trích landmark, server phân lớp) · **Q9** = CÓ (bật góp dữ liệu tự nguyện) ·
+**Q10** = nội dung giả lập trước · **Q11** = tăng độ chính xác MVP-30 trước · **Q6** = KHÔNG làm B2B/tutor ở GĐ1 ·
+**Q5** = hoãn tới sau GATE-4 · **R-07** = tuổi tối thiểu **16** cho góp dữ liệu · **R-11 đã đóng** (có tài khoản
+merchant/sandbox VNPay + MoMo). **BRD không còn câu hỏi nào chặn GATE-1.**
 
 **Thay đổi so với v0.1:** chốt **VSL** thay ASL (Q4) · chốt **VNPay + MoMo** (Q3) · bổ sung **module AI nhận
 diện ký hiệu động** là tính năng cốt lõi (Q7) · bổ sung §9 ghi nhận khảo sát sản phẩm đối thủ ở trạng thái
@@ -79,7 +85,7 @@ là khả thi; việc còn lại là dựng sản phẩm quanh nó.
 | **Marketing & SEO** | Trang chủ, giới thiệu, trang doanh nghiệp (chỉ form liên hệ), blog SEO "ký hiệu của từ X", trang pháp lý |
 | **Nội dung** | **VSL — Ngôn ngữ Ký hiệu Việt Nam**. Data model thiết kế đa ngôn ngữ ngay từ đầu |
 
-**30 ký hiệu VSL khởi điểm của mô hình MVP-30** *(nhóm theo chủ đề để làm giáo trình — xem câu hỏi Q10)*:
+**30 ký hiệu VSL khởi điểm của mô hình MVP-30** *(✅ Q10 đã chốt — dùng làm **bộ seed giả lập**, xem SRS §3.4)*:
 
 | Chủ đề | Ký hiệu |
 |--------|---------|
@@ -90,9 +96,15 @@ là khả thi; việc còn lại là dựng sản phẩm quanh nó.
 | **Khác** (2) | Nghề nghiệp · Dễ |
 
 > Bộ 30 ký hiệu này nghiêng về **danh từ đồ vật và xưng hô**, thiếu động từ và câu chào hỏi — tức là
-> **chưa đủ để dựng Chương 1 "Chào hỏi"** theo lẽ thường của một giáo trình. Đây là ràng buộc thật cần
-> anh Bryan quyết (Q10): hoặc **thiết kế giáo trình bám theo 30 ký hiệu đã có**, hoặc **quay bổ sung** các
-> ký hiệu chào hỏi rồi huấn luyện lại.
+> **chưa đủ để dựng Chương 1 "Chào hỏi"** theo lẽ thường của một giáo trình.
+>
+> ✅ **Q10 đã chốt (anh Bryan, 2026-09-20): làm giả lập trước, chưa cần quan tâm nội dung; nội dung thật
+> bổ sung sau.** Vì vậy 30 ký hiệu này **không** phải là giáo trình chính thức — chúng là **bộ dữ liệu
+> seed** để dựng và nghiệm thu chức năng (SRS §3.4, NFR-21). Giáo trình thật sẽ được thiết kế lại ở một
+> bước riêng, **sau GATE-4**.
+>
+> ⚠️ **Điều này chỉ dời rủi ro R-01, không gỡ nó.** GATE-6 (phát hành) vẫn cần **ít nhất 1 Unit nội dung
+> thật**. Q5 (nguồn video) đã được chốt là **hoãn tới sau GATE-4** — hoãn, **không phải đã giải quyết**.
 
 ### 3.2 Ngoài phạm vi — Giai đoạn 2 trở đi
 
@@ -230,20 +242,24 @@ tin chỉ truyền tải bằng âm thanh**.
 
 | Rủi ro / Câu hỏi | Ảnh hưởng | Giảm thiểu / Ai quyết | Hạn chót |
 |-------------------|-----------|------------------------|----------|
-| **R-01** Sản xuất nội dung là nút thắt lớn nhất — 30 ký hiệu VSL400 **không đủ** dựng một khoá học | **Rất cao** — chặn BG-01, BG-04 | Chốt nguồn nội dung trước GATE-2; làm trước 1 Unit hoàn chỉnh để đo chi phí thật — **anh Bryan quyết (Q5, Q10)** | Trước GATE-2 |
+| **R-01** Sản xuất nội dung là nút thắt lớn nhất — 30 ký hiệu VSL400 **không đủ** dựng một khoá học | **Rất cao** — chặn BG-01, BG-04 | ⏸️ **ĐÃ DỜI, chưa gỡ.** Q10 chốt dùng **nội dung giả lập** để dựng & nghiệm thu chức năng (SRS §3.4) → không còn chặn GATE-2/GATE-4. **Vẫn chặn GATE-6** — cần ≥ 1 Unit nội dung thật. **Q5 vẫn mở** | **Dời: trước GATE-6** |
 | **R-02** **Độ chính xác tụt khi dùng webcam thật** (0.901 đo trên video quay chuẩn) | **Rất cao** — chặn BR-06, BG-07 | **Bắt buộc kiểm với 3–5 người thật, webcam thật, trước GATE-2**; có phương án hạ cấp sang chế độ Gương không chấm điểm | Trước GATE-2 |
 | **R-03** Rủi ro pháp lý nếu clone quá sát đối thủ | Cao | Nhận diện thương hiệu & nội dung tự sản xuất 100%; rà soát pháp lý trước go-live | Trước GATE-6 |
 | **R-04** Chi phí băng thông video vượt dự toán | TB–Cao | CDN + HLS đa bitrate + theo dõi chi phí hằng tuần | Từ tháng 3 |
 | **R-05** ~~Chọn sai ngôn ngữ ký hiệu~~ | ✅ **Đã đóng** | Q4 chốt **VSL** | 2026-09-20 |
 | **R-06** ~~Cổng thanh toán chưa chốt~~ | ✅ **Đã đóng**, phát sinh R-10 | Q3 chốt **VNPay + MoMo** | 2026-09-20 |
-| **R-07** Tuân thủ PDPL với người học chưa thành niên | TB–Cao | Đặt tuổi tối thiểu trong Điều khoản; anh Bryan quyết chính sách tuổi | Trước GATE-5 |
+| **R-07** Tuân thủ PDPL với người học chưa thành niên | TB–Cao | ✅ **Đã chốt chính sách tuổi (2026-09-20): mốc 16 tuổi.** Người **dưới 16** vẫn **học được đầy đủ**, nhưng **không được mời và không được bật** góp dữ liệu (BR-A137). Ghi vào Điều khoản + thêm bước khai năm sinh ở onboarding. ⚠️ **Cảnh báo:** khai năm sinh là tự khai, không xác minh được — đây là biện pháp **giảm nhẹ**, không phải bảo đảm pháp lý | Hiện thực trước GATE-5 |
 | **R-08** Đội 1–2 người không kham nổi web + CMS + AI + nội dung | Cao *(tăng so với v0.1 vì thêm AI)* | Modular monolith + dịch vụ AI tái dùng nguyên trạng; cắt phạm vi theo §3.2 | Liên tục |
-| **R-09** **Dữ liệu huấn luyện quá ít** (701 mẫu / 30 lớp) để mở rộng | Cao — chặn BG-08 | Bật "Góp dữ liệu" tự nguyện (Q9); hợp tác quay thêm; **anh Bryan quyết (Q11)** | Trước GATE-3 |
+| **R-09** **Dữ liệu huấn luyện quá ít** (701 mẫu / 30 lớp) để mở rộng | Cao → **TB** *(hạ mức 2026-09-20)* | ✅ **Q9 = BẬT** góp dữ liệu (FR-46 vào phạm vi GĐ1) → có kênh thu dữ liệu hợp pháp. ✅ **Q11 = tăng độ chính xác MVP-30 trước** → **không mở rộng lớp ở GĐ1**, nên 701 mẫu/30 lớp là **đủ dùng cho GĐ1**; R-09 chuyển thành rủi ro của **BG-08 (mốc 12 tháng)**, không còn là rủi ro giao hàng. ⚠️ Kênh góp dữ liệu chỉ sinh dữ liệu **sau khi có người dùng thật** | BG-08: 12 tháng |
 | **R-10** **Không có tự động gia hạn → tỉ lệ gia hạn thấp** | Cao — ảnh hưởng BG-03 | Nhắc gia hạn 7/3/1 ngày; ưu đãi gói dài; gia hạn ≤ 3 thao tác; theo dõi tỉ lệ gia hạn từ tháng 2 | Từ go-live |
-| **R-11** **Merchant VNPay/MoMo không được duyệt** | **Rất cao** — chặn toàn bộ doanh thu | Nộp hồ sơ **ngay**, song song với phát triển; dự phòng: chuyển khoản thủ công có đối soát | Trước GATE-3 |
+| **R-11** ~~Merchant VNPay/MoMo không được duyệt~~ | ✅ **Đã đóng** *(2026-09-20)* | Anh Bryan xác nhận đã có **tài khoản merchant/sandbox** VNPay và MoMo (SĐT `0866678802`) → lấy được `vnp_TmnCode`/`vnp_HashSecret` và `partnerCode`/`accessKey`/`secretKey`. **Việc còn lại là thao tác, không còn là rủi ro:** lấy 5 khoá, đặt vào `deploy/.env`. 🔐 Khoá **không được commit** và **không được ghi log** (NFR-11) | 2026-09-20 |
 | **R-12** Người dùng hiểu nhầm AI là thông dịch viên | TB — rủi ro pháp lý & uy tín | Tuyên bố rõ ở màn AI, trang pháp lý, mọi tài liệu tiếp thị (SC-13) | Trước GATE-6 |
-| **Q6** GĐ1 có gồm B2B & đặt lịch tutor không? | ±6 tuần công | **anh Bryan quyết** — BRD mặc định **không** | Trước GATE-1 |
-| **Q8** Suy luận AI chạy ở đâu (client/landmark/server)? | Định hình NFR-12 & kiến trúc | **anh Bryan quyết** — SA khuyến nghị phương án B | Trước GATE-3 |
+| **Q8** ~~Suy luận AI chạy ở đâu~~ | ✅ **Đã đóng** | Chốt **phương án B**: trình duyệt trích landmark, server phân lớp (HLD ADR-08, NFR-12) | 2026-09-20 |
+| **Q9** ~~Có bật "Góp dữ liệu luyện tập"~~ | ✅ **Đã đóng** | Chốt **CÓ** — FR-46 vào phạm vi GĐ1 | 2026-09-20 |
+| **Q10** ~~Giáo trình bám 30 ký hiệu?~~ | ✅ **Đã đóng** | Chốt **nội dung giả lập trước** (SRS §3.4, NFR-21); giáo trình thật làm sau GATE-4 | 2026-09-20 |
+| **Q5** ~~Nguồn video bài học ngoài 30 ký hiệu VSL400~~ | ⏸️ **Hoãn có chủ đích** | Chốt **để sau GATE-4** (2026-09-20) — hợp lệ vì Q10 cho phép nghiệm thu bằng nội dung giả lập. ⚠️ **Không phải đã giải quyết:** vẫn chặn GATE-6 và vẫn là hạng mục tốn kém nhất. Phải mở lại **ngay khi GATE-4 xong**, nếu không sẽ thành nút thắt cuối dự án | **Mở lại sau GATE-4** |
+| **Q6** ~~GĐ1 có gồm B2B & đặt lịch tutor không?~~ | ✅ **Đã đóng** | Chốt **KHÔNG** (2026-09-20) — giữ nguyên phạm vi BRD, tiết kiệm ~6 tuần công. B2B chỉ còn **form liên hệ** ở trang doanh nghiệp; đặt lịch tutor đẩy sang GĐ2 | 2026-09-20 |
+| **Q11** ~~MVP-50 hay tăng độ chính xác MVP-30?~~ | ✅ **Đã đóng** | Chốt **tăng độ chính xác MVP-30 trước** (2026-09-20). Giữ nguyên 30 nhãn; toàn bộ công sức AI dồn vào hạ rủi ro **R-02**. MVP-50 lùi sang sau GATE-6 | 2026-09-20 |
 
 ## 9. Ghi nhận khảo sát sản phẩm đối thủ *(bổ sung ở v0.2)*
 
@@ -270,5 +286,7 @@ những thứ đối thủ đã kiểm chứng. **Không** sao chép nội dung,
 - [x] Ràng buộc PDPL, **CC BY 4.0 của VSL400**, và **tuyên bố không phải thông dịch viên** đã ghi nhận.
 - [x] Câu hỏi mở kèm người quyết + hạn chót.
 - [x] Ghi nhận khảo sát đối thủ ở §9 với ranh giới pháp lý rõ ràng.
-- [ ] ⚠️ **Chờ anh Bryan: Q6 (B2B), Q8 (vị trí suy luận AI), Q10 (giáo trình theo 30 ký hiệu?), Q11 (MVP-50 hay tăng độ chính xác MVP-30?).**
-- [ ] ⚠️ **R-02 và R-11 phải xử lý trước GATE-2/GATE-3 — đây là hai rủi ro có thể giết dự án.**
+- [x] ✅ **Toàn bộ câu hỏi mở đã được chốt (2026-09-20):** Q1, Q2, Q5 (hoãn), Q6, Q8, Q9, Q10, Q11, R-07, R-11.
+- [x] ✅ **BRD không còn câu hỏi nào chặn GATE-1.**
+- [ ] ⚠️ **R-02 giờ là rủi ro lớn nhất còn lại và có thể giết dự án** — 0.901 đo trên video quay chuẩn, chưa đo webcam thật. **Phải kiểm với ≥ 5 người, ≥ 3 điều kiện ánh sáng trước GATE-2.** Q11 đã chốt dồn toàn bộ công sức AI vào việc này.
+- [ ] ⚠️ **R-01 đã dời chứ chưa gỡ** — GATE-6 vẫn cần ≥ 1 Unit nội dung thật; phải mở lại Q5 ngay sau GATE-4.

@@ -1,6 +1,6 @@
 # Deploy Notes — SignLight (UAT)
 
-| Phiên bản | v0.2 | Ngày | 2026-09-20 | Trạng thái | ⚠️ **RUNBOOK — CHƯA TRIỂN KHAI LẦN NÀO** |
+| Phiên bản | **v0.3** | Ngày | 2026-09-20 | Trạng thái | ⚠️ **RUNBOOK — CHƯA TRIỂN KHAI LẦN NÀO** |
 |-----------|------|------|------------|------------|-------------------------------------------|
 
 > ## ⚠️ Đọc trước
@@ -9,10 +9,18 @@
 > các bước, checklist và cách xử lý sự cố. Phần "Nhật ký triển khai" (§7) còn trống.
 >
 > **Đang CHẶN việc chạy UAT:**
-> 1. ❓ **Chưa có dải port** — `docker-compose.yml` còn placeholder `<PORT_*>`. **Bắt buộc hỏi anh Bryan
->    trước khi chạy**, không được tự chọn port.
-> 2. ❓ **Chưa có tài khoản merchant VNPay/MoMo** (BRD R-11) — không có thì không kiểm được luồng thanh toán.
-> 3. ❓ **Chưa chốt Q8** (vị trí suy luận AI) — ảnh hưởng việc dịch vụ `ai` nhận tensor hay nhận ảnh.
+> 1. ⚠️ **Chưa có BỘ KHOÁ merchant/sandbox VNPay + MoMo** — anh Bryan xác nhận tài khoản thuộc loại
+>    **merchant/sandbox developer** (2026-09-20), nên **lấy được** 5 giá trị sau; DevOps cần chúng mới chạy được M6:
+>    `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`, `MOMO_PARTNER_CODE`, `MOMO_ACCESS_KEY`, `MOMO_SECRET_KEY`.
+>    Lấy ở `sandbox.vnpayment.vn` và `business.momo.vn` → mục *Thông tin tích hợp*.
+>    🔐 **Khoá là bí mật: chỉ đặt trong `deploy/.env`, tuyệt đối không commit, không dán vào tài liệu.**
+> 2. ⚠️ **Chưa có mã nguồn** (`../src/backend`, `../src/frontend`, `../src/ai`) — B4 chưa chạy.
+>
+> ✅ **Đã gỡ chặn ở v0.3:**
+> - **Q2 — dải port `18080–18090` đã được cấp**, đã điền vào `docker-compose.yml` và `.env.example`.
+> - **Q8 = phương án B** → dịch vụ `ai` **chỉ nhận tensor**, không nhận ảnh.
+> - **Q9 = CÓ** → **bắt buộc** tạo bucket `signlight-donation` với quyền tách riêng.
+> - **Q10 = nội dung giả lập** → UAT chạy bằng **dữ liệu seed**, không chờ nội dung thật.
 >
 > **Mới ở v0.2:** thêm service **`ai`** (Python + ONNX) và các biến `VNPAY_*` / `MOMO_*` / `SIGNLIGHT_AI_*`.
 
@@ -22,15 +30,16 @@
 
 | Service | Ảnh / nguồn | Port trong container | Port host | Ghi chú |
 |---------|-------------|:--------------------:|:---------:|---------|
-| `api` | build từ `../src/backend` | 8080 | `<PORT_API>` | Spring Boot 3.5 / Java 21 |
-| `web` | build từ `../src/frontend` | 3000 | `<PORT_WEB>` | Next.js 15 |
+| `api` | build từ `../src/backend` | 8080 | `18080` | Spring Boot 3.5 / Java 21 |
+| `web` | build từ `../src/frontend` | 3000 | `18081` | Next.js 15 |
 | `db` | `postgres:17-alpine` | 5432 | **không mở** | Có `unaccent` + `pg_trgm` |
 | `cache` | `redis:7.4-alpine` | 6379 | **không mở** | Có mật khẩu |
 | **`ai`** 🤖 | build từ `../src/ai` | 7860 | **không mở** | Python + FastAPI + ONNX. **Không có xác thực người dùng** → bắt buộc giữ nội bộ (ADR-10) |
-| `storage` | `minio/minio` | 9000 / 9001 | `<PORT_STORAGE>` / `<PORT_STORAGE_CONSOLE>` | Giả lập object storage; production dùng dịch vụ thật |
+| `storage` | `minio/minio` | 9000 / 9001 | `18082` / `18083` | Giả lập object storage; production dùng dịch vụ thật |
 
-**Cần 4 port** (5 nếu mở bảng điều khiển storage). Các service `ai`, `db`, `cache` **không mở port nào**.
-Đề nghị anh Bryan cấp **một dải liền nhau 5 port**.
+✅ **Dải port được cấp: `18080–18090`** (anh Bryan, 2026-09-20). Thực dùng **4 port**; `18084–18090` để dự phòng.
+Các service `ai`, `db`, `cache` **cố ý không mở port nào** — riêng `ai` là ràng buộc bảo mật (ADR-10, DR-12),
+không được mở kể cả khi cần gỡ lỗi; gỡ lỗi thì `docker compose exec` vào trong mạng.
 
 ### 1.1 🤖 Chuẩn bị dịch vụ AI
 
@@ -51,11 +60,16 @@ src/ai/
 - [ ] Đã **giữ nguyên tệp ghi nguồn VSL400 (CC BY 4.0)** — nghĩa vụ giấy phép (BRD §6, SC-12).
 - [ ] Đã xác nhận **3 biến `LOG_WEBHOOK_URL`, `LOG_WEBHOOK_SECRET`, `GDRIVE_FOLDER_ID` để rỗng**
       → tắt đường ghi/tải video người dùng của repo gốc (api-spec §4.5).
-- [ ] Nếu chọn **phương án B của Q8**: đã bổ sung endpoint `POST /api/infer/features` nhận tensor.
+- [ ] ✅ **Q8 = phương án B (đã chốt)** → đã bổ sung endpoint `POST /api/infer/features` nhận tensor `64×327`.
+- [ ] ✅ **Q8 = phương án B** → đã **tắt** `POST /api/infer/frames` và `POST /api/attempt` ở cấu hình UAT/prod (api-spec §4.5).
+- [ ] ✅ **Q9 = CÓ (đã chốt)** → đã tạo bucket `signlight-donation` với chính sách truy cập **tách riêng** (xem mục 11 của §3).
 
 ## 2. Chuẩn bị trước khi triển khai
 
-- [ ] ❓ **Đã có dải port từ anh Bryan** → điền vào `docker-compose.yml` thay cho `<PORT_*>`.
+- [x] ✅ **Dải port đã có: `18080–18090`** → đã điền vào `docker-compose.yml` và `.env.example`.
+      Gán: `18080` api · `18081` web · `18082` storage · `18083` storage-console · `18084–18090` dự phòng.
+- [ ] ⚠️ **Kiểm `ai` KHÔNG mở ra ngoài:** `docker compose port ai 7860` phải **báo lỗi/không trả kết quả**.
+      Nếu nó trả về một port host thì **dừng triển khai ngay** — đó là DR-12.
 - [ ] Đã copy `.env.example` → `.env` và thay **toàn bộ** giá trị `change_me`.
       Sinh chuỗi ngẫu nhiên: `openssl rand -base64 64`
 - [ ] Đã kiểm `.env` **không** bị commit (`git check-ignore -v deploy/.env` phải trả về kết quả).
@@ -83,12 +97,12 @@ docker compose logs -f api
 ### 3.1 Kiểm tra sau khi khởi động (smoke test)
 
 ```bash
-curl -fsS http://<HOST>:<PORT_API>/health
+curl -fsS http://<HOST>:18080/health
 ```
 
 - [ ] `/health` trả `status: UP`, gồm cả `db` và `redis`.
 - [ ] Di trú Flyway chạy xong, không lỗi (xem log `api`).
-- [ ] Mở `http://<HOST>:<PORT_WEB>` → trang chủ hiển thị.
+- [ ] Mở `http://<HOST>:18081` → trang chủ hiển thị.
 - [ ] Đăng ký một tài khoản thử → vào được lộ trình học.
 - [ ] Mở một bài học → video phát được (kiểm cả đường qua storage).
 - [ ] Mở Trainer đánh vần → mô hình tải được, camera bật được.
@@ -196,11 +210,12 @@ docker compose down
 
 | # | Việc | Người quyết | Trạng thái |
 |---|------|-------------|------------|
-| 1 | **Dải port UAT (cần 4–5 port liền nhau)** | anh Bryan | ❓ **chờ** |
+| 1 | ~~Dải port UAT~~ | — | ✅ **Đã cấp: `18080–18090`** (2026-09-20) |
 | 2 | Có mở bảng điều khiển storage ra ngoài không? | anh Bryan | ❓ chờ |
 | 3 | UAT dùng HTTP hay HTTPS? *(ảnh hưởng trực tiếp: camera chỉ chạy trên HTTPS/localhost)* | anh Bryan | ❓ chờ |
 | 4 | ~~Cổng thanh toán (Q3)~~ | — | ✅ **Đã chốt: VNPay + MoMo** |
 | 5 | Ai được truy cập UAT (giới hạn IP?) | anh Bryan | ❓ chờ |
-| 6 | **Tài khoản merchant VNPay/MoMo** (kể cả sandbox) — không có thì không kiểm được M6 | anh Bryan | ❓ **chờ — BRD R-11** |
-| 7 | **Q8: dịch vụ AI nhận tensor hay nhận ảnh?** — quyết định có phải bổ sung endpoint vào repo EXE101 | anh Bryan | ❓ **chờ** |
-| 8 | **Q9: có bật tính năng "Góp dữ liệu" không?** — quyết định có tạo bucket `signlight-donation` hay không | anh Bryan | ❓ chờ |
+| 6 | **Bộ khoá merchant/sandbox VNPay + MoMo** (5 giá trị, xem §đầu trang) — không có thì không kiểm được M6 | anh Bryan | ⚠️ **một phần** — đã có tài khoản (SĐT `0866678802`), **chờ 5 khoá tích hợp** |
+| 7 | ~~Q8: dịch vụ AI nhận tensor hay nhận ảnh?~~ | — | ✅ **Đã chốt: nhận TENSOR** (phương án B) — phải bổ sung `/api/infer/features`, tắt `/api/infer/frames` |
+| 8 | ~~Q9: có bật "Góp dữ liệu" không?~~ | — | ✅ **Đã chốt: CÓ** — **bắt buộc** tạo bucket `signlight-donation` |
+| 9 | **Nội dung giả lập (Q10)** — UAT chạy bằng **dữ liệu seed**; cần một lệnh seed idempotent và cờ `is_seed` | dev | ☐ theo SRS §3.4 / NFR-21 |

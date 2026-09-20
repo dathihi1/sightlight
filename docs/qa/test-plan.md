@@ -1,6 +1,6 @@
 # Test Plan — SignLight
 
-| Phiên bản | **v0.2** | Ngày | 2026-09-20 | Trạng thái | DRAFT — soạn ở B3, chạy ở B4 |
+| Phiên bản | **v0.3** | Ngày | 2026-09-20 | Trạng thái | DRAFT — soạn ở B3, chạy ở B4 |
 |-----------|------|------|------------|------------|------------------------------|
 
 **Tiền đề:** `docs/ba/SRS.md`, `docs/ba/FSD.md`, `docs/sa/api-spec.md`, `docs/sa/LLD.md`
@@ -23,7 +23,7 @@
 | **INV-6** 🆕 | **`returnUrl` của cổng thanh toán không bao giờ cấp quyền Premium** — chỉ IPN đã xác thực chữ ký mới làm điều đó | Nếu sai, bất kỳ ai cũng tự cấp Premium cho mình bằng cách gõ một URL; toàn bộ doanh thu (BG-03) sụp đổ | BR-A110, AC-29.7 |
 | **INV-7** 🆕 | **Lỗi của dịch vụ AI không được tính là lỗi của người học** — không trừ hạn mức, không ghi sai, không ảnh hưởng lịch ôn tập | Nếu sai, người học bị phạt vì sự cố hệ thống; phá hỏng niềm tin vào chính tính năng cốt lõi (BG-07) | NFR-20, AC-41.6 |
 
-**Trong phạm vi kiểm thử:** toàn bộ **FR-01→FR-46**; **NFR-01→NFR-20**; **35 màn hình** SCR-01→SCR-35;
+**Trong phạm vi kiểm thử:** toàn bộ **FR-01→FR-46**; **NFR-01→NFR-21**; **35 màn hình** SCR-01→SCR-35;
 **75 endpoint** + hợp đồng nội bộ với dịch vụ AI.
 
 **Ngoài phạm vi:** app native (chưa có ở GĐ1) · hạ tầng của nhà cung cấp bên thứ ba (cổng thanh toán, CDN,
@@ -82,7 +82,7 @@ kiểm thử chuyển trạng thái cho `Subscription` và `ContentItem` · ki�
 
 | Hạng mục | Cấu hình |
 |----------|----------|
-| **Môi trường** | `uat` theo `deploy/docker-compose.yml` — **dải port chờ anh Bryan cấp** |
+| **Môi trường** | `uat` theo `deploy/docker-compose.yml` — dải port **`18080–18090`** (api `18080`, web `18081`, storage `18082/18083`) |
 | **Dữ liệu** | Bộ dữ liệu gieo (seed) **hoàn toàn ẩn danh** — email dạng `hocvien{n}@example.com`, tên dạng "Hoc Vien 01". **Cấm tuyệt đối dữ liệu thật của người dùng** (PDPL) |
 | **Nội dung thử** | 1 khoá · 3 Unit (Unit 1 miễn phí) · 9 chương · 30 bài · 120 ký hiệu có video `READY` · 6 loại bài tập đều có mẫu |
 | **Tài khoản thử** | `free@example.com` (LEARNER_FREE) · `premium@example.com` (LEARNER_PREMIUM) · `editor@example.com` · `approver@example.com` · `support@example.com` · `admin@example.com` · 1 tài khoản `PENDING_VERIFICATION` · 1 tài khoản `PENDING_DELETION` |
@@ -101,7 +101,7 @@ kiểm thử chuyển trạng thái cho `Subscription` và `ContentItem` · ki�
 - [ ] Dev đã handover: build thành công, `/health` trả `UP`, dữ liệu gieo đã nạp.
 - [ ] Unit test của dev **xanh** và đạt ≥ 70% độ phủ service.
 - [ ] OpenAPI sinh từ code đã có để **đối chiếu với `api-spec.md`**.
-- [ ] Môi trường UAT chạy được, đã có dải port.
+- [x] ✅ Dải port đã có (`18080–18090`). [ ] Môi trường UAT chạy được — **chờ mã nguồn ở B4**.
 
 ### 4.2 Tiêu chí ra (đủ điều kiện trình GATE-4)
 - [ ] **0 lỗi Blocker, 0 lỗi Critical còn mở.**

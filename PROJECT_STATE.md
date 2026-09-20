@@ -6,8 +6,8 @@
 - **Ngày khởi tạo:** 2026-09-20
 - **Loại dự án:** Mới (greenfield — Track A, B1→B6)
 - **Cấu trúc thư mục:** Kiểu A — Monolith / ít module, tài liệu đi chung repo code
-- **Giai đoạn hiện tại:** B1–B6 đã soạn **bản nháp đầy đủ** (DRAFT) — chờ duyệt tuần tự từ GATE-1
-- **Cổng đang chờ:** GATE-1 (duyệt BRD)
+- **Giai đoạn hiện tại:** B1–B6 đã soạn **bản nháp đầy đủ** (DRAFT) — **v0.3**, ✅ **đã chốt toàn bộ câu hỏi mở** — chờ duyệt tuần tự từ GATE-1
+- **Cổng đang chờ:** GATE-1 (duyệt **BRD v0.3**)
 - **GATE-3 (đóng băng thiết kế):** BẬT
 - **GATE-4 (nghiệm thu chức năng):** BẬT
 
@@ -25,6 +25,16 @@
 | **Q3** | Cổng thanh toán | ✅ **VNPay + MoMo** | 2026-09-20 | ⚠️ Hai cổng này **không hỗ trợ tự động gia hạn** cho merchant thường → mô hình chuyển sang **mua từng kỳ + nhắc gia hạn thủ công**. Đã viết lại FR-28→FR-32 |
 | **Q4** | Ngôn ngữ ký hiệu đầu tiên | ✅ **VSL (Ngôn ngữ Ký hiệu Việt Nam)** | 2026-09-20 | Toàn bộ nội dung là VSL; dùng bộ dữ liệu **VSL400** (Zenodo, CC BY 4.0) — **bắt buộc ghi nguồn trong sản phẩm** |
 | **Q7** | Có tích hợp AI nhận diện chuyển động không | ✅ **CÓ — là tính năng cốt lõi** | 2026-09-20 | Thêm **module M10 (FR-41→FR-46)** và **dịch vụ AI riêng**. Tái dùng repo [`dathihi1/EXE101`](https://github.com/dathihi1/EXE101) |
+| **Q8** | Suy luận AI chạy ở đâu | ✅ **Phương án B — trình duyệt trích landmark, server phân lớp** | 2026-09-20 | **Gỡ chặn GATE-3.** NFR-12 viết lại (không pixel nào rời thiết bị, chỉ tensor `64×327`) · HLD ADR-08 chốt · api-spec §4.3 `POST /api/infer/features` là endpoint suy luận **duy nhất**, §4.4 `/api/infer/frames` chuyển sang danh sách **cấm bật** · phương án A (onnxruntime-web) thành đường nâng cấp sau GATE-6 · phương án C **bị loại** · thêm **DR-12** (High) vào pentest |
+| **Q9** | Có bật "Góp dữ liệu luyện tập" không | ✅ **CÓ** | 2026-09-20 | **FR-46 vào phạm vi GĐ1**, không còn là tuỳ chọn. BR-A130→A137 thành **ràng buộc GATE-5**. Bắt buộc: bucket `signlight-donation` (quyền tách riêng), bảng `data_donation_consent` + `donated_clip`, màn **SCR-33**. Giảm rủi ro **R-09** *(nhưng chỉ sinh dữ liệu sau khi có người dùng thật — không cứu được GĐ1)* |
+| **Q10** | 30 ký hiệu MVP-30 có làm giáo trình khởi điểm không | ✅ **Làm giả lập trước — nội dung bổ sung sau** | 2026-09-20 | Thêm **SRS §3.4 (SEED-1→SEED-6)** + **NFR-21**. 30 nhãn MVP-30 thành **bộ seed**, không phải giáo trình. Rủi ro **R-01 được DỜI sang GATE-6, chưa gỡ** — GATE-6 vẫn cần ≥ 1 Unit nội dung thật. Thêm **DR-13** vào pentest (chặn seed rò ra prod) |
+| **Q11** | MVP-50 hay tăng độ chính xác MVP-30 trước | ✅ **Tăng độ chính xác MVP-30 trước** | 2026-09-20 | Giữ **30 nhãn** ở GĐ1; toàn bộ công sức AI dồn vào hạ **R-02**. **R-09 hạ mức** (không mở rộng lớp thì 701 mẫu là đủ GĐ1). MVP-50 lùi sang sau GATE-6 |
+| **Q6** | GĐ1 có gồm B2B & đặt lịch tutor không | ✅ **KHÔNG** | 2026-09-20 | Giữ nguyên phạm vi BRD §3.1 — tiết kiệm ~6 tuần công. B2B chỉ có **form liên hệ**; đặt lịch tutor sang GĐ2 |
+| **Q5** | Nguồn video bài học ngoài VSL400 | ⏸️ **Hoãn tới sau GATE-4** | 2026-09-20 | Hợp lệ vì Q10 cho phép nghiệm thu bằng nội dung giả lập. ⚠️ **Hoãn ≠ giải quyết** — vẫn chặn GATE-6. **Phải mở lại ngay sau GATE-4** |
+| **Q1** | Version techstack | ✅ **Duyệt toàn bộ bảng + chuẩn backend Java** | 2026-09-20 | Java 21 · Spring Boot 3.5 · PostgreSQL 17 · Redis 7.4 · Next.js 15 / React 19 / TS 5.6 / Tailwind 4 · MediaPipe 0.10 · Python 3.11 / FastAPI 0.115 / ONNX Runtime 1.19 · Maven single-module `mm.com.mytel.signlight`. **GATE-2 hết vướng về techstack** |
+| **Q2** | Dải port UAT | ✅ **`18080–18090`** | 2026-09-20 | `18080` api · `18081` web · `18082` storage · `18083` storage-console · `18084–18090` dự phòng. Đã điền vào `docker-compose.yml` + `.env.example`. ⚠️ `ai` (7860) **cố ý không mở** — ADR-10, DR-12 |
+| **R-07** | Tuổi tối thiểu | ✅ **16 tuổi** (cho góp dữ liệu) | 2026-09-20 | Dưới 16 **vẫn học đầy đủ** nhưng không được mời/bật góp dữ liệu; API trả **403**. Cập nhật **BR-A137**, pentest **DR-06**. ⚠️ Tự khai, không xác minh được — chặn phải nằm ở **backend** |
+| **R-11** | Tài khoản thanh toán | ✅ **Đã có tài khoản merchant/sandbox VNPay + MoMo** (SĐT `0866678802`) | 2026-09-20 | **Rủi ro R-11 đóng.** Việc còn lại là thao tác: lấy 5 khoá (`VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`, `MOMO_PARTNER_CODE`, `MOMO_ACCESS_KEY`, `MOMO_SECRET_KEY`) đặt vào `deploy/.env`. 🔐 **Không commit, không ghi log** |
 
 ### Tài sản kỹ thuật đã có sẵn (từ repo EXE101)
 
@@ -47,43 +57,46 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 
 | Artifact              | Role     | Trạng thái   | Cập nhật   | Ghi chú |
 |-----------------------|----------|--------------|------------|---------|
-| BRD.md                | BA       | DONE         | 2026-09-20 | v0.2 — VSL + AI + VNPay/MoMo |
-| SRS.md                | BA       | DONE         | 2026-09-20 | v0.2 — **46 FR + 20 NFR** |
+| BRD.md                | BA       | DONE         | 2026-09-20 | **v0.3** — ✅ **hết câu hỏi mở**; chốt Q5/Q6/Q8→Q11, R-07, R-11 |
+| SRS.md                | BA       | DONE         | 2026-09-20 | **v0.3** — **46 FR + 21 NFR**; thêm §3.4 seed + NFR-21 |
 | function-map.html     | BA       | DONE         | 2026-09-20 | v0.2 — 12 module |
-| techstack.md          | SA       | DONE         | 2026-09-20 | v0.2 — ⚠️ **Version chờ anh Bryan xác nhận** |
-| HLD.md                | SA       | DONE         | 2026-09-20 | v0.2 — Modular monolith + **dịch vụ AI tách riêng**; 10 ADR |
+| techstack.md          | SA       | DONE         | 2026-09-20 | **v0.3** — ✅ **Q1 đã duyệt toàn bộ version** |
+| HLD.md                | SA       | DONE         | 2026-09-20 | **v0.3** — ADR-08 đã chốt (phương án B); Modular monolith + **dịch vụ AI tách riêng**; 10 ADR |
 | architecture.html     | SA       | DONE         | 2026-09-20 | v0.2 |
 | FSD.md                | BA       | DONE         | 2026-09-20 | v0.2 — **35 màn hình** |
 | LLD.md                | SA       | DONE         | 2026-09-20 | v0.2 — 30 bảng |
-| api-spec.md           | SA       | DONE         | 2026-09-20 | v0.2 — **75 endpoint** |
+| api-spec.md           | SA       | DONE         | 2026-09-20 | **v0.3** — **75 endpoint**; §4.3 là endpoint suy luận duy nhất |
 | design.md             | Designer | DONE         | 2026-09-20 | v0.2 |
 | scaffold-backend      | Backend  | NOT_STARTED  |            | B3 |
 | scaffold-frontend     | Frontend | NOT_STARTED  |            | B3 |
 | scaffold-ai           | AI/BE    | **CÓ SẴN**   | 2026-09-20 | Tái dùng `src/vsl_mvp/` của EXE101 |
 | src (code)            | dev      | NOT_STARTED  |            | B4 |
-| test-plan.md          | Tester   | DONE         | 2026-09-20 | v0.2 — thêm nhóm bất biến INV-6 |
-| test-cases.md         | Tester   | DONE         | 2026-09-20 | v0.2 — **217 case**, phủ 46/46 FR; chưa chạy |
+| test-plan.md          | Tester   | DONE         | 2026-09-20 | **v0.3** — phạm vi mở tới NFR-21 |
+| test-cases.md         | Tester   | DONE         | 2026-09-20 | **v0.3** — **217 case** + 3 nhóm case mới cần soạn (DR-12, seed); chưa chạy |
 | test-report.md        | Tester   | IN_PROGRESS  | 2026-09-20 | Khung — **chưa chạy**, chờ B4 |
-| pentest-report.md     | Security | IN_PROGRESS  | 2026-09-20 | Threat model xong — **chưa rà code**, chờ B5 |
-| user-guide.md         | BA       | IN_PROGRESS  | 2026-09-20 | Bản thảo — **thiếu ảnh UAT**, chờ B6 |
-| docker-compose.yml    | DevOps   | DONE         | 2026-09-20 | v0.2 — thêm service `ai`; ⚠️ **chờ dải port** |
-| deploy-notes.md       | DevOps   | IN_PROGRESS  | 2026-09-20 | Runbook — chưa triển khai |
+| pentest-report.md     | Security | IN_PROGRESS  | 2026-09-20 | **v0.3** — 13 DR (thêm DR-12, DR-13); **chưa rà code**, chờ B5 |
+| user-guide.md         | BA       | IN_PROGRESS  | 2026-09-20 | **v0.3** — giữ đoạn góp dữ liệu (Q9); **thiếu ảnh UAT**, chờ B6 |
+| docker-compose.yml    | DevOps   | DONE         | 2026-09-20 | **v0.3** — thêm service `ai`; ✅ **đã điền dải port `18080–18090`** |
+| deploy-notes.md       | DevOps   | IN_PROGRESS  | 2026-09-20 | **v0.3** — gỡ chặn Q8/Q9; chưa triển khai |
 
 ## Log phê duyệt (chỉ con người)
 | Cổng   | Kết quả  | Người duyệt | Ngày | Ghi chú |
 |--------|----------|-------------|------|---------|
-| GATE-1 | — chờ    |             |      | Trình BRD v0.2 |
-| GATE-2 | —        |             |      | Cần xác nhận version techstack (Q1) |
-| GATE-3 | —        |             |      | Cần chốt vị trí suy luận AI (Q8) |
-| GATE-4 | —        |             |      | Cần code + test chạy thật |
-| GATE-5 | —        |             |      | Cần rà bảo mật trên code thật |
-| GATE-6 | —        |             |      | Cần dải port UAT (Q2) |
+| GATE-1 | — chờ    |             |      | ✅ **Sẵn sàng trình** — BRD v0.3, không còn câu hỏi mở |
+| GATE-2 | —        |             |      | ✅ Q1 đã duyệt version. Còn **V-2: đo độ chính xác trên webcam thật** (R-02) |
+| GATE-3 | —        |             |      | ✅ Q8 chốt, R-11 đóng. Còn **V-1** (5 khoá thanh toán), **V-3** (endpoint tensor + xoá endpoint ảnh), xử lý **DR-01, DR-07, DR-08, DR-12** |
+| GATE-4 | —        |             |      | ✅ Q11 chốt. Cần code + test chạy thật *(nghiệm thu **trên dữ liệu seed** — hợp lệ theo SRS §3.4)*; cần **V-4, V-5** |
+| GATE-5 | —        |             |      | ✅ R-07 chốt (16 tuổi). Cần rà bảo mật trên code thật · **BR-A130→A137 là điều kiện bắt buộc** · cần **V-6** |
+| GATE-6 | —        |             |      | ✅ Q2 chốt (`18080–18090`). Còn **≥ 1 Unit nội dung thật** (R-01 chưa gỡ, xem **V-7**) · kiểm tự động chặn `is_seed` (DR-13) |
 
 ## Hàng đợi thay đổi & sự cố
 | Mã | Loại | Sev/Ưu tiên | Mô tả | Trạng thái | Cổng chờ | Cập nhật |
 |----|------|-------------|-------|------------|----------|----------|
 | CR-001 | Change Request | Cao | Bổ sung module AI nhận diện ký hiệu động (M10) trước GATE-1 | Đã đưa vào tài liệu | GATE-1 | 2026-09-20 |
 | CR-002 | Change Request | Cao | Đổi cổng thanh toán sang VNPay + MoMo, bỏ tự động gia hạn | Đã đưa vào tài liệu | GATE-1 | 2026-09-20 |
+| CR-003 | Change Request | Cao | **Chốt Q8 = phương án B** — bổ sung `POST /api/infer/features` vào repo EXE101; **tắt** `/api/infer/frames` và `/api/attempt` ở UAT/prod | Đã đưa vào tài liệu — **việc code chờ B4** | GATE-3 | 2026-09-20 |
+| CR-004 | Change Request | TB | **Chốt Q9 = CÓ** — FR-46 vào phạm vi GĐ1: bucket `signlight-donation`, 2 bảng, màn SCR-33 | Đã đưa vào tài liệu | GATE-3 | 2026-09-20 |
+| CR-005 | Change Request | Cao | **Chốt Q10 = nội dung giả lập trước** — thêm SRS §3.4 + NFR-21; cần **script seed idempotent** + cờ `is_seed` + cổng chặn phát hành | Đã đưa vào tài liệu — **việc code chờ B4** | GATE-4 | 2026-09-20 |
 
 ## Lịch sử phát hành
 | Version | Ngày | Phạm vi | Người duyệt | Kết quả | Rollback |
@@ -91,21 +104,36 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 | —       |      | *(chưa phát hành)* |   |         |          |
 
 ## Thông số môi trường
-- **Dải port UAT (anh Bryan cấp):** ❓ *chưa có — cần **5–6 port** (api, web, ai, storage, storage-console)*
+- **Dải port UAT:** ✅ **`18080–18090`** (anh Bryan cấp 2026-09-20)
+  | Port | Service | | Port | Service |
+  |---|---|---|---|---|
+  | `18080` | `api` (Spring Boot 8080) | | `18083` | `storage-console` (MinIO 9001) |
+  | `18081` | `web` (Next.js 3000) | | `18084–18090` | **dự phòng, chưa dùng** |
+  | `18082` | `storage` (MinIO S3 9000) | | — | — |
+
+  ⚠️ **`ai` (7860), `db` (5432), `cache` (6379) cố ý KHÔNG mở port.** Riêng `ai` là ràng buộc bảo mật
+  (ADR-10, DR-12) — không được mở kể cả để gỡ lỗi; gỡ lỗi bằng `docker compose exec`.
+- **Tài khoản thanh toán:** ✅ đã có **VNPay** và **MoMo** loại **merchant/sandbox**, đăng ký bằng SĐT `0866678802`.
+  Việc còn lại (V-1): lấy 5 khoá `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`, `MOMO_PARTNER_CODE`,
+  `MOMO_ACCESS_KEY`, `MOMO_SECRET_KEY` từ `sandbox.vnpayment.vn` / `business.momo.vn`.
+  🔐 *(Khoá là bí mật — chỉ đặt trong `deploy/.env`, **không commit**, **không ghi log** — NFR-11.)*
 - **Môi trường:** dev (local) · uat (Docker Compose) · prod (chưa định hướng hạ tầng)
 
-## Câu hỏi mở đang chờ anh Bryan quyết
+## Câu hỏi mở
 
-| # | Câu hỏi | Ảnh hưởng | Artifact liên quan |
-|---|---------|-----------|--------------------|
-| **Q8** | **Suy luận AI chạy ở đâu?** (A) Toàn bộ trong trình duyệt — ảnh không rời máy, cần port MediaPipe Holistic + ONNX sang web; (B) **Trình duyệt trích landmark, gửi tensor 64×327 lên server** — không có pixel rời máy, đổi mô hình không cần đổi client *(SA khuyến nghị)*; (C) Gửi 8–32 ảnh JPEG lên server như repo hiện tại — dùng lại được ngay nhưng pixel rời máy | **Chặn GATE-3** — quyết định này định hình NFR-12, HLD §2, FR-41 | HLD ADR-08, SRS NFR-12 |
-| **Q9** | Có bật tính năng **"Góp dữ liệu luyện tập"** (người dùng tự nguyện cho phép lưu clip để cải thiện mô hình) không? Đây là cách thực tế nhất để tăng 701 mẫu lên mức đủ tốt | Chất lượng mô hình dài hạn; nghĩa vụ đồng ý theo PDPL | SRS FR-46, pentest DR-07 |
-| **Q10** | 30 ký hiệu của MVP-30 có được dùng làm **giáo trình khởi điểm** không? *(Nhãn hiện tại nghiêng về chủ đề gia đình/đồ vật/thời tiết — xem BRD §3.1)* | Thiết kế chương trình học | BRD §3, SRS FR-41 |
-| **Q11** | Ưu tiên **mở rộng lên MVP-50** hay **tăng độ chính xác MVP-30** trước? | Lộ trình nội dung AI | BRD §8 R-09 |
-| Q1 | Xác nhận **version** từng dòng trong `techstack.md` | Chặn GATE-2 | docs/sa/techstack.md |
-| Q2 | Dải port UAT (5–6 port) | Chặn GATE-6 | deploy/docker-compose.yml |
-| Q5 | Nguồn video bài học ngoài 30 ký hiệu của VSL400 | Chi phí & tiến độ lớn nhất | BRD §6, §8 |
-| Q6 | GĐ1 có gồm B2B & đặt lịch tutor không? | ±6 tuần công | BRD §3 |
+> ✅ **KHÔNG CÒN CÂU HỎI NÀO** tính tới 2026-09-20. Toàn bộ Q1→Q11, R-07, R-11 đã được chốt (xem bảng §Quyết định đã chốt).
+
+**Việc còn lại KHÔNG phải câu hỏi — mà là việc phải làm:**
+
+| # | Việc | Ai làm | Chặn cổng |
+|---|------|--------|-----------|
+| V-1 | Lấy **5 khoá** VNPay/MoMo từ portal merchant, đặt vào `deploy/.env` *(không commit)* | anh Bryan → DevOps | GATE-3 |
+| V-2 | **Đo độ chính xác trên webcam thật** — ≥ 5 người, ≥ 3 điều kiện ánh sáng *(rủi ro R-02, lớn nhất còn lại)* | AI dev | **GATE-2** |
+| V-3 | Bổ sung `POST /api/infer/features` vào repo EXE101; **xoá** `/api/infer/frames` + `/api/attempt` khỏi bản triển khai | AI dev | GATE-3 (DR-07, DR-12) |
+| V-4 | Viết **script seed idempotent** + cờ `is_seed` + cổng chặn phát hành | dev | GATE-4 (NFR-21) |
+| V-5 | Soạn 3 nhóm test case mới: DR-12, seed idempotent, SEED-4 | Tester | GATE-4 |
+| V-6 | Hiện thực **chặn tuổi < 16 ở backend** cho góp dữ liệu (403), thu năm sinh ở onboarding | dev | GATE-5 |
+| V-7 | **Mở lại Q5** (nguồn video) ngay sau GATE-4 — R-01 mới chỉ được dời | PO | GATE-6 |
 
 ## Nhật ký (append-only)
 - 2026-09-20 — PO khởi tạo dự án, phân loại **Track A (dự án mới)**, chọn cấu trúc thư mục **kiểu A**.
@@ -114,3 +142,12 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 - 2026-09-20 — **Anh Bryan chốt Q3 = VNPay + MoMo, Q4 = VSL, Q7 = có module AI.** Cung cấp repo `dathihi1/EXE101`.
 - 2026-09-20 — Khảo sát **dashboard thật** của Lingvano sau khi anh Bryan đăng nhập → phát hiện 5 điểm khác với giả định v0.1 (xem BRD §9).
 - 2026-09-20 — Nghiên cứu repo EXE101: mô hình MVP-30 (top1 0.901), schema 327 chiều, hợp đồng `/api/infer/frames`. Cập nhật toàn bộ tài liệu lên **v0.2**.
+- 2026-09-20 — **Anh Bryan chốt NỐT toàn bộ câu hỏi còn lại:** Q1 = duyệt cả bảng version · **Q2 = dải port `18080–18090`** ·
+  Q5 = hoãn sau GATE-4 · Q6 = KHÔNG làm B2B/tutor · Q11 = tăng độ chính xác MVP-30 trước · R-07 = tuổi tối thiểu **16** ·
+  R-11 = tài khoản **merchant/sandbox** (đóng rủi ro).
+  Đã điền port vào `docker-compose.yml` + `.env.example`; tick ✅ toàn bộ cột "Xác nhận" của `techstack.md`;
+  cập nhật `BR-A137` (SRS), `DR-06` (pentest), bảng rủi ro BRD. **Mục "Câu hỏi mở" nay rỗng, thay bằng danh sách việc V-1→V-7.**
+- 2026-09-20 — **Anh Bryan chốt Q8 = phương án B, Q9 = CÓ, Q10 = nội dung giả lập trước; xác nhận đã có tài khoản VNPay + MoMo (SĐT `0866678802`).**
+  Cập nhật **BRD, SRS, HLD, techstack, api-spec, pentest-report, deploy-notes, user-guide, README, docs/README** lên **v0.3**.
+  Thêm **SRS §3.4 (SEED-1→6)**, **NFR-21**, **DR-12**, **DR-13**, **CR-003→CR-005**.
+  Gỡ chặn GATE-3 về mặt kiến trúc; **R-01 được dời sang GATE-6** (chưa gỡ); **R-11 hạ mức** *(đóng hẳn cùng ngày sau khi anh Bryan xác nhận là tài khoản merchant/sandbox)*.

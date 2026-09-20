@@ -24,7 +24,7 @@
 |----------|---------|
 | Đợt kiểm thử | *(chưa chạy)* |
 | Phiên bản mã nguồn kiểm thử | *(commit hash — chưa có)* |
-| Môi trường | UAT (`deploy/docker-compose.yml`) — **dải port chờ anh Bryan cấp** |
+| Môi trường | UAT (`deploy/docker-compose.yml`) — dải port **`18080–18090`** |
 | Thời gian bắt đầu / kết thúc | — / — |
 | Người thực hiện | Tester |
 | Bộ test case áp dụng | `test-cases.md` v0.1 — 191 case |

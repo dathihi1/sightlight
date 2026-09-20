@@ -1,8 +1,14 @@
 # docker-compose.yml (UAT) — SignLight
 #
 # ⚠️ BẮT BUỘC ĐỌC TRƯỚC KHI CHẠY
-# 1. Thay <PORT_*> bằng port trong DẢI PORT anh Bryan cấp. KHÔNG tự chọn port.
-#    (Trạng thái hiện tại: chưa có dải port — xem PROJECT_STATE.md, câu hỏi Q2.)
+# 1. ✅ DẢI PORT ĐÃ ĐƯỢC CẤP: 18080–18090 (anh Bryan, 2026-09-20).
+#       18080 → api   (Spring Boot)
+#       18081 → web   (Next.js)
+#       18082 → storage       (API S3 của MinIO)
+#       18083 → storage-console (bảng điều khiển MinIO — cân nhắc đóng nếu không cần)
+#       18084–18090 → DỰ PHÒNG, chưa dùng. Không tự ý gán thêm service vào dải này.
+#    ⚠️ Service `ai` CỐ Ý KHÔNG MỞ PORT — nó không có xác thực người dùng, chỉ được
+#       gọi từ mạng Docker nội bộ (HLD ADR-10, pentest DR-12). Đừng "tiện tay" mở 18084.
 # 2. Copy `.env.example` thành `.env` và điền giá trị thật. KHÔNG commit `.env`.
 # 3. Không expose port của PostgreSQL và Redis ra ngoài trên UAT.
 #
@@ -33,7 +39,7 @@ services:
       SERVER_ERROR_INCLUDE_MESSAGE: never
       JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75"
     ports:
-      - "<PORT_API>:8080"
+      - "18080:8080"
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
       interval: 15s
@@ -90,7 +96,7 @@ services:
     environment:
       NODE_ENV: production
     ports:
-      - "<PORT_WEB>:3000"
+      - "18081:3000"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/healthz"]
       interval: 15s
@@ -154,8 +160,8 @@ services:
     volumes:
       - storage_data:/data
     ports:
-      - "<PORT_STORAGE>:9000"        # API S3 — cần để trình duyệt tải video ở UAT
-      - "<PORT_STORAGE_CONSOLE>:9001" # Bảng điều khiển — cân nhắc KHÔNG mở nếu không cần
+      - "18082:9000"        # API S3 — cần để trình duyệt tải video ở UAT
+      - "18083:9001" # Bảng điều khiển — cân nhắc KHÔNG mở nếu không cần
     restart: unless-stopped
     networks: [app]
 

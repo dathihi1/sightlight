@@ -1,7 +1,12 @@
 # SRS — SignLight (Nền tảng học Ngôn ngữ Ký hiệu Việt Nam có AI luyện tập)
 
-| Phiên bản | **v0.2** | Ngày | 2026-09-20 | Trạng thái | DRAFT — chờ GATE-2 |
+| Phiên bản | **v0.3** | Ngày | 2026-09-20 | Trạng thái | DRAFT — chờ GATE-2 |
 |-----------|------|------|------------|------------|---------------------|
+
+**Thay đổi so với v0.2:** chốt **Q8 = phương án B** (trình duyệt trích landmark, server phân lớp) → viết lại
+**NFR-12**, loại bỏ phương án A/C khỏi phạm vi · chốt **Q9 = CÓ** → **FR-46 vào phạm vi GĐ1** (không còn là
+tuỳ chọn) · chốt **Q10 = nội dung giả lập trước** → thêm **§3.4 Chính sách nội dung giả lập (seed)** và
+**NFR-21**.
 
 **Thay đổi so với v0.1:** ngôn ngữ = **VSL** · thanh toán = **VNPay + MoMo, không tự động gia hạn** ·
 thêm **module M10 — AI nhận diện ký hiệu động (FR-41→FR-44)** · thêm FR-45 (báo thiếu ký hiệu), FR-46
@@ -1118,8 +1123,14 @@ flowchart LR
 
 #### FR-46 — Góp dữ liệu luyện tập *(tự nguyện, rút lại được)*
 
+> ✅ **Q9 đã chốt: BẬT** (anh Bryan, 2026-09-20). FR-46 **nằm trong phạm vi GĐ1**, không còn là tuỳ chọn.
+> Kéo theo: tạo bucket `signlight-donation` (deploy), bảng `data_donation_consent` + `donated_clip` (LLD),
+> màn **SCR-33** (FSD/design), và mục DR-07 trong pentest.
+>
 > ⚠️ **Đây là chức năng nhạy cảm nhất về quyền riêng tư của toàn hệ thống.** Nó cho phép lưu **video/landmark
 > của người học** để cải thiện mô hình — điều mà mặc định hệ thống **không bao giờ** làm.
+> **Vì Q9 = CÓ nên mọi quy tắc BR-A130→BR-A137 dưới đây trở thành ràng buộc bắt buộc của GATE-5**, không
+> phải khuyến nghị.
 
 - **Mô tả:** Giải quyết rủi ro R-09 (chỉ có 701 mẫu huấn luyện) bằng cách xin người học **tự nguyện** cho
   phép lưu lại lượt thử của họ làm dữ liệu huấn luyện.
@@ -1136,7 +1147,7 @@ flowchart LR
   - **BR-A135 — gắn nhãn ẩn danh:** bản ghi góp dữ liệu gắn với **định danh giả (pseudonymous id)**, không
     gắn email/tên.
   - **BR-A136 — hiển thị khi đang ghi:** có chỉ báo rõ ràng **mọi lúc** trong lúc lượt thử được lưu lại.
-  - **BR-A137 — tuổi:** không mời góp dữ liệu với tài khoản dưới tuổi tối thiểu (phụ thuộc quyết định R-07).
+  - **BR-A137 — tuổi:** ✅ **tuổi tối thiểu = 16** (anh Bryan chốt 2026-09-20). Tài khoản **dưới 16 tuổi**: màn SCR-33 **không hiển thị lời mời**, công tắc **bị vô hiệu**, và API `PUT /me/data-donation` **từ chối** (403). Người dưới 16 vẫn dùng **đầy đủ** chức năng AI. Năm sinh thu ở onboarding. ⚠️ Đây là tự khai, **không xác minh được** — biện pháp giảm nhẹ, không phải bảo đảm pháp lý.
 
 - **Tiêu chí chấp nhận:**
   - **AC-46.1:** Given người dùng **chưa** đồng ý — When thực hiện lượt luyện AI và theo dõi lưu lượng mạng — Then **không** có dữ liệu ảnh/video/landmark nào được gửi để lưu trữ.
@@ -1145,6 +1156,25 @@ flowchart LR
   - **AC-46.4:** Given đang ghi để góp dữ liệu — When xem giao diện — Then có chỉ báo rõ ràng đang lưu.
   - **AC-46.5:** Given tài khoản **không** bật góp dữ liệu — When dùng chức năng AI — Then **đầy đủ tính năng**, không bị hạn chế gì.
   - **AC-46.6:** Given kho dữ liệu góp — When kiểm nội dung bản ghi — Then **không** chứa email/tên, chỉ có định danh giả.
+
+### 3.4 Chính sách nội dung giả lập *(mới ở v0.3 — Q10 đã chốt)*
+
+> ✅ **Q10 đã chốt (anh Bryan, 2026-09-20): làm giả lập trước, chưa cần quan tâm nội dung. Nội dung thật
+> sẽ bổ sung sau.**
+
+**Điều này KHÔNG có nghĩa là bỏ qua nội dung — mà là tách nội dung ra khỏi đường găng.** Ràng buộc:
+
+| # | Quy tắc | Lý do |
+|---|---------|-------|
+| **SEED-1** | Mọi FR liên quan nội dung (FR-09→FR-16, FR-41) được **hiện thực và nghiệm thu bằng dữ liệu giả lập**. Tiêu chí chấp nhận **không đổi** | Không được lấy "nội dung chưa có" làm cớ để hoãn chức năng |
+| **SEED-2** | Nội dung là **dữ liệu, không phải code**: nạp qua script seed + bảng CSDL, **cấm** hard-code tên ký hiệu/bài học trong mã nguồn | Đổi nội dung thật sau này không được sửa code |
+| **SEED-3** | Bộ seed bám **30 nhãn của MVP-30** để phần AI chấm được **thật sự chạy** *(danh sách ở BRD §3.1)*; các bước học khác dùng video placeholder | AI là tính năng cốt lõi — không thể giả lập phần chấm |
+| **SEED-4** | Ký hiệu seed **ngoài** vốn AI phải test được nhánh "chưa có chấm tự động" (AC-41.2) → bộ seed **bắt buộc** có ≥ 3 ký hiệu ngoài 30 nhãn | Không có thì nhánh này không bao giờ được test |
+| **SEED-5** | Mỗi bản ghi seed có cờ `is_seed = true`; **GATE-6 chặn phát hành prod** nếu còn bản ghi `is_seed = true` | Chống rò nội dung giả lập ra người dùng thật |
+| **SEED-6** | Video/ảnh placeholder **không** dùng tư liệu có bản quyền của bên thứ ba; dùng clip tự dựng hoặc VSL400 (CC BY 4.0, có ghi nguồn) | Tránh nợ pháp lý ngay từ seed |
+
+**Hệ quả lên các cổng:** GATE-4 nghiệm thu **trên dữ liệu seed** — hợp lệ. GATE-6 (phát hành) **vẫn cần
+nội dung thật** cho ít nhất 1 Unit; đây là **rủi ro R-01 chưa được gỡ**, chỉ được **dời lại**.
 
 ## 4. Yêu cầu phi chức năng (NFR)
 
@@ -1161,7 +1191,7 @@ flowchart LR
 | **NFR-09** | Bảo mật — Mật khẩu & phiên | Argon2id; access token 15 phút; refresh token 30 ngày, **xoay vòng**, phát hiện tái sử dụng thì thu hồi toàn bộ |
 | **NFR-10** | Bảo mật — Giới hạn tần suất | Đăng nhập 10/phút/IP · đăng ký 5/giờ/IP · quên mật khẩu 3/giờ/email · tìm kiếm 60/phút/người dùng · webhook không giới hạn nhưng bắt buộc xác thực chữ ký |
 | **NFR-11** | Bảo mật — Thanh toán | Phạm vi **PCI-DSS SAQ-A**: không lưu/truyền/ghi log dữ liệu thẻ/ví (BR-A62). Chữ ký IPN xác thực bằng **HMAC-SHA512 (VNPay)** / **HMAC-SHA256 (MoMo)**, so sánh chống tấn công thời gian |
-| **NFR-12** | **Quyền riêng tư — Camera** *(viết lại ở v0.2)* | **Mặc định: không hình ảnh hay video nào từ camera được LƯU TRỮ ở bất kỳ đâu.** Việc **truyền đi** phụ thuộc phương án suy luận đã chọn (câu hỏi Q8):<br/>• **A — toàn bộ trong trình duyệt:** không có gì rời thiết bị.<br/>• **B — landmark (SA khuyến nghị):** chỉ tensor số 64×327 rời thiết bị; **không pixel nào**.<br/>• **C — gửi khung hình:** ảnh JPEG rời thiết bị nhưng **xử lý trong bộ nhớ và không lưu**.<br/>Với mọi phương án: **API từ chối** payload chứa ảnh khi đang ở chế độ A/B; hình ảnh chỉ được lưu khi người dùng **chủ động đồng ý** theo FR-46. Kiểm chứng bằng theo dõi lưu lượng mạng thật ở B5 |
+| **NFR-12** | **Quyền riêng tư — Camera** *(viết lại ở v0.3 — Q8 đã chốt)* | ✅ **Phương án B đã chốt (anh Bryan, 2026-09-20): trình duyệt trích landmark, server phân lớp.**<br/>• **Không một pixel nào** từ camera rời khỏi thiết bị trong luồng chấm AI. Thứ duy nhất được gửi lên là **tensor số `64×327`** (float) + vài chỉ số chất lượng.<br/>• **Không hình ảnh hay video nào được LƯU TRỮ** ở bất kỳ đâu trong luồng chấm AI.<br/>• **API bắt buộc từ chối** (HTTP 400, `errorCode = 10103`) mọi payload chứa trường ảnh/video/base64 — kể cả khi client gửi nhầm.<br/>• Ngoại lệ **duy nhất**: người dùng **chủ động bật** góp dữ liệu theo **FR-46** (Q9 = CÓ) — khi đó clip được lưu vào **bucket riêng** `signlight-donation`, gắn định danh giả, xoá khi rút đồng ý.<br/>Kiểm chứng bằng theo dõi lưu lượng mạng thật ở B5 (TC-FR41-01/02/03, TC-FR46-01) |
 | **NFR-13** | Tuân thủ dữ liệu | Tuân **Nghị định 13/2023/NĐ-CP**: có cơ sở pháp lý xử lý dữ liệu, cho phép xuất & xoá dữ liệu (FR-08), không PII trong log (BR-A90) |
 | **NFR-14** | Khả năng tiếp cận | **WCAG 2.1 AA** trên toàn luồng học: tương phản ≥ 4,5:1, thao tác đủ bằng bàn phím, có nhãn cho mọi điều khiển, vùng chạm ≥ 44×44 px, **không thông tin chỉ bằng âm thanh** |
 | **NFR-15** | Tương thích | 2 phiên bản gần nhất của Chrome/Edge/Firefox/Safari, desktop & mobile; **hạ cấp mềm** khi thiếu camera/WebAssembly |
@@ -1170,6 +1200,7 @@ flowchart LR
 | **NFR-18** | Chi phí | Chi phí hạ tầng ≤ **0,15 USD/MAU** (BG-06); bắt buộc dùng CDN cho video; có cảnh báo khi chi phí tháng vượt 120% dự toán |
 | **NFR-19** | **Chất lượng mô hình AI** | Mô hình triển khai đạt **top1 ≥ 0,85** và **top3 ≥ 0,95** trên tập kiểm định chia theo **người ký hiệu** (`group_shuffle_by_signer`). **Bắt buộc kiểm lại trên webcam thật với ≥ 5 người, ≥ 3 điều kiện ánh sáng trước GATE-4**; nếu tụt dưới 0,80 thì hạ cấp chức năng về chế độ Gương (rủi ro R-02) |
 | **NFR-20** | **Khả dụng & cô lập của dịch vụ AI** | Dịch vụ AI lỗi hoặc quá tải **không được làm hỏng luồng học**: backend đặt **timeout 5 giây**, có **circuit breaker**, và hạ cấp mềm sang chế độ Gương. Lỗi dịch vụ AI **không** tính vào hạn mức lượt thử và **không** đánh dấu ký hiệu là sai |
+| **NFR-21** | **Nội dung giả lập (seed)** *(mới ở v0.3 — Q10 đã chốt)* | Hệ thống phải chạy **đầy đủ chức năng** với bộ nội dung giả lập: **≥ 30 ký hiệu, ≥ 3 Unit, ≥ 9 bài học, ≥ 5 loại bước học**, nạp bằng **một lệnh seed duy nhất** và **lặp lại được** (idempotent). Nội dung thật thay thế seed **không được đòi hỏi đổi schema hay đổi code** — chỉ đổi dữ liệu. Video/ảnh seed dùng **placeholder** và **bắt buộc** hiển thị nhãn `NỘI DUNG GIẢ LẬP` ở mọi môi trường **trừ prod**; **cấm** deploy prod khi CSDL còn bản ghi seed *(kiểm tự động ở GATE-6)* |
 
 ## 5. Ràng buộc dữ liệu
 

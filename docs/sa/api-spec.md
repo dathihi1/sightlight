@@ -1,6 +1,6 @@
 # API Specification — SignLight
 
-| Phiên bản | **v0.2** | Ngày | 2026-09-20 | Trạng thái | DRAFT — chờ GATE-3 |
+| Phiên bản | **v0.3** | Ngày | 2026-09-20 | Trạng thái | DRAFT — chờ GATE-3 |
 |-----------|------|------|------------|------------|---------------------|
 
 **Tiền đề:** `docs/sa/LLD.md` v0.2 (nguồn sự thật tên bảng/trường), `docs/ba/SRS.md` v0.2 (ràng buộc validate)
@@ -850,7 +850,10 @@ này (đã duyệt) thắng**.
               {"index":1,"label":"Cháu","stableSignId":"chau"} ] }
 ```
 
-### 4.3 `POST /api/infer/features` — **endpoint cần bổ sung vào repo** *(phương án B của Q8)*
+### 4.3 `POST /api/infer/features` — ✅ **endpoint BẮT BUỘC bổ sung vào repo** *(Q8 chốt phương án B)*
+
+> ✅ **Q8 đã chốt (anh Bryan, 2026-09-20) = phương án B.** Đây là **endpoint suy luận duy nhất** được dùng
+> trong sản phẩm. Việc bổ sung nó vào repo EXE101 là **hạng mục chặn GATE-4**, không còn là điều kiện.
 
 Repo hiện chỉ có `POST /api/infer/frames` (nhận 8–32 ảnh JPEG). Phương án B cần thêm endpoint nhận
 **tensor đã trích sẵn**, bỏ qua bước MediaPipe ở server:
@@ -871,14 +874,16 @@ Repo hiện chỉ có `POST /api/infer/frames` (nhận 8–32 ảnh JPEG). Phư�
 > **Lượng công việc cần thêm vào repo EXE101:** một endpoint mỏng gọi thẳng `OnnxSignRecognizer` với tensor
 > có sẵn, bỏ qua `HolisticLandmarkExtractor`. Đây là **thay đổi nhỏ** vì lớp suy luận đã tách sẵn.
 
-### 4.4 `POST /api/infer/frames` — *(có sẵn trong repo — dùng cho phương án C)*
-Nhận 8–32 ảnh JPEG, tổng ≤ 2 MB, cộng `expected_sign_id`. Trả cùng cấu trúc §4.3 kèm `verified` và
-`qualityHints`. **Chỉ dùng nếu anh Bryan chọn phương án C của Q8.**
+### 4.4 `POST /api/infer/frames` — ❌ **KHÔNG bật trong sản phẩm** *(phương án C đã bị loại)*
+Có sẵn trong repo: nhận 8–32 ảnh JPEG, tổng ≤ 2 MB, cộng `expected_sign_id`. **Phương án C đã bị loại
+khi Q8 chốt phương án B** → endpoint này **phải tắt** ở cấu hình sản phẩm (xem §4.5). Giữ lại trong repo
+chỉ để chạy thử nghiệm nội bộ ở môi trường `dev`.
 
 ### 4.5 Endpoint của repo **KHÔNG được bật** trong sản phẩm
 
 | Endpoint | Vì sao không bật |
 |----------|------------------|
+| `POST /api/infer/frames` | Nhận **pixel** — vi phạm NFR-12 sau khi Q8 chốt phương án B. Chỉ được bật ở `dev` để thử nghiệm |
 | `POST /api/attempt` | **Ghi video người dùng xuống đĩa** và có thể tải lên Google Drive — vi phạm NFR-12. Việc góp dữ liệu phải đi qua luồng có đồng ý tường minh (FR-46, `POST /ai/donations/clips`) |
 | `GET /` (trang HTML test nội bộ) | Lộ giao diện test ra ngoài |
 | `GET /api/sample/{i}` | Không cần — video mẫu phục vụ qua CDN của SignLight |
@@ -897,4 +902,5 @@ Nhận 8–32 ảnh JPEG, tổng ≤ 2 MB, cộng `expected_sign_id`. Trả cùn
 - [x] Ghi chú: OpenAPI sinh từ code (springdoc) sẽ đối chiếu file này ở GATE-4 — không viết YAML tay.
 - [x] Đã xoá hết khối 💡 Hướng dẫn / 📝 Ví dụ của mẫu.
 - [x] ✅ §3.14 đã viết theo đúng VNPay + MoMo (Q3 đã chốt).
-- [ ] ⚠️ **§4.3 cần bổ sung endpoint `/api/infer/features` vào repo EXE101** nếu chọn phương án B của Q8.
+- [x] ✅ **Q8 đã chốt phương án B** — §4.3 là endpoint suy luận duy nhất; §4.4 (`/api/infer/frames`) chuyển sang danh sách **không bật**.
+- [ ] ⚠️ **Việc cần làm ở B4:** bổ sung `POST /api/infer/features` vào repo EXE101 (**chặn GATE-4**).

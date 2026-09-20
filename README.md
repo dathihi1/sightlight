@@ -10,7 +10,7 @@ tức thì — người học thực hiện trọn một ký hiệu trước cam
 
 ## Trạng thái
 
-**Giai đoạn:** đã hoàn tất **bộ tài liệu B1→B6 phiên bản v0.2**. **Chưa có mã nguồn.**
+**Giai đoạn:** đã hoàn tất **bộ tài liệu B1→B6 phiên bản v0.3** — ✅ **đã chốt toàn bộ câu hỏi mở**. **Chưa có mã nguồn.**
 Cổng đang chờ: **GATE-1 (duyệt BRD)**.
 
 👉 Đọc [`PROJECT_STATE.md`](PROJECT_STATE.md) trước mỗi phiên làm việc.
@@ -82,13 +82,26 @@ bị, **không pixel nào**. Lý do chọn và các phương án đã loại: [`
 └── training-skill-software/      # Bộ skill SDLC dùng để sinh tài liệu
 ```
 
-## Câu hỏi đang chặn
+## Trạng thái quyết định & việc còn lại
 
-| # | Câu hỏi | Chặn |
-|---|---------|------|
-| **Q8** | Suy luận AI chạy ở đâu? (SA khuyến nghị: trình duyệt trích landmark, server phân lớp) | GATE-3 |
-| **Q1** | Xác nhận version từng dòng trong techstack | GATE-2 |
-| **R-11** | Tài khoản merchant VNPay/MoMo | GATE-3 — không có thì không có doanh thu |
-| **R-02** | Kiểm độ chính xác AI trên webcam thật (≥ 5 người) | GATE-4 |
+> ✅ **Không còn câu hỏi nào đang chặn.** Toàn bộ Q1→Q11, R-07, R-11 đã được chốt ngày **2026-09-20**.
 
-Danh sách đầy đủ: [`PROJECT_STATE.md`](PROJECT_STATE.md).
+**Đã chốt:** Q1 (duyệt cả bảng version) · Q2 (**port `18080–18090`**) · Q3 (VNPay + MoMo) · Q4 (VSL) ·
+Q5 (hoãn nguồn video tới sau GATE-4) · Q6 (**không** làm B2B/tutor ở GĐ1) · Q7 (có module AI) ·
+**Q8 = phương án B** (trình duyệt trích landmark, server phân lớp) · **Q9 = CÓ** (bật góp dữ liệu tự nguyện) ·
+**Q10 = nội dung giả lập trước** · **Q11 = tăng độ chính xác MVP-30 trước** · R-07 (tuổi tối thiểu **16**) ·
+R-11 (đã có tài khoản merchant/sandbox).
+
+**Việc còn lại — không phải câu hỏi, mà là việc phải làm:**
+
+| # | Việc | Chặn |
+|---|------|------|
+| **V-2** | **Đo độ chính xác AI trên webcam thật** (≥ 5 người, ≥ 3 điều kiện ánh sáng) — **rủi ro R-02, lớn nhất còn lại** | GATE-2 |
+| **V-1** | Lấy 5 khoá VNPay/MoMo đặt vào `deploy/.env` *(không commit)* | GATE-3 |
+| **V-3** | Thêm `POST /api/infer/features`; **xoá** `/api/infer/frames` + `/api/attempt` khỏi bản triển khai | GATE-3 |
+| **V-4/V-5** | Script seed idempotent + cờ `is_seed`; 3 nhóm test case mới | GATE-4 |
+| **V-6** | Chặn tuổi < 16 cho góp dữ liệu **ở backend** | GATE-5 |
+| **V-7** | **Mở lại Q5** ngay sau GATE-4 — R-01 mới chỉ được *dời*, chưa gỡ | GATE-6 |
+
+Chi tiết: [`PROJECT_STATE.md`](PROJECT_STATE.md).
+

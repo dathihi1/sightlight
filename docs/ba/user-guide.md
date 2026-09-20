@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng — SignLight
 
-| Phiên bản | **v0.2** | Ngày | 2026-09-20 | Đối tượng | Người học | Trạng thái | ⚠️ **BẢN THẢO — CHƯA CÓ ẢNH MÀN HÌNH THẬT** |
+| Phiên bản | **v0.3** | Ngày | 2026-09-20 | Đối tượng | Người học | Trạng thái | ⚠️ **BẢN THẢO — CHƯA CÓ ẢNH MÀN HÌNH THẬT** |
 |-----------|------|------|------------|-----------|-----------|------------|-----------------------------------------------|
 
 > ## ⚠️ Đọc trước
@@ -505,4 +505,8 @@ Vì bạn chưa học tới phần tương ứng — xem bảng ở [mục 4](#4
 5. Bổ sung **dòng ghi nguồn VSL400 (CC BY 4.0)** vào mục 5b — nghĩa vụ giấy phép (SC-12).
 6. Rà lại toàn bộ thuật ngữ với **cố vấn người Điếc** — đặc biệt cách dùng từ khi nói về cộng đồng Điếc.
 7. Dịch sang tiếng Anh (song ngữ theo §2.3 SRS).
-8. Nếu anh Bryan **không bật** tính năng góp dữ liệu (Q9) → **xoá đoạn nói về nó** ở cuối mục 5b.
+8. ✅ **Q9 đã chốt = BẬT** (2026-09-20) → **giữ** đoạn nói về góp dữ liệu ở cuối mục 5b, và **mở rộng** nó
+   cho đủ 5 thông tin bắt buộc của **BR-A132** (lưu cái gì · lưu bao lâu · dùng làm gì · ai xem được ·
+   rút lại thế nào). Đây là **điều kiện của GATE-5**, không phải văn phong.
+9. ⚠️ **Q10 đã chốt = nội dung giả lập trước** → ảnh chụp UAT ở GĐ này là **nội dung seed**. Trước khi phát
+   hành cho người dùng thật, **bắt buộc chụp lại** bằng nội dung thật (SRS §3.4 SEED-5).

@@ -1,8 +1,8 @@
 # HLD — SignLight
 
-| Phiên bản | **v0.2** | Ngày | 2026-09-20 | Trạng thái | DRAFT — chờ GATE-2 |
+| Phiên bản | **v0.3** | Ngày | 2026-09-20 | Trạng thái | DRAFT — chờ GATE-2 |
 
-**Tiền đề:** `docs/ba/BRD.md` v0.2, `docs/ba/SRS.md` v0.2 · **Đi kèm:** `docs/sa/architecture.html` (sơ đồ khối dễ nhìn — không thay tài liệu này) · **Khớp:** `docs/sa/techstack.md`
+**Tiền đề:** `docs/ba/BRD.md` v0.3, `docs/ba/SRS.md` v0.3 · **Đi kèm:** `docs/sa/architecture.html` (sơ đồ khối dễ nhìn — không thay tài liệu này) · **Khớp:** `docs/sa/techstack.md`
 
 ---
 
@@ -278,7 +278,7 @@ danh mục ở Redis** → nội dung xuất hiện với người học.
 | Môi trường | Mục đích | Cấu hình | Dữ liệu |
 |------------|----------|----------|---------|
 | **dev** | Máy lập trình viên | Docker Compose: api + web + postgres + redis; storage giả lập S3 | Dữ liệu mẫu ẩn danh |
-| **uat** | Nghiệm thu (B6) | Docker Compose theo `deploy/docker-compose.yml`; **dải port do anh Bryan cấp** | Dữ liệu ẩn danh, **không PII thật** |
+| **uat** | Nghiệm thu (B6) | Docker Compose theo `deploy/docker-compose.yml`; dải port **`18080–18090`** (api `18080` · web `18081` · storage `18082/18083`; `ai` **không mở**) | Dữ liệu ẩn danh, **không PII thật** |
 | **prod** (định hướng) | Người dùng thật | 1 máy chủ + Caddy + api + postgres + redis; object storage & CDN là dịch vụ quản lý; sao lưu hằng ngày | Dữ liệu thật, mã hoá khi lưu nghỉ |
 
 ```
@@ -359,7 +359,7 @@ PostgreSQL. **Không** cần đổi kiến trúc trong cả ba bước.
   *Hệ quả:* thêm ZaloPay sau này chỉ là thêm một lớp; đổi lại phải kỷ luật **không để chi tiết của cổng rò
   rỉ ra ngoài interface**.
 
-- **ADR-08 — 🤖 Vị trí suy luận AI: trích đặc trưng ở client, phân lớp ở server.** *(mới ở v0.2 — ⚠️ chờ Q8)*
+- **ADR-08 — 🤖 Vị trí suy luận AI: trích đặc trưng ở client, phân lớp ở server.** *(mới ở v0.2 — ✅ **ĐÃ CHỐT: phương án B**, anh Bryan 2026-09-20)*
   *Bối cảnh:* mô hình nhận **tensor 64×327**, không nhận pixel. Có ba phương án khả thi.
 
   | | A — toàn bộ trong trình duyệt | **B — landmark lên server** *(khuyến nghị)* | C — gửi ảnh lên server |
@@ -372,11 +372,18 @@ PostgreSQL. **Không** cần đổi kiến trúc trong cả ba bước.
   | Hoạt động khi mạng yếu | ✅ | ⚠️ | ❌ |
   | Bảo vệ mô hình khỏi sao chép | ❌ Mô hình tải về máy người dùng | ✅ | ✅ |
 
-  *Quyết định đề xuất:* **phương án B**. Nó giữ trọn cam kết quyền riêng tư (không pixel nào rời thiết bị),
-  chỉ cần **một endpoint mới** ở dịch vụ AI nhận tensor thay vì ảnh, và vẫn cho phép nâng cấp mô hình mà
-  không đụng tới client. Phương án A là **đường nâng cấp tự nhiên** khi đã đo được hiệu năng MediaPipe
-  trên máy thật; giữ nguyên interface thì đổi sang A sau này không phá kiến trúc.
-  *Hệ quả:* chấp nhận ~84 KB mỗi lượt thử và phụ thuộc mạng; **cần anh Bryan chốt trước GATE-3**.
+  *Quyết định (đã chốt):* **phương án B** — anh Bryan chốt ngày **2026-09-20**. Nó giữ trọn cam kết quyền
+  riêng tư (không pixel nào rời thiết bị), chỉ cần **một endpoint mới** ở dịch vụ AI nhận tensor thay vì
+  ảnh, và vẫn cho phép nâng cấp mô hình mà không đụng tới client. Phương án A là **đường nâng cấp tự nhiên**
+  khi đã đo được hiệu năng MediaPipe trên máy thật; giữ nguyên interface thì đổi sang A sau này không phá
+  kiến trúc. Phương án C **bị loại** khỏi phạm vi.
+  *Hệ quả bắt buộc thực hiện:*
+  1. Dịch vụ AI **phải bổ sung** `POST /api/infer/features` nhận tensor `64×327` (api-spec §4.3);
+     endpoint `POST /api/infer/frames` (nhận ảnh) của repo EXE101 **không được bật** trong sản phẩm.
+  2. Frontend **bắt buộc** chạy MediaPipe Holistic tại chỗ — không có đường nào khác để lấy landmark.
+  3. Backend **từ chối 400 (`10103`)** mọi payload chứa trường ảnh/video (INV-1, TC-FR41-02).
+  4. Chấp nhận ~84 KB mỗi lượt thử và phụ thuộc mạng; nếu MediaPipe không đạt ≥ 15 fps trên máy tầm trung
+     (GĐ-06) thì **leo thang lên anh Bryan**, không tự ý rơi về phương án C.
 
 - **ADR-09 — 🤖 Backend Java quyết định đúng/sai, dịch vụ AI chỉ trả nhãn.** *(mới ở v0.2)*
   *Bối cảnh:* "đúng hay sai" phụ thuộc ngưỡng tin cậy, biên giữa top1/top2, và ký hiệu mục tiêu — đều là
@@ -406,4 +413,5 @@ PostgreSQL. **Không** cần đổi kiến trúc trong cả ba bước.
 - [x] Xuyên suốt: authn/authz, log, tracing, cấu hình, lỗi, **PDPL**, header bảo mật, cache, việc nền.
 - [x] ADR ghi bối cảnh → quyết định → hệ quả (**10 ADR**).
 - [x] ✅ Q3 đã chốt (VNPay + MoMo) — ADR-07 cập nhật cho hai cổng.
-- [ ] ⚠️ **Phụ thuộc Q8 (vị trí suy luận AI)** — ADR-08 nêu 3 phương án và khuyến nghị B; **cần chốt trước GATE-3**.
+- [x] ✅ **Q8 đã chốt: phương án B** (trình duyệt trích landmark, server phân lớp) — ADR-08 cập nhật, C bị loại.
+- [x] ✅ **Q9 đã chốt: BẬT góp dữ liệu tự nguyện** — ADR-10 giữ nguyên ranh giới: luồng góp dữ liệu đi riêng, không qua endpoint suy luận.
