@@ -45,7 +45,7 @@ dịch vụ email — chỉ kiểm phần tích hợp của SignLight) · kiểm
 | 🤖 **Cô lập dịch vụ AI** | Tester | Tắt/làm chậm dịch vụ AI có chủ đích | NFR-20: luồng học không hỏng | 0 case Fail |
 | 💳 **Thanh toán VNPay/MoMo** | Tester | Sandbox của cổng + script giả mạo | FR-29→32, INV-6 | 0 case Fail |
 | **Hồi quy** | Tester | Bộ E2E tự động | Trước mỗi lần trình cổng | 100% case Blocker/Critical xanh |
-| **Chấp nhận (UAT)** | PO + anh Bryan | Thủ công | Luồng nghiệp vụ chính trên môi trường UAT | B6, GATE-6 |
+| **Chấp nhận (UAT)** | PO + anh Duy | Thủ công | Luồng nghiệp vụ chính trên môi trường UAT | B6, GATE-6 |
 
 ### 2.1 Cách suy ra test case
 1. **Mỗi tiêu chí chấp nhận Given–When–Then trong SRS → ít nhất 1 test case.** SRS v0.1 có **97 tiêu chí chấp nhận** (AC-01.1 → AC-40.2).

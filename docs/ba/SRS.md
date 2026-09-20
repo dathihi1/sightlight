@@ -1123,7 +1123,7 @@ flowchart LR
 
 #### FR-46 — Góp dữ liệu luyện tập *(tự nguyện, rút lại được)*
 
-> ✅ **Q9 đã chốt: BẬT** (anh Bryan, 2026-09-20). FR-46 **nằm trong phạm vi GĐ1**, không còn là tuỳ chọn.
+> ✅ **Q9 đã chốt: BẬT** (anh Duy, 2026-09-20). FR-46 **nằm trong phạm vi GĐ1**, không còn là tuỳ chọn.
 > Kéo theo: tạo bucket `signlight-donation` (deploy), bảng `data_donation_consent` + `donated_clip` (LLD),
 > màn **SCR-33** (FSD/design), và mục DR-07 trong pentest.
 >
@@ -1147,7 +1147,7 @@ flowchart LR
   - **BR-A135 — gắn nhãn ẩn danh:** bản ghi góp dữ liệu gắn với **định danh giả (pseudonymous id)**, không
     gắn email/tên.
   - **BR-A136 — hiển thị khi đang ghi:** có chỉ báo rõ ràng **mọi lúc** trong lúc lượt thử được lưu lại.
-  - **BR-A137 — tuổi:** ✅ **tuổi tối thiểu = 16** (anh Bryan chốt 2026-09-20). Tài khoản **dưới 16 tuổi**: màn SCR-33 **không hiển thị lời mời**, công tắc **bị vô hiệu**, và API `PUT /me/data-donation` **từ chối** (403). Người dưới 16 vẫn dùng **đầy đủ** chức năng AI. Năm sinh thu ở onboarding. ⚠️ Đây là tự khai, **không xác minh được** — biện pháp giảm nhẹ, không phải bảo đảm pháp lý.
+  - **BR-A137 — tuổi:** ✅ **tuổi tối thiểu = 16** (anh Duy chốt 2026-09-20). Tài khoản **dưới 16 tuổi**: màn SCR-33 **không hiển thị lời mời**, công tắc **bị vô hiệu**, và API `PUT /me/data-donation` **từ chối** (403). Người dưới 16 vẫn dùng **đầy đủ** chức năng AI. Năm sinh thu ở onboarding. ⚠️ Đây là tự khai, **không xác minh được** — biện pháp giảm nhẹ, không phải bảo đảm pháp lý.
 
 - **Tiêu chí chấp nhận:**
   - **AC-46.1:** Given người dùng **chưa** đồng ý — When thực hiện lượt luyện AI và theo dõi lưu lượng mạng — Then **không** có dữ liệu ảnh/video/landmark nào được gửi để lưu trữ.
@@ -1159,7 +1159,7 @@ flowchart LR
 
 ### 3.4 Chính sách nội dung giả lập *(mới ở v0.3 — Q10 đã chốt)*
 
-> ✅ **Q10 đã chốt (anh Bryan, 2026-09-20): làm giả lập trước, chưa cần quan tâm nội dung. Nội dung thật
+> ✅ **Q10 đã chốt (anh Duy, 2026-09-20): làm giả lập trước, chưa cần quan tâm nội dung. Nội dung thật
 > sẽ bổ sung sau.**
 
 **Điều này KHÔNG có nghĩa là bỏ qua nội dung — mà là tách nội dung ra khỏi đường găng.** Ràng buộc:
@@ -1191,7 +1191,7 @@ nội dung thật** cho ít nhất 1 Unit; đây là **rủi ro R-01 chưa đư�
 | **NFR-09** | Bảo mật — Mật khẩu & phiên | Argon2id; access token 15 phút; refresh token 30 ngày, **xoay vòng**, phát hiện tái sử dụng thì thu hồi toàn bộ |
 | **NFR-10** | Bảo mật — Giới hạn tần suất | Đăng nhập 10/phút/IP · đăng ký 5/giờ/IP · quên mật khẩu 3/giờ/email · tìm kiếm 60/phút/người dùng · webhook không giới hạn nhưng bắt buộc xác thực chữ ký |
 | **NFR-11** | Bảo mật — Thanh toán | Phạm vi **PCI-DSS SAQ-A**: không lưu/truyền/ghi log dữ liệu thẻ/ví (BR-A62). Chữ ký IPN xác thực bằng **HMAC-SHA512 (VNPay)** / **HMAC-SHA256 (MoMo)**, so sánh chống tấn công thời gian |
-| **NFR-12** | **Quyền riêng tư — Camera** *(viết lại ở v0.3 — Q8 đã chốt)* | ✅ **Phương án B đã chốt (anh Bryan, 2026-09-20): trình duyệt trích landmark, server phân lớp.**<br/>• **Không một pixel nào** từ camera rời khỏi thiết bị trong luồng chấm AI. Thứ duy nhất được gửi lên là **tensor số `64×327`** (float) + vài chỉ số chất lượng.<br/>• **Không hình ảnh hay video nào được LƯU TRỮ** ở bất kỳ đâu trong luồng chấm AI.<br/>• **API bắt buộc từ chối** (HTTP 400, `errorCode = 10103`) mọi payload chứa trường ảnh/video/base64 — kể cả khi client gửi nhầm.<br/>• Ngoại lệ **duy nhất**: người dùng **chủ động bật** góp dữ liệu theo **FR-46** (Q9 = CÓ) — khi đó clip được lưu vào **bucket riêng** `signlight-donation`, gắn định danh giả, xoá khi rút đồng ý.<br/>Kiểm chứng bằng theo dõi lưu lượng mạng thật ở B5 (TC-FR41-01/02/03, TC-FR46-01) |
+| **NFR-12** | **Quyền riêng tư — Camera** *(viết lại ở v0.3 — Q8 đã chốt)* | ✅ **Phương án B đã chốt (anh Duy, 2026-09-20): trình duyệt trích landmark, server phân lớp.**<br/>• **Không một pixel nào** từ camera rời khỏi thiết bị trong luồng chấm AI. Thứ duy nhất được gửi lên là **tensor số `64×327`** (float) + vài chỉ số chất lượng.<br/>• **Không hình ảnh hay video nào được LƯU TRỮ** ở bất kỳ đâu trong luồng chấm AI.<br/>• **API bắt buộc từ chối** (HTTP 400, `errorCode = 10103`) mọi payload chứa trường ảnh/video/base64 — kể cả khi client gửi nhầm.<br/>• Ngoại lệ **duy nhất**: người dùng **chủ động bật** góp dữ liệu theo **FR-46** (Q9 = CÓ) — khi đó clip được lưu vào **bucket riêng** `signlight-donation`, gắn định danh giả, xoá khi rút đồng ý.<br/>Kiểm chứng bằng theo dõi lưu lượng mạng thật ở B5 (TC-FR41-01/02/03, TC-FR46-01) |
 | **NFR-13** | Tuân thủ dữ liệu | Tuân **Nghị định 13/2023/NĐ-CP**: có cơ sở pháp lý xử lý dữ liệu, cho phép xuất & xoá dữ liệu (FR-08), không PII trong log (BR-A90) |
 | **NFR-14** | Khả năng tiếp cận | **WCAG 2.1 AA** trên toàn luồng học: tương phản ≥ 4,5:1, thao tác đủ bằng bàn phím, có nhãn cho mọi điều khiển, vùng chạm ≥ 44×44 px, **không thông tin chỉ bằng âm thanh** |
 | **NFR-15** | Tương thích | 2 phiên bản gần nhất của Chrome/Edge/Firefox/Safari, desktop & mobile; **hạ cấp mềm** khi thiếu camera/WebAssembly |

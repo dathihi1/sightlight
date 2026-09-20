@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  ARCHITECTURE MAP / SƠ ĐỒ KIẾN TRÚC KHỐI — mẫu của SA, Mytel SDLC Kit
+  ARCHITECTURE MAP / SƠ ĐỒ KIẾN TRÚC KHỐI — mẫu của SA, Duy SDLC Kit
   ===========================================================================
   MỤC ĐÍCH: 1 trang HTML để nhìn KIẾN TRÚC TỔNG THỂ theo TẦNG & KHỐI —
     • Phân tầng: Client → Cổng → Dịch vụ → Dữ liệu → Tích hợp ngoài → Hạ tầng xuyên suốt
@@ -182,7 +182,7 @@ document.getElementById('kick').textContent=[DATA.project,DATA.archStyle,"KIẾN
 document.getElementById('title').textContent="Sơ đồ kiến trúc khối theo tầng";
 document.getElementById('lead').innerHTML="Kiến trúc phân tầng: <b>Client → Cổng → Dịch vụ → Dữ liệu → Tích hợp ngoài</b>, kèm hạ tầng xuyên suốt. Mỗi khối ghi công nghệ + module phục vụ. Trang này <b>đi kèm</b> (không thay) <code>HLD.md</code> — .md là nguồn sự thật đặc tả.";
 document.getElementById('meta').textContent=`${DATA.layers.length} tầng · ${allBlocks().length} khối · ${nSvc} service · ${nExt} tích hợp ngoài · Kiểu kiến trúc: ${DATA.archStyle}`;
-document.getElementById('foot').textContent="Sinh bởi SA (Mytel SDLC Kit) ở B2, đi kèm HLD.md. Sơ đồ để 'dễ nhìn'; mọi quyết định & đặc tả kiến trúc nằm ở HLD.md (nguồn sự thật).";
+document.getElementById('foot').textContent="Sinh bởi SA (Duy SDLC Kit) ở B2, đi kèm HLD.md. Sơ đồ để 'dễ nhìn'; mọi quyết định & đặc tả kiến trúc nằm ở HLD.md (nguồn sự thật).";
 
 // stats
 let sc={new:0,change:0,keep:0,na:0}; allBlocks().forEach(b=>sc[b.status||'keep']++);

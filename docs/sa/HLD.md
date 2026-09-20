@@ -101,7 +101,7 @@ flowchart TB
 ```
 
 **Nguyên tắc ranh giới module (bắt buộc tuân ở LLD & code):**
-- Mỗi module là **một package gốc** `mm.com.mytel.signlight.<module>`, có **một lớp cửa ngõ** (`<Module>Facade`).
+- Mỗi module là **một package gốc** `vn.duy.signlight.<module>`, có **một lớp cửa ngõ** (`<Module>Facade`).
 - Module **chỉ gọi nhau qua Facade**, **không** gọi thẳng repository của module khác.
 - Module **sở hữu bảng của mình**; module khác muốn đọc thì gọi Facade. Ngoại lệ được phép duy nhất:
   truy vấn đọc chỉ-đọc xuyên module cho màn hình tổng hợp, và phải khai báo rõ ở LLD §2.
@@ -359,7 +359,7 @@ PostgreSQL. **Không** cần đổi kiến trúc trong cả ba bước.
   *Hệ quả:* thêm ZaloPay sau này chỉ là thêm một lớp; đổi lại phải kỷ luật **không để chi tiết của cổng rò
   rỉ ra ngoài interface**.
 
-- **ADR-08 — 🤖 Vị trí suy luận AI: trích đặc trưng ở client, phân lớp ở server.** *(mới ở v0.2 — ✅ **ĐÃ CHỐT: phương án B**, anh Bryan 2026-09-20)*
+- **ADR-08 — 🤖 Vị trí suy luận AI: trích đặc trưng ở client, phân lớp ở server.** *(mới ở v0.2 — ✅ **ĐÃ CHỐT: phương án B**, anh Duy 2026-09-20)*
   *Bối cảnh:* mô hình nhận **tensor 64×327**, không nhận pixel. Có ba phương án khả thi.
 
   | | A — toàn bộ trong trình duyệt | **B — landmark lên server** *(khuyến nghị)* | C — gửi ảnh lên server |
@@ -372,7 +372,7 @@ PostgreSQL. **Không** cần đổi kiến trúc trong cả ba bước.
   | Hoạt động khi mạng yếu | ✅ | ⚠️ | ❌ |
   | Bảo vệ mô hình khỏi sao chép | ❌ Mô hình tải về máy người dùng | ✅ | ✅ |
 
-  *Quyết định (đã chốt):* **phương án B** — anh Bryan chốt ngày **2026-09-20**. Nó giữ trọn cam kết quyền
+  *Quyết định (đã chốt):* **phương án B** — anh Duy chốt ngày **2026-09-20**. Nó giữ trọn cam kết quyền
   riêng tư (không pixel nào rời thiết bị), chỉ cần **một endpoint mới** ở dịch vụ AI nhận tensor thay vì
   ảnh, và vẫn cho phép nâng cấp mô hình mà không đụng tới client. Phương án A là **đường nâng cấp tự nhiên**
   khi đã đo được hiệu năng MediaPipe trên máy thật; giữ nguyên interface thì đổi sang A sau này không phá
@@ -383,7 +383,7 @@ PostgreSQL. **Không** cần đổi kiến trúc trong cả ba bước.
   2. Frontend **bắt buộc** chạy MediaPipe Holistic tại chỗ — không có đường nào khác để lấy landmark.
   3. Backend **từ chối 400 (`10103`)** mọi payload chứa trường ảnh/video (INV-1, TC-FR41-02).
   4. Chấp nhận ~84 KB mỗi lượt thử và phụ thuộc mạng; nếu MediaPipe không đạt ≥ 15 fps trên máy tầm trung
-     (GĐ-06) thì **leo thang lên anh Bryan**, không tự ý rơi về phương án C.
+     (GĐ-06) thì **leo thang lên anh Duy**, không tự ý rơi về phương án C.
 
 - **ADR-09 — 🤖 Backend Java quyết định đúng/sai, dịch vụ AI chỉ trả nhãn.** *(mới ở v0.2)*
   *Bối cảnh:* "đúng hay sai" phụ thuộc ngưỡng tin cậy, biên giữa top1/top2, và ký hiệu mục tiêu — đều là

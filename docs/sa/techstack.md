@@ -1,6 +1,6 @@
 # Techstack — SignLight
 
-| Phiên bản | **v0.3** | Ngày | 2026-09-20 | Trạng thái | ✅ **ĐÃ DUYỆT TOÀN BỘ VERSION** — anh Bryan xác nhận 2026-09-20 |
+| Phiên bản | **v0.3** | Ngày | 2026-09-20 | Trạng thái | ✅ **ĐÃ DUYỆT TOÀN BỘ VERSION** — anh Duy xác nhận 2026-09-20 |
 
 **Tiền đề:** `docs/ba/BRD.md`, `docs/ba/SRS.md` (NFR-01→21) · **Khớp với:** `docs/sa/HLD.md` §1 — **Modular monolith**
 
@@ -15,7 +15,7 @@ Bốn ràng buộc chi phối mọi lựa chọn dưới đây:
 3. **Hình ảnh camera được bảo vệ** (NFR-12) → **trích đặc trưng bắt buộc chạy trong trình duyệt**; dịch vụ AI phía server chỉ nhận **tensor số**, không nhận pixel (**phương án B — Q8 đã chốt 2026-09-20**).
 4. **Tái dùng tài sản AI đã kiểm chứng** (repo EXE101) → chấp nhận thêm một tiến trình Python thay vì viết lại bằng Java.
 
-## Bảng công nghệ *(✅ anh Bryan đã duyệt toàn bộ — 2026-09-20)*
+## Bảng công nghệ *(✅ anh Duy đã duyệt toàn bộ — 2026-09-20)*
 
 | Lớp | Lựa chọn | **Version** | Lý do (chọn & chọn version) | Phương án thay thế đã cân nhắc | NFR liên quan | Xác nhận |
 |-----|----------|-------------|------------------------------|-------------------------------|---------------|:--------:|
@@ -39,10 +39,10 @@ Bốn ràng buộc chi phối mọi lựa chọn dưới đây:
 | **Huấn luyện & mở rộng mô hình** | **PyTorch** (Lite Transformer / GRU) — chỉ chạy ngoại tuyến | PyTorch **2.4.x** | Đã có sẵn pipeline trong repo; **không** nằm trong đường chạy của sản phẩm | — | BG-08 | ✅ |
 | **Bộ dữ liệu huấn luyện** | **VSL400** (Zenodo, **CC BY 4.0**) | bản `17943574` | Bộ dữ liệu VSL công khai duy nhất đủ dùng. ⚠️ **Bắt buộc ghi nguồn trong sản phẩm** (BRD §6, SC-12) | Tự quay toàn bộ — chi phí và thời gian rất lớn; vẫn cần cho phần mở rộng | BG-08 | ✅ |
 | Trình phát video | **HLS.js** + **HLS đa bitrate** | HLS.js **1.5.x** | Tự thích ứng băng thông (NFR-03, AC-11.4); Safari phát HLS gốc; hỗ trợ đổi tốc độ 0.5× không biến dạng (AC-11.1) | **DASH** — Safari hỗ trợ kém hơn · **MP4 tải thẳng** — không thích ứng băng thông, tốn băng thông hơn | NFR-03 | ✅ |
-| Lưu trữ đối tượng | **Object storage tương thích S3** | API S3 | Lưu video gốc + bản HLS + ảnh đại diện; URL ký có hạn 15 phút (BR-A17). Nhà cung cấp cụ thể chọn theo giá vùng — **cần anh Bryan chốt** | **Lưu trên ổ đĩa máy chủ** — không mở rộng được, không có CDN sẵn | NFR-03, NFR-18 | ✅ |
+| Lưu trữ đối tượng | **Object storage tương thích S3** | API S3 | Lưu video gốc + bản HLS + ảnh đại diện; URL ký có hạn 15 phút (BR-A17). Nhà cung cấp cụ thể chọn theo giá vùng — **cần anh Duy chốt** | **Lưu trên ổ đĩa máy chủ** — không mở rộng được, không có CDN sẵn | NFR-03, NFR-18 | ✅ |
 | CDN | **CDN đứng trước object storage** | — | **Bắt buộc** để đạt NFR-03 và NFR-18; video là khoản chi phí lớn nhất (BRD R-04) | Không dùng CDN — **bị loại**, chi phí băng thông sẽ vỡ ngân sách | NFR-03, NFR-18 | ✅ |
 | Chuyển mã video | **FFmpeg** trong worker nền (hoặc dịch vụ chuyển mã được quản lý) | FFmpeg **7.x** | Sinh HLS 360p/540p/720p (BR-A75). Đội nhỏ nên **ưu tiên dịch vụ được quản lý** nếu chi phí chấp nhận được | Tự dựng cụm chuyển mã — quá sức đội 1–2 người | NFR-03, NFR-18 | ✅ |
-| Cổng thanh toán | ✅ **VNPay + MoMo** *(anh Bryan chốt 2026-09-20)* | API hiện hành của từng cổng | Phù hợp thị trường VN, người dùng đã quen. ⚠️ **Hệ quả:** không có tự động gia hạn → mô hình chuyển sang **mua từng kỳ + nhắc gia hạn** (BRD §3.3, FR-31). Hai cổng dùng **thuật toán chữ ký khác nhau** (VNPay HMAC-SHA512, MoMo HMAC-SHA256) nên **bắt buộc** đặt sau interface `PaymentProvider` | **Stripe** — hỗ trợ định kỳ tốt nhất nhưng khó cho pháp nhân VN · Paddle/Lemon Squeezy — merchant of record, phí cao hơn · **ZaloPay** — có thể thêm sau qua cùng interface | NFR-11 | ✅ |
+| Cổng thanh toán | ✅ **VNPay + MoMo** *(anh Duy chốt 2026-09-20)* | API hiện hành của từng cổng | Phù hợp thị trường VN, người dùng đã quen. ⚠️ **Hệ quả:** không có tự động gia hạn → mô hình chuyển sang **mua từng kỳ + nhắc gia hạn** (BRD §3.3, FR-31). Hai cổng dùng **thuật toán chữ ký khác nhau** (VNPay HMAC-SHA512, MoMo HMAC-SHA256) nên **bắt buộc** đặt sau interface `PaymentProvider` | **Stripe** — hỗ trợ định kỳ tốt nhất nhưng khó cho pháp nhân VN · Paddle/Lemon Squeezy — merchant of record, phí cao hơn · **ZaloPay** — có thể thêm sau qua cùng interface | NFR-11 | ✅ |
 | Thư viện tích hợp thanh toán | **Tự hiện thực** (HTTP client + ký HMAC) | — | SDK Java chính thức của VNPay/MoMo hoặc không có hoặc ít được bảo trì; phần cần làm chỉ là dựng URL có chữ ký + xác thực IPN — tự viết **kiểm soát được và test được** | SDK bên thứ ba — rủi ro bảo trì với thành phần chạm tới tiền | NFR-11 | ✅ |
 | Email giao dịch | **Dịch vụ email có API** (ví dụ SES/Resend/Postmark) | — | Gửi qua API + bảng outbox (BR-A89); cần tỉ lệ vào hộp thư đến cao cho email xác thực/hoá đơn | Tự dựng SMTP — tỉ lệ vào hộp thư đến kém, tốn công quản lý danh tiếng IP | NFR-17 | ✅ |
 | Sinh PDF chứng chỉ | **OpenPDF** hoặc **Apache PDFBox** | PDFBox **3.x** | Sinh phía server, nhúng font tiếng Việt; không phụ thuộc trình duyệt | Sinh phía client — không kiểm soát được tính toàn vẹn của chứng chỉ | FR-27 | ✅ |
@@ -60,8 +60,8 @@ Bốn ràng buộc chi phối mọi lựa chọn dưới đây:
 | Hạng mục | Giá trị chốt | Xác nhận |
 |----------|--------------|:--------:|
 | Maven module | **Single-module** — kiến trúc là modular monolith, tách gói theo miền là đủ; multi-module làm chậm vòng lặp phát triển của đội nhỏ. Tách module khi nào thực sự cần tách deploy | ✅ |
-| `groupId` / `artifactId` | `mm.com.mytel.signlight` / `signlight-api` | ✅ |
-| Package gốc | `mm.com.mytel.signlight` — **package-by-feature**: `identity`, `content`, `learning`, `practice`, `dictionary`, `gamification`, `billing`, `cms`, `platform`, **`airecognition`** | ✅ |
+| `groupId` / `artifactId` | `vn.duy.signlight` / `signlight-api` | ✅ |
+| Package gốc | `vn.duy.signlight` — **package-by-feature**: `identity`, `content`, `learning`, `practice`, `dictionary`, `gamification`, `billing`, `cms`, `platform`, **`airecognition`** | ✅ |
 | Envelope | `BaseRequest` / `TransactionResponse<T>`, `errorCode` **5 ký tự** `[MM][T][NN]` theo `error-code-convention.md` | ✅ |
 | Phân bổ mã module (2 ký tự đầu của errorCode) | `00` chung · `01` identity · `02` content · `03` learning · `04` dictionary · `05` gamification · `06` billing · `07` cms · `08` platform · **`10` airecognition** | ✅ |
 | Sinh OpenAPI | **springdoc-openapi 2.6.x**, sinh từ code ở B4, đối chiếu với `api-spec.md` ở GATE-4. **Không viết YAML tay** | ✅ |
@@ -73,7 +73,7 @@ Bốn ràng buộc chi phối mọi lựa chọn dưới đây:
 | T-01 | ~~Cổng thanh toán chưa chốt~~ → **Đã chốt VNPay + MoMo**; rủi ro còn lại là **merchant không được duyệt** | **Cao** | Nộp hồ sơ merchant **ngay**, song song phát triển (BRD R-11); `PaymentProvider` cho phép đổi/thêm cổng mà không phá kiến trúc |
 | T-02 | **Độ chính xác 0.901 đo trên video quay chuẩn, chưa đo trên webcam thật** | **Rất cao** | Kiểm với ≥ 5 người thật, ≥ 3 điều kiện ánh sáng, **trước GATE-4** (NFR-19); tụt dưới 0,80 → hạ cấp về chế độ Gương (BRD R-02) |
 | T-09 | **Thêm một ngôn ngữ (Python) vào hệ thống Java/TS** → đội 1–2 người phải bảo trì 3 ngôn ngữ | **Cao** | Đóng gói dịch vụ AI thành **hộp đen có hợp đồng ổn định** (`/ai/infer`, `/ai/labels`); tái dùng nguyên trạng repo EXE101, **không sửa logic AI** trong dự án này; có thể gộp về Java sau nếu cần |
-| T-10 | **MediaPipe Holistic nặng trên trình duyệt** — nút cổ chai thật sự (mô hình chỉ 0,5 ms, MediaPipe mới là phần tốn) | **Cao** | Đo sớm trên máy tầm trung (GĐ-06 của BRD); hạ độ phân giải khung vào, giảm tần suất lấy mẫu; nếu không đạt → **leo thang lên anh Bryan**. ⚠️ **Không được tự ý rơi về phương án C** (gửi ảnh lên server) — phương án đó đã bị loại khi Q8 chốt phương án B, rơi về nó là **vi phạm NFR-12** |
+| T-10 | **MediaPipe Holistic nặng trên trình duyệt** — nút cổ chai thật sự (mô hình chỉ 0,5 ms, MediaPipe mới là phần tốn) | **Cao** | Đo sớm trên máy tầm trung (GĐ-06 của BRD); hạ độ phân giải khung vào, giảm tần suất lấy mẫu; nếu không đạt → **leo thang lên anh Duy**. ⚠️ **Không được tự ý rơi về phương án C** (gửi ảnh lên server) — phương án đó đã bị loại khi Q8 chốt phương án B, rơi về nó là **vi phạm NFR-12** |
 | T-11 | **Lệch quy tắc chuẩn hoá nhãn** giữa dịch vụ AI (`stable_sign_id`) và backend | TB — gây ánh xạ sai, người học nhận kết quả vô nghĩa | Viết **một bộ test chung** chạy cùng bộ dữ liệu ở cả hai phía (BR-A124, AC-44.2) |
 | T-12 | Giấy phép **CC BY 4.0 của VSL400** yêu cầu ghi nguồn | TB — rủi ro pháp lý nếu quên | Ghi nguồn ở 3 vị trí cố định; đưa vào checklist release (SC-12) |
 | T-03 | Giấy phép Redis (RSALv2/SSPL) có thể vướng nếu sau này cung cấp dịch vụ lại | TB | Dùng ở dạng nội bộ là hợp lệ; sẵn sàng chuyển **Valkey** (tương thích giao thức) |
@@ -88,8 +88,8 @@ Bốn ràng buộc chi phối mọi lựa chọn dưới đây:
 ## ✅ Checklist trước GATE-2
 - [x] Mọi lựa chọn có **Lý do** bám NFR + **≥1 phương án thay thế** đã cân nhắc (không mặc định framework).
 - [x] Mọi dòng có **version cụ thể** (ưu tiên LTS, kèm lý do chọn version).
-- [ ] ⚠️ **Cột Xác nhận còn trống toàn bộ — cần anh Bryan xác nhận từng dòng trước khi trình GATE-2.**
-- [x] ✅ Backend Java: **Maven single-module**, `mm.com.mytel.signlight` / `signlight-api`, package-by-feature — **đã duyệt**.
+- [ ] ⚠️ **Cột Xác nhận còn trống toàn bộ — cần anh Duy xác nhận từng dòng trước khi trình GATE-2.**
+- [x] ✅ Backend Java: **Maven single-module**, `vn.duy.signlight` / `signlight-api`, package-by-feature — **đã duyệt**.
 - [x] Cột **NFR liên quan** trỏ đúng ID NFR ở SRS.
 - [x] Techstack **khớp kiểu kiến trúc** đã chốt ở HLD §1 (Modular monolith).
 - [x] Ô không dùng ghi rõ "Không áp dụng" + lý do (ứng dụng di động, message broker).
@@ -97,5 +97,5 @@ Bốn ràng buộc chi phối mọi lựa chọn dưới đây:
 - [x] ✅ **Cổng thanh toán đã chốt: VNPay + MoMo** (Q3, 2026-09-20).
 - [x] ✅ **Q8 đã chốt: phương án B** (2026-09-20) — MediaPipe chạy **bắt buộc** ở trình duyệt; `onnxruntime-web` chuyển sang **đường nâng cấp**, không dùng ở GĐ1.
 - [x] ✅ **Q9 đã chốt: BẬT góp dữ liệu** — kéo theo **bucket `signlight-donation`** ở dòng "Lưu trữ đối tượng" (quyền truy cập tách riêng, BR-A134).
-- [x] ✅ **Q1 đã chốt: anh Bryan duyệt toàn bộ bảng version + chuẩn backend** (2026-09-20) — **GATE-2 hết vướng về techstack**.
+- [x] ✅ **Q1 đã chốt: anh Duy duyệt toàn bộ bảng version + chuẩn backend** (2026-09-20) — **GATE-2 hết vướng về techstack**.
 - [ ] ⚠️ Dòng duy nhất còn `☐`: **Ứng dụng di động** — cố ý, vì "Không áp dụng ở GĐ1".

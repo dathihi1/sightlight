@@ -852,7 +852,7 @@ này (đã duyệt) thắng**.
 
 ### 4.3 `POST /api/infer/features` — ✅ **endpoint BẮT BUỘC bổ sung vào repo** *(Q8 chốt phương án B)*
 
-> ✅ **Q8 đã chốt (anh Bryan, 2026-09-20) = phương án B.** Đây là **endpoint suy luận duy nhất** được dùng
+> ✅ **Q8 đã chốt (anh Duy, 2026-09-20) = phương án B.** Đây là **endpoint suy luận duy nhất** được dùng
 > trong sản phẩm. Việc bổ sung nó vào repo EXE101 là **hạng mục chặn GATE-4**, không còn là điều kiện.
 
 Repo hiện chỉ có `POST /api/infer/frames` (nhận 8–32 ảnh JPEG). Phương án B cần thêm endpoint nhận

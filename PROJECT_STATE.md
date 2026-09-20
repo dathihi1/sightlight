@@ -20,7 +20,7 @@
 
 ## Quyết định đã chốt
 
-| # | Câu hỏi | Quyết định của anh Bryan | Ngày | Ảnh hưởng |
+| # | Câu hỏi | Quyết định của anh Duy | Ngày | Ảnh hưởng |
 |---|---------|---------------------------|------|-----------|
 | **Q3** | Cổng thanh toán | ✅ **VNPay + MoMo** | 2026-09-20 | ⚠️ Hai cổng này **không hỗ trợ tự động gia hạn** cho merchant thường → mô hình chuyển sang **mua từng kỳ + nhắc gia hạn thủ công**. Đã viết lại FR-28→FR-32 |
 | **Q4** | Ngôn ngữ ký hiệu đầu tiên | ✅ **VSL (Ngôn ngữ Ký hiệu Việt Nam)** | 2026-09-20 | Toàn bộ nội dung là VSL; dùng bộ dữ liệu **VSL400** (Zenodo, CC BY 4.0) — **bắt buộc ghi nguồn trong sản phẩm** |
@@ -31,7 +31,7 @@
 | **Q11** | MVP-50 hay tăng độ chính xác MVP-30 trước | ✅ **Tăng độ chính xác MVP-30 trước** | 2026-09-20 | Giữ **30 nhãn** ở GĐ1; toàn bộ công sức AI dồn vào hạ **R-02**. **R-09 hạ mức** (không mở rộng lớp thì 701 mẫu là đủ GĐ1). MVP-50 lùi sang sau GATE-6 |
 | **Q6** | GĐ1 có gồm B2B & đặt lịch tutor không | ✅ **KHÔNG** | 2026-09-20 | Giữ nguyên phạm vi BRD §3.1 — tiết kiệm ~6 tuần công. B2B chỉ có **form liên hệ**; đặt lịch tutor sang GĐ2 |
 | **Q5** | Nguồn video bài học ngoài VSL400 | ⏸️ **Hoãn tới sau GATE-4** | 2026-09-20 | Hợp lệ vì Q10 cho phép nghiệm thu bằng nội dung giả lập. ⚠️ **Hoãn ≠ giải quyết** — vẫn chặn GATE-6. **Phải mở lại ngay sau GATE-4** |
-| **Q1** | Version techstack | ✅ **Duyệt toàn bộ bảng + chuẩn backend Java** | 2026-09-20 | Java 21 · Spring Boot 3.5 · PostgreSQL 17 · Redis 7.4 · Next.js 15 / React 19 / TS 5.6 / Tailwind 4 · MediaPipe 0.10 · Python 3.11 / FastAPI 0.115 / ONNX Runtime 1.19 · Maven single-module `mm.com.mytel.signlight`. **GATE-2 hết vướng về techstack** |
+| **Q1** | Version techstack | ✅ **Duyệt toàn bộ bảng + chuẩn backend Java** | 2026-09-20 | Java 21 · Spring Boot 3.5 · PostgreSQL 17 · Redis 7.4 · Next.js 15 / React 19 / TS 5.6 / Tailwind 4 · MediaPipe 0.10 · Python 3.11 / FastAPI 0.115 / ONNX Runtime 1.19 · Maven single-module `vn.duy.signlight`. **GATE-2 hết vướng về techstack** |
 | **Q2** | Dải port UAT | ✅ **`18080–18090`** | 2026-09-20 | `18080` api · `18081` web · `18082` storage · `18083` storage-console · `18084–18090` dự phòng. Đã điền vào `docker-compose.yml` + `.env.example`. ⚠️ `ai` (7860) **cố ý không mở** — ADR-10, DR-12 |
 | **R-07** | Tuổi tối thiểu | ✅ **16 tuổi** (cho góp dữ liệu) | 2026-09-20 | Dưới 16 **vẫn học đầy đủ** nhưng không được mời/bật góp dữ liệu; API trả **403**. Cập nhật **BR-A137**, pentest **DR-06**. ⚠️ Tự khai, không xác minh được — chặn phải nằm ở **backend** |
 | **R-11** | Tài khoản thanh toán | ✅ **Đã có tài khoản merchant/sandbox VNPay + MoMo** (SĐT `0866678802`) | 2026-09-20 | **Rủi ro R-11 đóng.** Việc còn lại là thao tác: lấy 5 khoá (`VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`, `MOMO_PARTNER_CODE`, `MOMO_ACCESS_KEY`, `MOMO_SECRET_KEY`) đặt vào `deploy/.env`. 🔐 **Không commit, không ghi log** |
@@ -104,7 +104,7 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 | —       |      | *(chưa phát hành)* |   |         |          |
 
 ## Thông số môi trường
-- **Dải port UAT:** ✅ **`18080–18090`** (anh Bryan cấp 2026-09-20)
+- **Dải port UAT:** ✅ **`18080–18090`** (anh Duy cấp 2026-09-20)
   | Port | Service | | Port | Service |
   |---|---|---|---|---|
   | `18080` | `api` (Spring Boot 8080) | | `18083` | `storage-console` (MinIO 9001) |
@@ -127,7 +127,7 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 
 | # | Việc | Ai làm | Chặn cổng |
 |---|------|--------|-----------|
-| V-1 | Lấy **5 khoá** VNPay/MoMo từ portal merchant, đặt vào `deploy/.env` *(không commit)* | anh Bryan → DevOps | GATE-3 |
+| V-1 | Lấy **5 khoá** VNPay/MoMo từ portal merchant, đặt vào `deploy/.env` *(không commit)* | anh Duy → DevOps | GATE-3 |
 | V-2 | **Đo độ chính xác trên webcam thật** — ≥ 5 người, ≥ 3 điều kiện ánh sáng *(rủi ro R-02, lớn nhất còn lại)* | AI dev | **GATE-2** |
 | V-3 | Bổ sung `POST /api/infer/features` vào repo EXE101; **xoá** `/api/infer/frames` + `/api/attempt` khỏi bản triển khai | AI dev | GATE-3 (DR-07, DR-12) |
 | V-4 | Viết **script seed idempotent** + cờ `is_seed` + cổng chặn phát hành | dev | GATE-4 (NFR-21) |
@@ -139,15 +139,28 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 - 2026-09-20 — PO khởi tạo dự án, phân loại **Track A (dự án mới)**, chọn cấu trúc thư mục **kiểu A**.
 - 2026-09-20 — Nghiên cứu đối thủ Lingvano ASL (marketing, onboarding 11 bước, help center, Play Store, design token) làm đầu vào BRD/SRS v0.1.
 - 2026-09-20 — BA/SA/Designer/Tester/Security/DevOps soạn bản nháp đầy đủ B1→B6 (v0.1).
-- 2026-09-20 — **Anh Bryan chốt Q3 = VNPay + MoMo, Q4 = VSL, Q7 = có module AI.** Cung cấp repo `dathihi1/EXE101`.
-- 2026-09-20 — Khảo sát **dashboard thật** của Lingvano sau khi anh Bryan đăng nhập → phát hiện 5 điểm khác với giả định v0.1 (xem BRD §9).
+- 2026-09-20 — **Anh Duy chốt Q3 = VNPay + MoMo, Q4 = VSL, Q7 = có module AI.** Cung cấp repo `dathihi1/EXE101`.
+- 2026-09-20 — Khảo sát **dashboard thật** của Lingvano sau khi anh Duy đăng nhập → phát hiện 5 điểm khác với giả định v0.1 (xem BRD §9).
 - 2026-09-20 — Nghiên cứu repo EXE101: mô hình MVP-30 (top1 0.901), schema 327 chiều, hợp đồng `/api/infer/frames`. Cập nhật toàn bộ tài liệu lên **v0.2**.
-- 2026-09-20 — **Anh Bryan chốt NỐT toàn bộ câu hỏi còn lại:** Q1 = duyệt cả bảng version · **Q2 = dải port `18080–18090`** ·
+- 2026-09-20 — **Anh Duy chốt NỐT toàn bộ câu hỏi còn lại:** Q1 = duyệt cả bảng version · **Q2 = dải port `18080–18090`** ·
   Q5 = hoãn sau GATE-4 · Q6 = KHÔNG làm B2B/tutor · Q11 = tăng độ chính xác MVP-30 trước · R-07 = tuổi tối thiểu **16** ·
   R-11 = tài khoản **merchant/sandbox** (đóng rủi ro).
   Đã điền port vào `docker-compose.yml` + `.env.example`; tick ✅ toàn bộ cột "Xác nhận" của `techstack.md`;
   cập nhật `BR-A137` (SRS), `DR-06` (pentest), bảng rủi ro BRD. **Mục "Câu hỏi mở" nay rỗng, thay bằng danh sách việc V-1→V-7.**
-- 2026-09-20 — **Anh Bryan chốt Q8 = phương án B, Q9 = CÓ, Q10 = nội dung giả lập trước; xác nhận đã có tài khoản VNPay + MoMo (SĐT `0866678802`).**
+- 2026-09-20 — **Anh Duy chốt Q8 = phương án B, Q9 = CÓ, Q10 = nội dung giả lập trước; xác nhận đã có tài khoản VNPay + MoMo (SĐT `0866678802`).**
   Cập nhật **BRD, SRS, HLD, techstack, api-spec, pentest-report, deploy-notes, user-guide, README, docs/README** lên **v0.3**.
   Thêm **SRS §3.4 (SEED-1→6)**, **NFR-21**, **DR-12**, **DR-13**, **CR-003→CR-005**.
-  Gỡ chặn GATE-3 về mặt kiến trúc; **R-01 được dời sang GATE-6** (chưa gỡ); **R-11 hạ mức** *(đóng hẳn cùng ngày sau khi anh Bryan xác nhận là tài khoản merchant/sandbox)*.
+  Gỡ chặn GATE-3 về mặt kiến trúc; **R-01 được dời sang GATE-6** (chưa gỡ); **R-11 hạ mức** *(đóng hẳn cùng ngày sau khi anh Duy xác nhận là tài khoản merchant/sandbox)*.
+- 2026-09-20 — **Chuẩn hoá danh xưng toàn workspace về `Duy`.** Chủ đầu tư/người duyệt mọi cổng nay ghi là
+  **anh Duy**; mọi tham chiếu tới tổ chức cũ trong tài liệu đều đổi sang **Duy**. Phạm vi: `PROJECT_STATE.md`,
+  `docs/**`, `deploy/**` **và** bộ `training-skill-software/` (SDLC Kit).
+  - **Package gốc Java chốt lại: `vn.duy.signlight`** (`groupId` đổi theo, `artifactId = signlight-api`
+    giữ nguyên) — cập nhật ở `techstack.md`, `HLD.md`, mục **Q1**, và các file convention của Kit
+    (`package-structure.md`, `maven-conventions.md`, `backend-dev-java/SKILL.md`).
+  - Hai gói skill trong `skills-theo-vai-tro/` đổi tên thành **`duy-ba-phan-tich-yeu-cau-srs.skill`** và
+    **`duy-sa-thiet-ke-hld-lld.skill`** (đã đóng gói lại, `name:` trong frontmatter đổi theo).
+  - Đã gỡ **git remote `origin`** của repo Kit và thay URL trong README bằng `gitlab.example.com`.
+  ⚠️ **Không đụng tới** `training-skill-software/reference-docs-signed/` (tài liệu chuẩn đã ký — sửa là mất
+  hiệu lực) và **giữ nguyên** mã chuẩn `ST.TIM.ITC.16` / `TC.CNVTQĐ.CNTT.19`. Đã quét: nhóm file này không
+  chứa chuỗi cần đổi ở dạng đọc được.
+  ℹ️ Chuỗi **`Viettel`** (2 chỗ trong Kit) **giữ nguyên** — chưa có yêu cầu đổi.

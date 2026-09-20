@@ -9,7 +9,7 @@
 > các bước, checklist và cách xử lý sự cố. Phần "Nhật ký triển khai" (§7) còn trống.
 >
 > **Đang CHẶN việc chạy UAT:**
-> 1. ⚠️ **Chưa có BỘ KHOÁ merchant/sandbox VNPay + MoMo** — anh Bryan xác nhận tài khoản thuộc loại
+> 1. ⚠️ **Chưa có BỘ KHOÁ merchant/sandbox VNPay + MoMo** — anh Duy xác nhận tài khoản thuộc loại
 >    **merchant/sandbox developer** (2026-09-20), nên **lấy được** 5 giá trị sau; DevOps cần chúng mới chạy được M6:
 >    `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`, `MOMO_PARTNER_CODE`, `MOMO_ACCESS_KEY`, `MOMO_SECRET_KEY`.
 >    Lấy ở `sandbox.vnpayment.vn` và `business.momo.vn` → mục *Thông tin tích hợp*.
@@ -37,7 +37,7 @@
 | **`ai`** 🤖 | build từ `../src/ai` | 7860 | **không mở** | Python + FastAPI + ONNX. **Không có xác thực người dùng** → bắt buộc giữ nội bộ (ADR-10) |
 | `storage` | `minio/minio` | 9000 / 9001 | `18082` / `18083` | Giả lập object storage; production dùng dịch vụ thật |
 
-✅ **Dải port được cấp: `18080–18090`** (anh Bryan, 2026-09-20). Thực dùng **4 port**; `18084–18090` để dự phòng.
+✅ **Dải port được cấp: `18080–18090`** (anh Duy, 2026-09-20). Thực dùng **4 port**; `18084–18090` để dự phòng.
 Các service `ai`, `db`, `cache` **cố ý không mở port nào** — riêng `ai` là ràng buộc bảo mật (ADR-10, DR-12),
 không được mở kể cả khi cần gỡ lỗi; gỡ lỗi thì `docker compose exec` vào trong mạng.
 
@@ -211,11 +211,11 @@ docker compose down
 | # | Việc | Người quyết | Trạng thái |
 |---|------|-------------|------------|
 | 1 | ~~Dải port UAT~~ | — | ✅ **Đã cấp: `18080–18090`** (2026-09-20) |
-| 2 | Có mở bảng điều khiển storage ra ngoài không? | anh Bryan | ❓ chờ |
-| 3 | UAT dùng HTTP hay HTTPS? *(ảnh hưởng trực tiếp: camera chỉ chạy trên HTTPS/localhost)* | anh Bryan | ❓ chờ |
+| 2 | Có mở bảng điều khiển storage ra ngoài không? | anh Duy | ❓ chờ |
+| 3 | UAT dùng HTTP hay HTTPS? *(ảnh hưởng trực tiếp: camera chỉ chạy trên HTTPS/localhost)* | anh Duy | ❓ chờ |
 | 4 | ~~Cổng thanh toán (Q3)~~ | — | ✅ **Đã chốt: VNPay + MoMo** |
-| 5 | Ai được truy cập UAT (giới hạn IP?) | anh Bryan | ❓ chờ |
-| 6 | **Bộ khoá merchant/sandbox VNPay + MoMo** (5 giá trị, xem §đầu trang) — không có thì không kiểm được M6 | anh Bryan | ⚠️ **một phần** — đã có tài khoản (SĐT `0866678802`), **chờ 5 khoá tích hợp** |
+| 5 | Ai được truy cập UAT (giới hạn IP?) | anh Duy | ❓ chờ |
+| 6 | **Bộ khoá merchant/sandbox VNPay + MoMo** (5 giá trị, xem §đầu trang) — không có thì không kiểm được M6 | anh Duy | ⚠️ **một phần** — đã có tài khoản (SĐT `0866678802`), **chờ 5 khoá tích hợp** |
 | 7 | ~~Q8: dịch vụ AI nhận tensor hay nhận ảnh?~~ | — | ✅ **Đã chốt: nhận TENSOR** (phương án B) — phải bổ sung `/api/infer/features`, tắt `/api/infer/frames` |
 | 8 | ~~Q9: có bật "Góp dữ liệu" không?~~ | — | ✅ **Đã chốt: CÓ** — **bắt buộc** tạo bucket `signlight-donation` |
 | 9 | **Nội dung giả lập (Q10)** — UAT chạy bằng **dữ liệu seed**; cần một lệnh seed idempotent và cờ `is_seed` | dev | ☐ theo SRS §3.4 / NFR-21 |

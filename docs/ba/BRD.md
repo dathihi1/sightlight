@@ -3,7 +3,7 @@
 | Phiên bản | **v0.3** | Ngày | 2026-09-20 | Người viết | BA | Trạng thái | DRAFT — chờ GATE-1 |
 |-----------|------|------|------------|------------|----|-----------|---------------------|
 
-**Thay đổi so với v0.2 — anh Bryan chốt TOÀN BỘ câu hỏi mở ngày 2026-09-20:**
+**Thay đổi so với v0.2 — anh Duy chốt TOÀN BỘ câu hỏi mở ngày 2026-09-20:**
 **Q8** = phương án B (trình duyệt trích landmark, server phân lớp) · **Q9** = CÓ (bật góp dữ liệu tự nguyện) ·
 **Q10** = nội dung giả lập trước · **Q11** = tăng độ chính xác MVP-30 trước · **Q6** = KHÔNG làm B2B/tutor ở GĐ1 ·
 **Q5** = hoãn tới sau GATE-4 · **R-07** = tuổi tối thiểu **16** cho góp dữ liệu · **R-11 đã đóng** (có tài khoản
@@ -98,7 +98,7 @@ là khả thi; việc còn lại là dựng sản phẩm quanh nó.
 > Bộ 30 ký hiệu này nghiêng về **danh từ đồ vật và xưng hô**, thiếu động từ và câu chào hỏi — tức là
 > **chưa đủ để dựng Chương 1 "Chào hỏi"** theo lẽ thường của một giáo trình.
 >
-> ✅ **Q10 đã chốt (anh Bryan, 2026-09-20): làm giả lập trước, chưa cần quan tâm nội dung; nội dung thật
+> ✅ **Q10 đã chốt (anh Duy, 2026-09-20): làm giả lập trước, chưa cần quan tâm nội dung; nội dung thật
 > bổ sung sau.** Vì vậy 30 ký hiệu này **không** phải là giáo trình chính thức — chúng là **bộ dữ liệu
 > seed** để dựng và nghiệm thu chức năng (SRS §3.4, NFR-21). Giáo trình thật sẽ được thiết kế lại ở một
 > bước riêng, **sau GATE-4**.
@@ -139,7 +139,7 @@ hạn thấp hơn và **thiết kế nhắc gia hạn thật tốt** (FR-31).
 
 | Vai trò | Người/Bộ phận | Quan tâm chính / Quyền quyết |
 |---------|---------------|-------------------------------|
-| **Chủ đầu tư (duyệt)** | anh Bryan | Duyệt mọi cổng; quyết phạm vi, ngân sách, techstack, thời điểm phát hành |
+| **Chủ đầu tư (duyệt)** | anh Duy | Duyệt mọi cổng; quyết phạm vi, ngân sách, techstack, thời điểm phát hành |
 | Người học phổ thông | Người nghe có người thân/bạn/đồng nghiệp Điếc | Học được thật, rẻ, linh hoạt, **biết mình làm đúng hay sai** |
 | Người học nghề nghiệp | Giáo viên, y tá, nhân viên dịch vụ công, bán hàng | Học nhanh vốn từ dùng được trong công việc |
 | **Cố vấn/giáo viên người Điếc** | Người Điếc bản ngữ cộng tác sản xuất & duyệt nội dung | Tính chính xác ngôn ngữ, tôn trọng văn hoá Điếc, được ghi nhận & trả công xứng đáng |
@@ -252,7 +252,7 @@ tin chỉ truyền tải bằng âm thanh**.
 | **R-08** Đội 1–2 người không kham nổi web + CMS + AI + nội dung | Cao *(tăng so với v0.1 vì thêm AI)* | Modular monolith + dịch vụ AI tái dùng nguyên trạng; cắt phạm vi theo §3.2 | Liên tục |
 | **R-09** **Dữ liệu huấn luyện quá ít** (701 mẫu / 30 lớp) để mở rộng | Cao → **TB** *(hạ mức 2026-09-20)* | ✅ **Q9 = BẬT** góp dữ liệu (FR-46 vào phạm vi GĐ1) → có kênh thu dữ liệu hợp pháp. ✅ **Q11 = tăng độ chính xác MVP-30 trước** → **không mở rộng lớp ở GĐ1**, nên 701 mẫu/30 lớp là **đủ dùng cho GĐ1**; R-09 chuyển thành rủi ro của **BG-08 (mốc 12 tháng)**, không còn là rủi ro giao hàng. ⚠️ Kênh góp dữ liệu chỉ sinh dữ liệu **sau khi có người dùng thật** | BG-08: 12 tháng |
 | **R-10** **Không có tự động gia hạn → tỉ lệ gia hạn thấp** | Cao — ảnh hưởng BG-03 | Nhắc gia hạn 7/3/1 ngày; ưu đãi gói dài; gia hạn ≤ 3 thao tác; theo dõi tỉ lệ gia hạn từ tháng 2 | Từ go-live |
-| **R-11** ~~Merchant VNPay/MoMo không được duyệt~~ | ✅ **Đã đóng** *(2026-09-20)* | Anh Bryan xác nhận đã có **tài khoản merchant/sandbox** VNPay và MoMo (SĐT `0866678802`) → lấy được `vnp_TmnCode`/`vnp_HashSecret` và `partnerCode`/`accessKey`/`secretKey`. **Việc còn lại là thao tác, không còn là rủi ro:** lấy 5 khoá, đặt vào `deploy/.env`. 🔐 Khoá **không được commit** và **không được ghi log** (NFR-11) | 2026-09-20 |
+| **R-11** ~~Merchant VNPay/MoMo không được duyệt~~ | ✅ **Đã đóng** *(2026-09-20)* | Anh Duy xác nhận đã có **tài khoản merchant/sandbox** VNPay và MoMo (SĐT `0866678802`) → lấy được `vnp_TmnCode`/`vnp_HashSecret` và `partnerCode`/`accessKey`/`secretKey`. **Việc còn lại là thao tác, không còn là rủi ro:** lấy 5 khoá, đặt vào `deploy/.env`. 🔐 Khoá **không được commit** và **không được ghi log** (NFR-11) | 2026-09-20 |
 | **R-12** Người dùng hiểu nhầm AI là thông dịch viên | TB — rủi ro pháp lý & uy tín | Tuyên bố rõ ở màn AI, trang pháp lý, mọi tài liệu tiếp thị (SC-13) | Trước GATE-6 |
 | **Q8** ~~Suy luận AI chạy ở đâu~~ | ✅ **Đã đóng** | Chốt **phương án B**: trình duyệt trích landmark, server phân lớp (HLD ADR-08, NFR-12) | 2026-09-20 |
 | **Q9** ~~Có bật "Góp dữ liệu luyện tập"~~ | ✅ **Đã đóng** | Chốt **CÓ** — FR-46 vào phạm vi GĐ1 | 2026-09-20 |

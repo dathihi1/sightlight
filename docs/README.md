@@ -1,6 +1,6 @@
 # Bản đồ tài liệu — SignLight
 
-Bộ tài liệu này (phiên bản **v0.3**) được sinh theo **Mytel SDLC Kit** (`training-skill-software/software-development-skills/`),
+Bộ tài liệu này (phiên bản **v0.3**) được sinh theo **Duy SDLC Kit** (`training-skill-software/software-development-skills/`),
 cấu trúc **kiểu A** — tài liệu đi chung repo code, phẳng theo vai trò.
 
 **Nguồn sự thật về quy trình:** `training-skill-software/software-development-skills/WORKFLOW.md`
