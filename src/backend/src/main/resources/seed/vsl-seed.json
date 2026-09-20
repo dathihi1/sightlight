@@ -1,0 +1,152 @@
+{
+  "_readme": [
+    "BỘ DỮ LIỆU GIẢ LẬP (SEED) — SRS §3.4, NFR-21.",
+    "Đây KHÔNG phải giáo trình. Đây là dữ liệu để dựng và nghiệm thu chức năng (SEED-1).",
+    "Nội dung là DỮ LIỆU, không phải code (SEED-2): đổi nội dung thật sau này không cần sửa mã nguồn.",
+    "30 ký hiệu đầu bám đúng 30 nhãn MVP-30 để phần chấm AI chạy thật (SEED-3).",
+    "3 ký hiệu cuối (aiVocabulary=false) để test nhánh 'chưa có chấm tự động' (SEED-4, AC-41.2).",
+    "Mọi bản ghi sinh ra từ file này mang cờ is_seed = true; GATE-6 chặn phát hành nếu còn (SEED-5).",
+    "Video là placeholder tự dựng, không dùng tư liệu bản quyền bên thứ ba (SEED-6)."
+  ],
+  "seedVersion": 1,
+  "course": {
+    "code": "VSL",
+    "name": "Ngôn ngữ Ký hiệu Việt Nam — Cơ bản",
+    "alphabetLetters": "AĂÂBCDĐEÊGHIKLMNOÔƠPQRSTUƯVXY",
+    "status": "PUBLISHED"
+  },
+  "signs": [
+    { "word": "Anh", "meaning": "Anh trai; cách xưng hô với nam lớn tuổi hơn", "topic": "Xưng hô & gia đình", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Chị", "meaning": "Chị gái; cách xưng hô với nữ lớn tuổi hơn", "topic": "Xưng hô & gia đình", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Em", "meaning": "Em; cách xưng hô với người nhỏ tuổi hơn", "topic": "Xưng hô & gia đình", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Cháu", "meaning": "Cháu; con của anh chị em hoặc thế hệ sau", "topic": "Xưng hô & gia đình", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Chú", "meaning": "Chú; em trai của bố", "topic": "Xưng hô & gia đình", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Cô", "meaning": "Cô; chị hoặc em gái của bố", "topic": "Xưng hô & gia đình", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Cậu", "meaning": "Cậu; anh hoặc em trai của mẹ", "topic": "Xưng hô & gia đình", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Họ hàng", "meaning": "Người trong cùng dòng họ", "topic": "Xưng hô & gia đình", "wordClass": "NOUN", "aiVocabulary": true },
+
+    { "word": "Cái bàn", "meaning": "Đồ dùng có mặt phẳng để làm việc, ăn uống", "topic": "Đồ vật trong nhà", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Cái cửa", "meaning": "Lối ra vào của phòng hoặc nhà", "topic": "Đồ vật trong nhà", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Cái đèn", "meaning": "Vật phát sáng", "topic": "Đồ vật trong nhà", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Cái chảo", "meaning": "Dụng cụ nấu ăn lòng nông", "topic": "Đồ vật trong nhà", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Cửa sổ", "meaning": "Ô mở trên tường để lấy sáng và gió", "topic": "Đồ vật trong nhà", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Giường", "meaning": "Đồ dùng để nằm ngủ", "topic": "Đồ vật trong nhà", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Nồi cơm điện", "meaning": "Thiết bị nấu cơm bằng điện", "topic": "Đồ vật trong nhà", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Máy điều hòa", "meaning": "Thiết bị làm mát không khí", "topic": "Đồ vật trong nhà", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Quạt (đứng)", "meaning": "Quạt máy có chân đứng", "topic": "Đồ vật trong nhà", "wordClass": "NOUN", "aiVocabulary": true },
+
+    { "word": "Trường học", "meaning": "Nơi dạy và học", "topic": "Địa điểm", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Trường Đại học", "meaning": "Cơ sở giáo dục bậc đại học", "topic": "Địa điểm", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Ngân hàng", "meaning": "Nơi gửi và vay tiền", "topic": "Địa điểm", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Nhà hàng", "meaning": "Nơi phục vụ ăn uống", "topic": "Địa điểm", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Nhà trọ", "meaning": "Nơi thuê ở tạm", "topic": "Địa điểm", "wordClass": "NOUN", "aiVocabulary": true },
+
+    { "word": "Chủ nhật", "meaning": "Ngày cuối tuần", "topic": "Thời gian & thời tiết", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Mùa hè", "meaning": "Mùa nóng trong năm", "topic": "Thời gian & thời tiết", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Mùa khô", "meaning": "Mùa ít mưa", "topic": "Thời gian & thời tiết", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Nắng", "meaning": "Trời có ánh mặt trời gay gắt", "topic": "Thời gian & thời tiết", "wordClass": "ADJECTIVE", "aiVocabulary": true },
+    { "word": "Ướt", "meaning": "Bị thấm nước", "topic": "Thời gian & thời tiết", "wordClass": "ADJECTIVE", "aiVocabulary": true },
+    { "word": "Ngày Nhà giáo Việt Nam", "meaning": "Ngày 20 tháng 11", "topic": "Thời gian & thời tiết", "wordClass": "NOUN", "aiVocabulary": true },
+
+    { "word": "Nghề nghiệp", "meaning": "Công việc làm để sinh sống", "topic": "Khác", "wordClass": "NOUN", "aiVocabulary": true },
+    { "word": "Dễ", "meaning": "Không khó", "topic": "Khác", "wordClass": "ADJECTIVE", "aiVocabulary": true },
+
+    { "word": "Xin chào", "meaning": "Lời chào gặp mặt", "topic": "Chào hỏi", "wordClass": "PHRASE", "aiVocabulary": false },
+    { "word": "Cảm ơn", "meaning": "Lời cảm tạ", "topic": "Chào hỏi", "wordClass": "PHRASE", "aiVocabulary": false },
+    { "word": "Tạm biệt", "meaning": "Lời chào khi chia tay", "topic": "Chào hỏi", "wordClass": "PHRASE", "aiVocabulary": false }
+  ],
+  "units": [
+    {
+      "title": "Unit 1 — Người thân và đồ vật quanh ta",
+      "free": true,
+      "chapters": [
+        {
+          "title": "Chương 1 — Xưng hô trong gia đình",
+          "lessons": [
+            {
+              "title": "Anh, chị, em",
+              "estimatedMinutes": 4,
+              "exercises": [
+                { "type": "SIGN_TO_MEANING", "sign": "Anh", "prompt": "Ký hiệu này nghĩa là gì?", "options": ["Anh", "Chị", "Em", "Cháu"] },
+                { "type": "SIGN_TO_MEANING", "sign": "Chị", "prompt": "Ký hiệu này nghĩa là gì?", "options": ["Chị", "Cô", "Em", "Cậu"] },
+                { "type": "MEANING_TO_SIGN", "sign": "Em", "prompt": "Chọn ký hiệu của từ \"Em\"", "options": ["Em", "Anh", "Cháu", "Chú"] },
+                { "type": "TYPE_WHAT_YOU_SEE", "sign": "Cháu", "prompt": "Gõ nghĩa của ký hiệu bạn vừa xem", "answer": "Cháu", "acceptedAnswers": ["chau", "cháu"] }
+              ]
+            },
+            {
+              "title": "Chú, cô, cậu",
+              "estimatedMinutes": 4,
+              "exercises": [
+                { "type": "SIGN_TO_MEANING", "sign": "Chú", "prompt": "Ký hiệu này nghĩa là gì?", "options": ["Chú", "Cậu", "Cô", "Anh"] },
+                { "type": "SIGN_TO_MEANING", "sign": "Cô", "prompt": "Ký hiệu này nghĩa là gì?", "options": ["Cô", "Chị", "Cháu", "Em"] },
+                { "type": "MEANING_TO_SIGN", "sign": "Cậu", "prompt": "Chọn ký hiệu của từ \"Cậu\"", "options": ["Cậu", "Chú", "Anh", "Họ hàng"] },
+                { "type": "TYPE_WHAT_YOU_SEE", "sign": "Họ hàng", "prompt": "Gõ nghĩa của ký hiệu bạn vừa xem", "answer": "Họ hàng", "acceptedAnswers": ["ho hang", "họ hàng"] }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Chương 2 — Đồ vật trong nhà",
+          "lessons": [
+            {
+              "title": "Bàn, cửa, đèn",
+              "estimatedMinutes": 5,
+              "exercises": [
+                { "type": "SIGN_TO_MEANING", "sign": "Cái bàn", "prompt": "Ký hiệu này nghĩa là gì?", "options": ["Cái bàn", "Cái cửa", "Cửa sổ", "Giường"] },
+                { "type": "SIGN_TO_MEANING", "sign": "Cái cửa", "prompt": "Ký hiệu này nghĩa là gì?", "options": ["Cái cửa", "Cửa sổ", "Cái đèn", "Cái bàn"] },
+                { "type": "MEANING_TO_SIGN", "sign": "Cái đèn", "prompt": "Chọn ký hiệu của từ \"Cái đèn\"", "options": ["Cái đèn", "Cái chảo", "Quạt (đứng)", "Máy điều hòa"] },
+                { "type": "TYPE_WHAT_YOU_SEE", "sign": "Cửa sổ", "prompt": "Gõ nghĩa của ký hiệu bạn vừa xem", "answer": "Cửa sổ", "acceptedAnswers": ["cua so", "cửa sổ"] }
+              ]
+            },
+            {
+              "title": "Bếp và phòng ngủ",
+              "estimatedMinutes": 5,
+              "exercises": [
+                { "type": "SIGN_TO_MEANING", "sign": "Cái chảo", "prompt": "Ký hiệu này nghĩa là gì?", "options": ["Cái chảo", "Nồi cơm điện", "Cái bàn", "Cái đèn"] },
+                { "type": "SIGN_TO_MEANING", "sign": "Nồi cơm điện", "prompt": "Ký hiệu này nghĩa là gì?", "options": ["Nồi cơm điện", "Máy điều hòa", "Cái chảo", "Quạt (đứng)"] },
+                { "type": "MEANING_TO_SIGN", "sign": "Giường", "prompt": "Chọn ký hiệu của từ \"Giường\"", "options": ["Giường", "Cái bàn", "Cửa sổ", "Cái cửa"] },
+                { "type": "TYPE_WHAT_YOU_SEE", "sign": "Quạt (đứng)", "prompt": "Gõ tên đồ vật trong ký hiệu bạn vừa xem", "answer": "Quạt", "acceptedAnswers": ["quat", "quạt", "quat dung", "quạt đứng"] }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Unit 2 — Địa điểm, thời gian và thời tiết",
+      "free": false,
+      "chapters": [
+        {
+          "title": "Chương 3 — Địa điểm quen thuộc",
+          "lessons": [
+            {
+              "title": "Trường học và ngân hàng",
+              "estimatedMinutes": 5,
+              "exercises": [
+                { "type": "SIGN_TO_MEANING", "sign": "Trường học", "prompt": "Ký hiệu này nghĩa là gì?", "options": ["Trường học", "Trường Đại học", "Ngân hàng", "Nhà hàng"] },
+                { "type": "SIGN_TO_MEANING", "sign": "Ngân hàng", "prompt": "Ký hiệu này nghĩa là gì?", "options": ["Ngân hàng", "Nhà hàng", "Nhà trọ", "Trường học"] },
+                { "type": "MEANING_TO_SIGN", "sign": "Nhà hàng", "prompt": "Chọn ký hiệu của từ \"Nhà hàng\"", "options": ["Nhà hàng", "Nhà trọ", "Ngân hàng", "Trường Đại học"] },
+                { "type": "TYPE_WHAT_YOU_SEE", "sign": "Nhà trọ", "prompt": "Gõ nghĩa của ký hiệu bạn vừa xem", "answer": "Nhà trọ", "acceptedAnswers": ["nha tro", "nhà trọ"] }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Chương 4 — Thời gian và thời tiết",
+          "lessons": [
+            {
+              "title": "Mùa và thời tiết",
+              "estimatedMinutes": 5,
+              "exercises": [
+                { "type": "SIGN_TO_MEANING", "sign": "Mùa hè", "prompt": "Ký hiệu này nghĩa là gì?", "options": ["Mùa hè", "Mùa khô", "Nắng", "Ướt"] },
+                { "type": "SIGN_TO_MEANING", "sign": "Nắng", "prompt": "Ký hiệu này nghĩa là gì?", "options": ["Nắng", "Ướt", "Mùa hè", "Chủ nhật"] },
+                { "type": "MEANING_TO_SIGN", "sign": "Chủ nhật", "prompt": "Chọn ký hiệu của từ \"Chủ nhật\"", "options": ["Chủ nhật", "Ngày Nhà giáo Việt Nam", "Mùa khô", "Nghề nghiệp"] },
+                { "type": "TYPE_WHAT_YOU_SEE", "sign": "Ướt", "prompt": "Gõ nghĩa của ký hiệu bạn vừa xem", "answer": "Ướt", "acceptedAnswers": ["uot", "ướt"] }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+/*
+ * Design token — nguồn sự thật: docs/design/design.md §2.1 và §2.2.
+ * Giá trị ở đây đã được kiểm tương phản để đạt WCAG 2.1 AA (NFR-14); đổi màu thì phải đo lại.
+ */
+@theme {
+  --color-brand-700: #3730a3;
+  --color-brand-600: #4338ca;
+  --color-brand-100: #e0e7ff;
+  --color-brand-050: #eef2ff;
+
+  --color-accent-500: #f59e0b;
+  --color-accent-700: #b45309;
+
+  --color-bg-default: #ffffff;
+  --color-bg-subtle: #f8fafc;
+  --color-bg-video: #0f172a;
+
+  --color-ink-900: #0f172a;
+  --color-ink-600: #475569;
+  --color-ink-400: #94a3b8;
+
+  --color-border-default: #e2e8f0;
+  --color-border-strong: #cbd5e1;
+
+  --color-success-700: #15803d;
+  --color-success-050: #f0fdf4;
+  --color-danger-700: #b91c1c;
+  --color-danger-050: #fef2f2;
+  --color-warning-700: #b45309;
+}
+
+/* Chế độ tối là bắt buộc: người học hay học buổi tối (design.md §2.2). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg-default: #0b1120;
+    --color-bg-subtle: #111827;
+    --color-bg-video: #000000;
+    --color-ink-900: #f1f5f9;
+    --color-ink-600: #cbd5e1;
+    --color-brand-600: #818cf8;
+    --color-brand-050: #1e1b4b;
+    --color-border-default: #1f2937;
+    --color-border-strong: #334155;
+    --color-success-700: #4ade80;
+    --color-success-050: #052e16;
+    --color-danger-700: #fca5a5;
+    --color-danger-050: #450a0a;
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-bg-default: #0b1120;
+  --color-bg-subtle: #111827;
+  --color-bg-video: #000000;
+  --color-ink-900: #f1f5f9;
+  --color-ink-600: #cbd5e1;
+  --color-brand-600: #818cf8;
+  --color-brand-050: #1e1b4b;
+  --color-border-default: #1f2937;
+  --color-border-strong: #334155;
+  --color-success-700: #4ade80;
+  --color-success-050: #052e16;
+  --color-danger-700: #fca5a5;
+  --color-danger-050: #450a0a;
+}
+
+body {
+  background: var(--color-bg-default);
+  color: var(--color-ink-900);
+  font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Viền focus dày 3px cách 2px — bắt buộc để thao tác bằng bàn phím nhìn thấy được (design.md §2.1). */
+:focus-visible {
+  outline: 3px solid var(--color-brand-600);
+  outline-offset: 2px;
+}
+
+/* Vùng chạm tối thiểu 44×44 px (NFR-14). */
+button,
+a[role="button"] {
+  min-height: 44px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

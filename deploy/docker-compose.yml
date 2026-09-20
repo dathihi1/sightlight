@@ -147,7 +147,9 @@ services:
   # Lưu trữ đối tượng giả lập cho UAT (video, ảnh đại diện, chứng chỉ PDF).
   # Ở production dùng dịch vụ object storage + CDN thật — xem techstack.md.
   storage:
-    image: minio/minio:latest
+    # Docker Hub không còn phục vụ `minio/minio` công khai (pull access denied, 2026-09);
+    # quay.io là registry chính thức hiện tại của MinIO.
+    image: quay.io/minio/minio:latest
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}

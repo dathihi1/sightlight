@@ -6,7 +6,7 @@
 - **Ngày khởi tạo:** 2026-09-20
 - **Loại dự án:** Mới (greenfield — Track A, B1→B6)
 - **Cấu trúc thư mục:** Kiểu A — Monolith / ít module, tài liệu đi chung repo code
-- **Giai đoạn hiện tại:** B1–B6 đã soạn **bản nháp đầy đủ** (DRAFT) — **v0.3**, ✅ **đã chốt toàn bộ câu hỏi mở** — chờ duyệt tuần tự từ GATE-1
+- **Giai đoạn hiện tại:** tài liệu B1–B6 ở **v0.3** (DRAFT, ✅ hết câu hỏi mở) · **B4 đã bắt đầu**: lát cắt demo chạy được đầu-cuối trong `src/` (2026-09-21) — chờ duyệt tuần tự từ GATE-1
 - **Cổng đang chờ:** GATE-1 (duyệt **BRD v0.3**)
 - **GATE-3 (đóng băng thiết kế):** BẬT
 - **GATE-4 (nghiệm thu chức năng):** BẬT
@@ -67,10 +67,10 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 | LLD.md                | SA       | DONE         | 2026-09-20 | v0.2 — 30 bảng |
 | api-spec.md           | SA       | DONE         | 2026-09-20 | **v0.3** — **75 endpoint**; §4.3 là endpoint suy luận duy nhất |
 | design.md             | Designer | DONE         | 2026-09-20 | v0.2 |
-| scaffold-backend      | Backend  | NOT_STARTED  |            | B3 |
-| scaffold-frontend     | Frontend | NOT_STARTED  |            | B3 |
-| scaffold-ai           | AI/BE    | **CÓ SẴN**   | 2026-09-20 | Tái dùng `src/vsl_mvp/` của EXE101 |
-| src (code)            | dev      | NOT_STARTED  |            | B4 |
+| scaffold-backend      | Backend  | DONE         | 2026-09-21 | `src/backend` — Spring Boot 3.5 / Java 21, Flyway V1+V2, 20 repository, build Docker sạch |
+| scaffold-frontend     | Frontend | DONE         | 2026-09-21 | `src/frontend` — Next.js 15 / React 19 / Tailwind 4, 7 màn, build standalone sạch |
+| scaffold-ai           | AI/BE    | DONE         | 2026-09-21 | `src/ai` — FastAPI + ONNX Runtime; **đã bổ sung `POST /api/infer/features`** (V-3 phần code) |
+| src (code)            | dev      | IN_PROGRESS  | 2026-09-21 | **Lát cắt demo chạy được đầu-cuối** — xem `src/README.md`. Chưa làm: billing, CMS, quiz/mốc, chứng chỉ, góp dữ liệu, OAuth Google |
 | test-plan.md          | Tester   | DONE         | 2026-09-20 | **v0.3** — phạm vi mở tới NFR-21 |
 | test-cases.md         | Tester   | DONE         | 2026-09-20 | **v0.3** — **217 case** + 3 nhóm case mới cần soạn (DR-12, seed); chưa chạy |
 | test-report.md        | Tester   | IN_PROGRESS  | 2026-09-20 | Khung — **chưa chạy**, chờ B4 |
@@ -130,7 +130,7 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 | V-1 | Lấy **5 khoá** VNPay/MoMo từ portal merchant, đặt vào `deploy/.env` *(không commit)* | anh Duy → DevOps | GATE-3 |
 | V-2 | **Đo độ chính xác trên webcam thật** — ≥ 5 người, ≥ 3 điều kiện ánh sáng *(rủi ro R-02, lớn nhất còn lại)* | AI dev | **GATE-2** |
 | V-3 | Bổ sung `POST /api/infer/features` vào repo EXE101; **xoá** `/api/infer/frames` + `/api/attempt` khỏi bản triển khai | AI dev | GATE-3 (DR-07, DR-12) |
-| V-4 | Viết **script seed idempotent** + cờ `is_seed` + cổng chặn phát hành | dev | GATE-4 (NFR-21) |
+| ~~V-4~~ | ~~Viết **script seed idempotent** + cờ `is_seed`~~ → ✅ **XONG 2026-09-21** (`SeedRunner` + `seed/vsl-seed.json`, 33 ký hiệu, cờ `is_seed` trên mọi bảng nội dung). ⚠️ **Cổng chặn phát hành vẫn CHƯA làm** — cần kiểm tự động chặn `is_seed = true` ở GATE-6 | dev | GATE-4 (NFR-21) |
 | V-5 | Soạn 3 nhóm test case mới: DR-12, seed idempotent, SEED-4 | Tester | GATE-4 |
 | V-6 | Hiện thực **chặn tuổi < 16 ở backend** cho góp dữ liệu (403), thu năm sinh ở onboarding | dev | GATE-5 |
 | V-7 | **Mở lại Q5** (nguồn video) ngay sau GATE-4 — R-01 mới chỉ được dời | PO | GATE-6 |
@@ -164,3 +164,41 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
   hiệu lực) và **giữ nguyên** mã chuẩn `ST.TIM.ITC.16` / `TC.CNVTQĐ.CNTT.19`. Đã quét: nhóm file này không
   chứa chuỗi cần đổi ở dạng đọc được.
   ℹ️ Chuỗi **`Viettel`** (2 chỗ trong Kit) **giữ nguyên** — chưa có yêu cầu đổi.
+- 2026-09-21 — **B4 vòng 1: dựng xong lát cắt demo chạy được đầu-cuối.** Ba service lên trong
+  `docker compose`, cả 6 container `healthy`. Chi tiết phạm vi ở `src/README.md`.
+  - **Đã hiện thực:** đăng ký/đăng nhập (Argon2id + JWT 15 phút) · lộ trình học có khoá theo tiến độ
+    và theo Premium · học bài + **chấm ở server** + hoàn thành idempotent · streak/phút học theo ngày
+    địa phương · từ điển tìm không dấu (PostgreSQL FTS + `unaccent` + `pg_trgm`) ·
+    **module M10 chấm ký hiệu động end-to-end** · hạn mức 5 lượt AI/ngày · bộ seed idempotent.
+  - **Đã kiểm chạy thật (curl + trình duyệt):** `10103` khi payload có trường ảnh · `10102` khi tensor
+    sai kích thước · `10201` với ký hiệu ngoài vốn AI · `06204` đúng ở lượt thứ 6 · client gửi kèm
+    `isCorrect=true` **bị bỏ qua** · payload bài học **không chứa** `isCorrect`/`correctAnswer` ·
+    gọi lại `complete` cùng `idempotencyKey` **không cộng dồn** phút học.
+  - **Ánh xạ nhãn AI: 30/30, 0 nhãn mồ côi** — tức `stable_sign_id` ở Java và Python khớp nhau trên
+    dữ liệu thật, hạ rủi ro **T-11**. Có bộ test chung hai phía (`StableSignIdTest.java`,
+    `test_labels.py`).
+  - **Ba lỗi phát hiện khi chạy thật và đã sửa:** xung đột bean `CorsConfigurationSource` với
+    `mvcHandlerMappingIntrospector` · thông báo lỗi ra tiếng Anh khi client không gửi
+    `Accept-Language` (nay mặc định `vi`) · Next.js standalone bind theo hostname container làm
+    healthcheck đỏ.
+
+  ⚠️ **Ba việc cần đồng bộ lại tài liệu ở lần cập nhật kế tiếp:**
+  1. **LLD §1.7b:** `ai_model_version.version_code` nới từ `VARCHAR(32)` lên `VARCHAR(64)`
+     (migration `V2`). Lý do: mã phiên bản ở chế độ mô phỏng mang hậu tố `-stub` dài 34 ký tự — giữ
+     hậu tố để dữ liệu sinh ra từ kết quả giả lập **phân biệt được vĩnh viễn** trong CSDL.
+  2. **`docker-compose.yml`:** ảnh MinIO đổi từ `minio/minio` sang `quay.io/minio/minio` — Docker Hub
+     không còn phục vụ công khai (`pull access denied`, kiểm 2026-09-21).
+  3. **`.env.example`:** thêm `MEDIA_SIGNING_KEY` (ký URL video, BR-A17) và `SIGNLIGHT_SEED_ENABLED`.
+
+  ⚠️ **Nợ kỹ thuật đã biết, phải xử lý trước cổng tương ứng:**
+  - **Chặn GATE-4 —** bố cục từng lát của tensor 327 chiều (`motion`, `geometry`, `quality`) hiện
+    được suy ra từ mô tả ở `api-spec.md` §3.12b, **chưa đối chiếu với bộ trích đặc trưng thật của repo
+    EXE101**. Nếu công thức lệch, mô hình đã huấn luyện sẽ nhận đầu vào sai mà vẫn trả về một nhãn
+    trông hợp lý. Phải đối chiếu **trước khi** nạp trọng số thật.
+  - **Chặn GATE-4 —** hệ thống đang chạy **chế độ STUB** (chưa có tệp mô hình trong
+    `src/ai/runs/`). Mọi phản hồi mang cờ `stubMode: true`; **số liệu hiện tại không có ý nghĩa về độ
+    chính xác** và không dùng để nghiệm thu NFR-19. Việc **V-2** (đo trên webcam thật) vẫn nguyên.
+  - **Chặn GATE-5 —** access token đang giữ ở `localStorage`; ADR-06 yêu cầu refresh token ở cookie
+    `HttpOnly` và access token chỉ sống trong bộ nhớ (rủi ro **DR-01**).
+  - **Chặn GATE-5 —** chưa có giới hạn tần suất (NFR-10) và chưa có refresh token xoay vòng (NFR-09).
+  - Độ phủ unit test còn rất thấp so với ngưỡng **70%** của NFR-16 — mới có test cho `StableSignId`.

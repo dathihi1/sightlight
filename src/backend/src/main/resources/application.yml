@@ -1,0 +1,81 @@
+spring:
+  application:
+    name: signlight-api
+  threads:
+    virtual:
+      enabled: true          # Java 21 virtual threads — tải chủ yếu là I/O-bound (techstack)
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/signlight}
+    username: ${SPRING_DATASOURCE_USERNAME:signlight}
+    password: ${SPRING_DATASOURCE_PASSWORD:signlight}
+    hikari:
+      maximum-pool-size: 10
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate     # Flyway là nguồn sự thật của lược đồ; ddl-auto KHÔNG BAO GIỜ tạo bảng
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  messages:
+    basename: messages
+    encoding: UTF-8
+    use-code-as-default-message: false   # thiếu khoá -> ném lỗi để phát hiện sớm
+  jackson:
+    default-property-inclusion: non_null
+  web:
+    locale-resolver: accept_header
+    # Client không gửi Accept-Language thì phải rơi về tiếng Việt, không phải locale của máy chủ —
+    # người dùng mục tiêu ở Việt Nam (BRD §3).
+    locale: vi
+
+server:
+  port: 8080
+  error:
+    include-stacktrace: never
+    include-message: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  pattern:
+    console: '{"ts":"%d{yyyy-MM-dd HH:mm:ss.SSS}","level":"%p","traceId":"%X{requestId:-}","logger":"%logger{36}","msg":"%m"}%n'
+  level:
+    vn.duy.signlight: INFO
+
+# Tên biến môi trường bám theo `deploy/.env.example` (đã duyệt ở v0.3) — đừng đặt tên mới khi
+# đã có biến tương đương ở đó.
+signlight:
+  seed:
+    # Nạp nội dung giả lập (SRS §3.4). PHẢI là false ở prod — GATE-6 kiểm điều này.
+    enabled: ${SIGNLIGHT_SEED_ENABLED:true}
+  cors:
+    allowed-origins: ${PUBLIC_WEB_BASE_URL:http://localhost:3000,http://localhost:18081}
+  security:
+    jwt:
+      # Bắt buộc đặt lại ở mọi môi trường thật. Ứng dụng từ chối khởi động nếu khoá ngắn hơn 32 byte.
+      secret: ${JWT_SECRET:doi-khoa-nay-o-moi-truong-that-toi-thieu-32-byte}
+      access-token-ttl: PT${JWT_ACCESS_TTL_MINUTES:15}M
+      issuer: signlight
+  media:
+    base-url: ${PUBLIC_CDN_BASE_URL:http://localhost:18082}/${STORAGE_BUCKET_MEDIA:signlight-media}
+    signing-key: ${MEDIA_SIGNING_KEY:doi-khoa-ky-url-media-o-moi-truong-that}
+  ai:
+    base-url: ${SIGNLIGHT_AI_BASE_URL:http://localhost:7860}
+    timeout-ms: ${SIGNLIGHT_AI_TIMEOUT_MS:5000}
