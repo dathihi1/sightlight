@@ -1,0 +1,29 @@
+# Chuẩn hoá ký tự xuống dòng.
+#
+# Repo được phát triển trên Windows nhưng build và chạy trong container Linux, nên mọi tệp văn bản
+# phải là LF ở cả kho lẫn thư mục làm việc. Để Git tự đổi sang CRLF khi checkout sẽ làm hỏng:
+#   - script shell trong Dockerfile (CRLF khiến shebang và lệnh lỗi "no such file or directory");
+#   - so sánh diff giữa máy Windows và CI Linux (toàn bộ tệp hiện là "đã đổi");
+#   - chữ ký/băm nội dung tính trên tệp văn bản.
+* text=auto eol=lf
+
+# Tệp nhị phân: Git không được đụng vào nội dung.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.mp4   binary
+*.webm  binary
+*.woff  binary
+*.woff2 binary
+*.pdf   binary
+*.onnx  binary
+*.task  binary
+
+# Tệp bắt buộc LF kể cả khi có cấu hình khác đè lên.
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
