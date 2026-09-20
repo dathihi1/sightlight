@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<!--
+  ARCHITECTURE MAP / SƠ ĐỒ KIẾN TRÚC KHỐI — mẫu của SA, Mytel SDLC Kit
+  ===========================================================================
+  MỤC ĐÍCH: 1 trang HTML để nhìn KIẾN TRÚC TỔNG THỂ theo TẦNG & KHỐI —
+    • Phân tầng: Client → Cổng → Dịch vụ → Dữ liệu → Tích hợp ngoài → Hạ tầng xuyên suốt
+    • Mỗi KHỐI: công nghệ (badge), phục vụ module/FR nào, mô tả ngắn
+    • Đường LUỒNG (connector) giữa các khối; danh sách LUỒNG CHÍNH end-to-end
+    • Trạng thái khối (nâng cấp): Thêm mới / Thay đổi / Giữ nguyên / Ngoài phạm vi
+  Đi KÈM (không thay) HLD.md — .md là nguồn sự thật đặc tả; HTML này để "dễ nhìn".
+  Sinh ở B2 (cùng HLD). Lưu: docs/sa/architecture.html
+    (kiểu B microservices: docs/system_architecture.html — đi cùng system_architecture.md).
+
+  CÁCH DÙNG (SA): CHỈ sửa biến DATA. layers[].blocks[] = các khối; edges = luồng nối
+    (from→to theo id khối); flows = luồng chính dạng chữ. status: 'new'|'change'|'keep'|'na' (tuỳ chọn).
+  Ví dụ dùng tình huống "gói cước data" — THAY bằng dự án thật rồi xoá phần mẫu.
+-->
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignLight — Sơ đồ kiến trúc</title>
+<style>
+  :root{
+    --bg:#f4f6f8;--card:#fff;--ink:#1f2733;--muted:#69727f;--line:#e5e9ef;
+    --accent:#f26a21;--new:#1f9d55;--change:#c98a12;--keep:#5566;--na:#98a2b0;
+    --new-bg:#e9f7ef;--change-bg:#fbf1de;--na-bg:#eef1f5;--edge:#c3cad4;
+    --lb:#eef2f7;--tech:#eef1f6;--tech-ink:#42506a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5}
+  .wrap{max-width:1200px;margin:0 auto;padding:26px 26px 70px}
+  .kick{font:600 12px/1.4 ui-monospace,monospace;letter-spacing:.14em;color:#1a7f8c;text-transform:uppercase;margin-bottom:6px}
+  h1{margin:0 0 8px;font-size:29px;font-weight:800;letter-spacing:-.5px}
+  .lead{color:#40474f;max-width:800px;margin:0 0 6px}
+  .meta{color:var(--muted);font-size:13px}
+  .stats{display:flex;flex-wrap:wrap;gap:14px;margin:18px 0 8px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 18px;min-width:140px;flex:1}
+  .tile .n{font-size:28px;font-weight:800;line-height:1}
+  .tile .l{font-size:12.5px;color:var(--muted);margin-top:6px}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted);margin:6px 0 4px}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
+  .dot.new{background:var(--new)}.dot.change{background:var(--change)}.dot.keep{background:#9aa4b2}.dot.na{background:var(--na)}
+  .tools{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+  .tools input{padding:8px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:#fff;min-width:220px;flex:1;max-width:360px}
+  /* diagram */
+  #diagram{position:relative}
+  #edges{position:absolute;top:0;left:0;pointer-events:none;z-index:0}
+  .layer{position:relative;z-index:1;display:grid;grid-template-columns:130px 1fr;gap:14px;align-items:stretch;margin:0 0 30px}
+  .llabel{font-weight:700;font-size:13px;color:#3a4353;background:var(--lb);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;justify-content:center}
+  .llabel small{font-weight:500;color:var(--muted);font-size:11.5px;margin-top:3px}
+  .blocks{display:flex;flex-wrap:wrap;gap:12px;align-content:flex-start}
+  .block{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:11px 13px;min-width:170px;max-width:250px;flex:1;box-shadow:0 1px 2px rgba(20,30,50,.04)}
+  .block.new{border-left:4px solid var(--new)} .block.change{border-left:4px solid var(--change)} .block.keep{border-left:4px solid #9aa4b2} .block.na{border-left:4px dashed var(--na);opacity:.72}
+  .bname{font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px}
+  .bserves{font:11px/1.3 ui-monospace,monospace;color:var(--muted);margin-top:2px}
+  .bdesc{color:#4a515a;font-size:12px;margin-top:5px}
+  .techs{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
+  .tech{font-size:10.5px;font-weight:600;background:var(--tech);color:var(--tech-ink);padding:2px 7px;border-radius:5px}
+  .stag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:auto}
+  .stag.new{background:var(--new-bg);color:var(--new)} .stag.change{background:var(--change-bg);color:var(--change)} .stag.na{background:var(--na-bg);color:var(--na)}
+  .dim{opacity:.25;transition:opacity .15s}
+  .hot{outline:2px solid var(--accent);outline-offset:2px}
+  /* flows */
+  .flows{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-top:6px}
+  .flows h3{margin:0 0 8px;font-size:15px}
+  .flow{padding:7px 0;border-top:1px dashed var(--line);font-size:13px}
+  .flow:first-of-type{border-top:0}
+  .flow b{color:#2a3340}
+  .flow .st{font:12px/1.5 ui-monospace,monospace;color:#3a4a63}
+  footer{max-width:1200px;margin:0 auto;padding:14px 26px 40px;color:var(--muted);font-size:12px}
+  @media print{.tools{display:none}.layer,.flows,.block{break-inside:avoid}body{background:#fff}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kick" id="kick"></div>
+  <h1 id="title"></h1>
+  <p class="lead" id="lead"></p>
+  <div class="meta" id="meta"></div>
+  <div class="stats" id="stats"></div>
+  <div class="legend" id="legend"></div>
+  <div class="tools"><input type="search" id="q" placeholder="🔎 Tô sáng khối / công nghệ / module…"></div>
+  <div id="diagram"><svg id="edges"></svg><div id="layers"></div></div>
+  <div id="flows"></div>
+</div>
+<footer id="foot"></footer>
+
+<script>
+/* ===================== SA CHỈ SỬA PHẦN DATA NÀY ===================== */
+const DATA = {
+  project:"SignLight — Học VSL có AI nhận diện ký hiệu động",
+  archStyle:"Modular monolith (Spring Boot 3.5 / Java 21) + MỘT dịch vụ AI Python tách riêng — HLD §1, ADR-08→10",
+  updated:"2026-09",
+  showStatus:true,
+  layers:[
+    { id:"L1", name:"Kênh / Client", note:"Web responsive", blocks:[
+      {id:"web", name:"Web người học", techs:["Next.js 15","React 19","TypeScript"], serves:"LEARNER · M0→M6, M10", desc:"Lộ trình, bài học, Trainer, AI luyện ký hiệu, từ điển, tiến độ, thanh toán."},
+      {id:"cmsui", name:"CMS nội dung", techs:["Next.js /admin"], serves:"EDITOR · APPROVER · SUPPORT · M7, M10", desc:"Soạn, duyệt, xuất bản; vốn ký hiệu AI; tra cứu CSKH."},
+      {id:"mkt", name:"Landing + Blog SEO", techs:["Next.js SSG/ISR"], serves:"GUEST · M8", desc:"Thu hút người học; đọc được khi tắt JavaScript."},
+      {id:"mp", name:"MediaPipe Holistic (TẠI CHỖ)", techs:["WASM SIMD","Tasks Vision"], serves:"FR-41, FR-42", status:"new", desc:"Trích landmark → tensor 64×327 NGAY TRONG TRÌNH DUYỆT. Pixel KHÔNG rời thiết bị (NFR-12)."}
+    ]},
+    { id:"L2", name:"Cổng / Edge", note:"một cửa vào", blocks:[
+      {id:"proxy", name:"Reverse proxy", techs:["Caddy 2"], desc:"TLS tự động, security header (CSP/HSTS/Permissions-Policy: camera=self)."},
+      {id:"auth", name:"Xác thực & phân quyền", techs:["Spring Security","JWT","OAuth2 PKCE"], serves:"NFR-07 · NFR-09", desc:"Access 15 phút trong bộ nhớ; refresh 30 ngày cookie HttpOnly, xoay vòng."}
+    ]},
+    { id:"L3", name:"Dịch vụ — MỘT tiến trình Java, 10 module", note:"Spring Boot", blocks:[
+      {id:"identity", name:"identity", techs:["Spring Boot"], serves:"M0 · FR-01→08", desc:"Tài khoản, onboarding, hồ sơ, xoá dữ liệu."},
+      {id:"content", name:"content", techs:["Spring Boot"], serves:"M1 · M7 · FR-09,10,33→35", desc:"Cây nội dung, ký hiệu, video, duyệt & xuất bản."},
+      {id:"learning", name:"learning", techs:["Spring Boot"], serves:"M2 · FR-11→16", desc:"Chấm bài Ở SERVER, quiz, mốc, tiến độ (1 transaction)."},
+      {id:"practice", name:"practice", techs:["Spring Boot"], serves:"M3 · FR-17→20", desc:"Lặp lại ngắt quãng SM-2; đánh vần tĩnh; mở khoá theo tiến độ."},
+      {id:"airec", name:"airecognition 🤖", techs:["Spring Boot","Resilience4j"], serves:"M10 · FR-41→44,46", status:"new", desc:"CỔNG TRUNG CHUYỂN: kiểm quyền & hạn mức, áp ngưỡng tin cậy, ghi lượt thử, đồng bộ vốn ký hiệu."},
+      {id:"dictionary", name:"dictionary", techs:["PostgreSQL FTS"], serves:"M4 · FR-21,22,45", desc:"Tìm kiếm không dấu; báo thiếu ký hiệu."},
+      {id:"gamification", name:"gamification", techs:["Spring Boot","PDFBox"], serves:"M5 · FR-23→27", desc:"Streak, Freeze, huy hiệu, Khám phá, chứng chỉ PDF."},
+      {id:"billing", name:"billing", techs:["PaymentProvider (ADR-07)"], serves:"M6 · FR-28→32", status:"change", desc:"VNPay + MoMo. KHÔNG tự động gia hạn — mua từng kỳ + nhắc gia hạn."},
+      {id:"support", name:"cms / support", techs:["Spring Boot"], serves:"M7 · FR-36", desc:"Quyền biên tập, duyệt, tra cứu CSKH (audit log bắt buộc)."},
+      {id:"platform", name:"platform", techs:["Micrometer","@Scheduled"], serves:"M9 · FR-39,40", desc:"Outbox email, job hết hạn & nhắc gia hạn, log traceId, số liệu."}
+    ]},
+    { id:"L3b", name:"Dịch vụ AI (Python)", note:"tiến trình riêng", blocks:[
+      {id:"fastapi", name:"FastAPI — cổng 7860", techs:["Python 3.11","FastAPI"], serves:"FR-41", status:"new", desc:"KHÔNG trạng thái · KHÔNG CSDL · KHÔNG xác thực người dùng · chỉ truy cập từ mạng nội bộ (ADR-10)."},
+      {id:"onnx", name:"ONNX Runtime", techs:["onnxruntime 1.19"], serves:"NFR-04, NFR-19", status:"new", desc:"vsl_mvp30_v2_lite_transformer INT8 · 0,40 MB · ~0,52 ms/mẫu · top1 0.901 / top3 1.000."},
+      {id:"train", name:"Pipeline huấn luyện (ngoại tuyến)", techs:["PyTorch 2.4","MediaPipe"], serves:"BG-08", status:"keep", desc:"Lite Transformer / GRU. KHÔNG nằm trong đường chạy của sản phẩm. Dữ liệu: VSL400 (CC BY 4.0)."}
+    ]},
+    { id:"L4", name:"Dữ liệu", note:"lưu trữ", blocks:[
+      {id:"pg", name:"PostgreSQL 17", techs:["RDBMS","tsvector","pg_trgm"], serves:"nguồn sự thật", desc:"~35 bảng; FTS thay cho máy tìm kiếm riêng (ADR-05)."},
+      {id:"redis", name:"Redis 7.4", techs:["Cache"], serves:"NFR-01 · NFR-10", desc:"Cache danh mục & vốn ký hiệu AI, rate-limit, token bị thu hồi."},
+      {id:"obj", name:"Object storage (S3)", techs:["S3 API"], serves:"NFR-03", desc:"Video gốc + HLS + ảnh; URL ký hạn 15 phút."},
+      {id:"donate", name:"Bucket dữ liệu góp", techs:["S3 · quyền RIÊNG"], serves:"FR-46", status:"new", desc:"CHỈ tồn tại khi người dùng đồng ý tường minh. Gắn định danh giả, có hạn xoá (BR-A134)."},
+      {id:"outbox", name:"Bảng outbox + job_lock", techs:["PostgreSQL"], serves:"ADR-02", desc:"Thay message broker: email, chuyển mã, streak nửa đêm, nhắc gia hạn."}
+    ]},
+    { id:"L5", name:"Tích hợp ngoài", note:"bên thứ ba", blocks:[
+      {id:"cdn", name:"CDN", techs:["HTTPS"], serves:"NFR-03 · NFR-18", desc:"BẮT BUỘC — video là khoản chi phí lớn nhất."},
+      {id:"vnpay", name:"VNPay", techs:["Redirect + IPN","HMAC-SHA512"], serves:"FR-29,31,32", status:"new", desc:"Lưu ý: vnp_Amount = VND × 100. Không hỗ trợ tự động gia hạn."},
+      {id:"momo", name:"MoMo", techs:["Redirect/QR + IPN","HMAC-SHA256"], serves:"FR-29,31,32", status:"new", desc:"resultCode = 0 là thành công. Không hỗ trợ tự động gia hạn."},
+      {id:"mail", name:"Dịch vụ email", techs:["REST API"], serves:"FR-39, FR-31", desc:"Xác thực, biên nhận, nhắc học, NHẮC GIA HẠN 7/3/1 ngày."},
+      {id:"trc", name:"Chuyển mã video", techs:["FFmpeg / dịch vụ quản lý"], serves:"FR-33", desc:"Sinh HLS 360p/540p/720p."},
+      {id:"gg", name:"Google OAuth2", techs:["OIDC + PKCE"], serves:"FR-03", desc:"Đăng nhập bằng Google."}
+    ]},
+    { id:"L6", name:"Xuyên suốt", note:"cross-cutting", blocks:[
+      {id:"obs", name:"Quan sát", techs:["Actuator","Prometheus","Grafana"], serves:"NFR-17, NFR-20", desc:"Log JSON + traceId; cảnh báo 5xx > 1%/5 phút; theo dõi độ trễ & tỉ lệ lỗi dịch vụ AI."},
+      {id:"cicd", name:"CI/CD", techs:["GitHub/GitLab CI","ArchUnit"], serves:"NFR-16", desc:"Build, test, quét SCA & secret; CƯỠNG CHẾ ranh giới module."},
+      {id:"sec", name:"Bảo mật & tuân thủ", techs:["Argon2id","Gitleaks","OWASP DC"], serves:"NFR-07→13", desc:"ST.TIM.ITC.16; PDPL; không PII trong log; KHÔNG lưu hình ảnh camera."},
+      {id:"bkp", name:"Sao lưu & phục hồi", techs:["pg_dump hằng ngày"], serves:"NFR-17", desc:"RPO ≤ 24 giờ, RTO ≤ 4 giờ; diễn tập phục hồi hằng quý."}
+    ]}
+  ],
+  edges:[
+    {from:"web",to:"proxy"},{from:"cmsui",to:"proxy"},{from:"mkt",to:"proxy"},
+    {from:"proxy",to:"auth"},
+    {from:"auth",to:"identity"},{from:"auth",to:"content"},{from:"auth",to:"learning"},
+    {from:"auth",to:"practice"},{from:"auth",to:"airec"},{from:"auth",to:"dictionary"},
+    {from:"auth",to:"gamification"},{from:"auth",to:"billing"},{from:"auth",to:"support"},
+    {from:"web",to:"mp"},{from:"mp",to:"airec"},
+    {from:"airec",to:"fastapi"},{from:"fastapi",to:"onnx"},{from:"train",to:"onnx"},
+    {from:"identity",to:"pg"},{from:"content",to:"pg"},{from:"learning",to:"pg"},
+    {from:"practice",to:"pg"},{from:"airec",to:"pg"},{from:"dictionary",to:"pg"},
+    {from:"gamification",to:"pg"},{from:"billing",to:"pg"},{from:"support",to:"pg"},
+    {from:"platform",to:"outbox"},
+    {from:"identity",to:"redis"},{from:"content",to:"redis"},{from:"dictionary",to:"redis"},{from:"airec",to:"redis"},
+    {from:"content",to:"obj"},{from:"gamification",to:"obj"},{from:"airec",to:"donate"},
+    {from:"web",to:"cdn"},{from:"cdn",to:"obj"},
+    {from:"billing",to:"vnpay"},{from:"billing",to:"momo"},
+    {from:"platform",to:"mail"},{from:"platform",to:"trc"},{from:"identity",to:"gg"}
+  ],
+  flows:[
+    {name:"🤖 Luyện ký hiệu động với AI (FR-41→43) — luồng đặc trưng của sản phẩm", steps:"Camera → MediaPipe Holistic TRONG TRÌNH DUYỆT → tensor 64×327 → [cổng chất lượng TẠI CHỖ: thiếu tay/quá ngắn thì DỪNG, không gọi API] → airecognition (kiểm quyền + hạn mức) → Dịch vụ AI (ONNX, ~0,5 ms) → airecognition ÁP NGƯỠNG & BIÊN TIN CẬY (ADR-09) → sign_attempt (CHỈ số liệu) → phản hồi + gợi ý sửa. PIXEL KHÔNG RỜI THIẾT BỊ."},
+    {name:"Hoàn thành một bài học (FR-12 + FR-16)", steps:"Web → Caddy → Auth → learning (chấm Ở SERVER) → [PostgreSQL · practice cập nhật lịch ôn · gamification cập nhật streak/huy hiệu] — TẤT CẢ TRONG MỘT TRANSACTION"},
+    {name:"Thanh toán VNPay/MoMo (FR-29 + FR-32)", steps:"Web → billing (tra bảng giá SERVER, sinh order_ref) → URL đã ký → VNPay/MoMo → IPN server-to-server → xác thực HMAC → đối chiếu order_ref VÀ SỐ TIỀN → cộng dồn expires_at → nâng vai trò. returnUrl CHỈ ĐỂ HIỂN THỊ, không cấp quyền."},
+    {name:"Nhắc gia hạn (FR-31) — thay cho tự động gia hạn", steps:"Job mỗi giờ → còn 7/3/1 ngày → email + thông báo trong ứng dụng → hết hạn → hạ vai trò (GIỮ NGUYÊN tiến độ học) → sau 1 ngày gửi 1 email quay lại → DỪNG, không làm phiền thêm"},
+    {name:"Mở rộng vốn ký hiệu AI (FR-44, BG-08)", steps:"Huấn luyện lại ngoại tuyến (VSL400 + dữ liệu góp) → ONNX mới → đổi ai_model_version → CMS bấm Đồng bộ → ánh xạ nhãn ↔ sign.id → nhãn mồ côi KHÔNG được bật → người học thấy thêm ký hiệu có chấm AI"},
+    {name:"Xem video bài học (FR-11)", steps:"Web → API lấy URL ký 15 phút → CDN → Object storage (HLS đa bitrate, tự thích ứng băng thông)"}
+  ]
+};
+/* =================== HẾT PHẦN SA CẦN SỬA =================== */
+
+const STAG={new:"Thêm mới",change:"Thay đổi",na:"Ngoài phạm vi"};
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+const allBlocks=()=>DATA.layers.flatMap(l=>l.blocks);
+const nExt=(DATA.layers.find(l=>/ngoài/i.test(l.name))||{blocks:[]}).blocks.length;
+const nSvc=(DATA.layers.find(l=>/dịch vụ/i.test(l.name))||{blocks:[]}).blocks.length;
+
+document.getElementById('kick').textContent=[DATA.project,DATA.archStyle,"KIẾN TRÚC TỔNG THỂ","CẬP NHẬT "+DATA.updated].filter(Boolean).join("  ·  ");
+document.getElementById('title').textContent="Sơ đồ kiến trúc khối theo tầng";
+document.getElementById('lead').innerHTML="Kiến trúc phân tầng: <b>Client → Cổng → Dịch vụ → Dữ liệu → Tích hợp ngoài</b>, kèm hạ tầng xuyên suốt. Mỗi khối ghi công nghệ + module phục vụ. Trang này <b>đi kèm</b> (không thay) <code>HLD.md</code> — .md là nguồn sự thật đặc tả.";
+document.getElementById('meta').textContent=`${DATA.layers.length} tầng · ${allBlocks().length} khối · ${nSvc} service · ${nExt} tích hợp ngoài · Kiểu kiến trúc: ${DATA.archStyle}`;
+document.getElementById('foot').textContent="Sinh bởi SA (Mytel SDLC Kit) ở B2, đi kèm HLD.md. Sơ đồ để 'dễ nhìn'; mọi quyết định & đặc tả kiến trúc nằm ở HLD.md (nguồn sự thật).";
+
+// stats
+let sc={new:0,change:0,keep:0,na:0}; allBlocks().forEach(b=>sc[b.status||'keep']++);
+const tiles=[{n:DATA.layers.length,l:"Tầng"},{n:allBlocks().length,l:"Khối"},{n:nSvc,l:"Service"},{n:nExt,l:"Tích hợp ngoài"}];
+if(DATA.showStatus){tiles.push({n:sc.new,l:"Thêm mới"}); if(sc.change)tiles.push({n:sc.change,l:"Thay đổi"});}
+document.getElementById('stats').innerHTML=tiles.map(t=>`<div class="tile"><div class="n">${t.n}</div><div class="l">${t.l}</div></div>`).join('');
+
+// legend
+document.getElementById('legend').innerHTML = DATA.showStatus
+ ? `<span><span class="dot new"></span>Thêm mới</span><span><span class="dot change"></span>Thay đổi</span><span><span class="dot keep"></span>Giữ nguyên</span><span><span class="dot na"></span>Ngoài phạm vi</span><span>· badge xám = công nghệ</span>`
+ : `<span>Badge xám = công nghệ của khối · mũi tên = luồng gọi</span>`;
+
+// layers + blocks
+const layers=document.getElementById('layers');
+DATA.layers.forEach(l=>{
+  const row=el('div','layer');
+  row.appendChild(el('div','llabel',`${l.name}${l.note?`<small>${l.note}</small>`:''}`));
+  const bs=el('div','blocks');
+  l.blocks.forEach(b=>{
+    const st=DATA.showStatus?(b.status||'keep'):'';
+    const card=el('div','block'+(st?' '+st:''));
+    card.dataset.block=b.id;
+    card.dataset.text=(b.name+' '+(b.serves||'')+' '+(b.techs||[]).join(' ')+' '+(b.desc||'')).toLowerCase();
+    card.innerHTML=`<div class="bname">${b.name}${DATA.showStatus&&STAG[b.status]?`<span class="stag ${b.status}">${STAG[b.status]}</span>`:''}</div>
+      ${b.serves?`<div class="bserves">${b.serves}</div>`:''}
+      ${b.desc?`<div class="bdesc">${b.desc}</div>`:''}
+      <div class="techs">${(b.techs||[]).map(t=>`<span class="tech">${t}</span>`).join('')}</div>`;
+    bs.appendChild(card);
+  });
+  row.appendChild(bs); layers.appendChild(row);
+});
+
+// flows
+if(DATA.flows&&DATA.flows.length){
+  document.getElementById('flows').innerHTML=`<div class="flows"><h3>🔀 Luồng chính (end-to-end)</h3>
+    ${DATA.flows.map(f=>`<div class="flow"><b>${f.name}:</b> <span class="st">${f.steps}</span></div>`).join('')}</div>`;
+}
+
+// edges (SVG connectors)
+function drawEdges(){
+  const wrap=document.getElementById('diagram'), svg=document.getElementById('edges');
+  const wr=wrap.getBoundingClientRect();
+  svg.setAttribute('width',wrap.offsetWidth); svg.setAttribute('height',wrap.offsetHeight);
+  let s=`<defs><marker id="arw" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="${'#9aa4b2'}"/></marker></defs>`;
+  (DATA.edges||[]).forEach(e=>{
+    const a=document.querySelector(`[data-block="${e.from}"]`), b=document.querySelector(`[data-block="${e.to}"]`);
+    if(!a||!b)return;
+    const ra=a.getBoundingClientRect(), rb=b.getBoundingClientRect();
+    const sameRow=Math.abs(ra.top-rb.top)<24;
+    let sx,sy,tx,ty;
+    if(sameRow){ const l2r=ra.left<rb.left; sx=(l2r?ra.right:ra.left)-wr.left; sy=ra.top+ra.height/2-wr.top; tx=(l2r?rb.left:rb.right)-wr.left; ty=rb.top+rb.height/2-wr.top;
+      const mx=(sx+tx)/2; s+=`<path d="M${sx},${sy} C${mx},${sy} ${mx},${ty} ${tx},${ty}" fill="none" stroke="#c3cad4" stroke-width="1.6" marker-end="url(#arw)"/>`; return; }
+    const down=rb.top>ra.top;
+    sx=ra.left+ra.width/2-wr.left; sy=(down?ra.bottom:ra.top)-wr.top;
+    tx=rb.left+rb.width/2-wr.left; ty=(down?rb.top:rb.bottom)-wr.top;
+    const my=(sy+ty)/2;
+    s+=`<path d="M${sx},${sy} C${sx},${my} ${tx},${my} ${tx},${ty}" fill="none" stroke="#c3cad4" stroke-width="1.6" marker-end="url(#arw)"/>`;
+  });
+  svg.innerHTML=s;
+}
+let rt; window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(drawEdges,120);});
+window.addEventListener('load',drawEdges); drawEdges();
+
+// search highlight
+document.getElementById('q').addEventListener('input',e=>{
+  const q=e.target.value.trim().toLowerCase();
+  document.querySelectorAll('.block').forEach(b=>{
+    const hit=q&&b.dataset.text.includes(q);
+    b.classList.toggle('hot',!!hit);
+    b.classList.toggle('dim', !!q && !b.dataset.text.includes(q));
+  });
+});
+</script>
+</body>
+</html>

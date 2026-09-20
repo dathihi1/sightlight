@@ -1,0 +1,169 @@
+# docker-compose.yml (UAT) — SignLight
+#
+# ⚠️ BẮT BUỘC ĐỌC TRƯỚC KHI CHẠY
+# 1. Thay <PORT_*> bằng port trong DẢI PORT anh Bryan cấp. KHÔNG tự chọn port.
+#    (Trạng thái hiện tại: chưa có dải port — xem PROJECT_STATE.md, câu hỏi Q2.)
+# 2. Copy `.env.example` thành `.env` và điền giá trị thật. KHÔNG commit `.env`.
+# 3. Không expose port của PostgreSQL và Redis ra ngoài trên UAT.
+#
+# Chạy:  docker compose --env-file .env up -d --build
+# Dừng:  docker compose down            (thêm -v để xoá luôn dữ liệu — CẨN THẬN)
+
+services:
+  api:
+    build:
+      context: ../src/backend
+      dockerfile: Dockerfile
+    image: signlight/api:uat
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: uat
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_DATA_REDIS_HOST: cache
+      SPRING_DATA_REDIS_PORT: 6379
+      # Dịch vụ AI — gọi qua mạng nội bộ, KHÔNG qua Internet
+      SIGNLIGHT_AI_BASE_URL: http://ai:7860
+      SIGNLIGHT_AI_TIMEOUT_MS: 5000
+      # Chỉ mở /health ra ngoài — các endpoint Actuator khác giữ nội bộ (rủi ro DR-03)
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: never
+      SERVER_ERROR_INCLUDE_STACKTRACE: never
+      SERVER_ERROR_INCLUDE_MESSAGE: never
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75"
+    ports:
+      - "<PORT_API>:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+      ai:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [app]
+
+  # 🤖 Dịch vụ AI nhận diện ký hiệu động (Python + ONNX Runtime)
+  # Nguồn: repo dathihi1/EXE101 — src/vsl_mvp/ + runs/vsl_mvp30_v2_lite_transformer/
+  ai:
+    build:
+      context: ../src/ai
+      dockerfile: Dockerfile
+    image: signlight/ai:uat
+    environment:
+      MODEL_DIR: /app/runs/vsl_mvp30_v2_lite_transformer
+      INFERENCE_WORKERS: "2"
+      # ⚠️ BẮT BUỘC để rỗng — tắt mọi đường ghi/tải dữ liệu người dùng của repo gốc
+      # (endpoint POST /api/attempt và Google Drive uploader — xem api-spec.md §4.5)
+      LOG_WEBHOOK_URL: ""
+      LOG_WEBHOOK_SECRET: ""
+      GDRIVE_FOLDER_ID: ""
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:7860/health',timeout=3).status==200 else 1)"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 90s   # nạp mô hình ONNX + khởi tạo MediaPipe
+    restart: unless-stopped
+    networks: [app]
+    # ⚠️ KHÔNG expose port 7860 ra ngoài. Dịch vụ AI KHÔNG có xác thực người dùng (ADR-10)
+    # và chỉ được gọi từ container `api` qua mạng nội bộ.
+    # Nếu cần kiểm thử thủ công: dùng `docker compose exec ai curl ...`
+
+  web:
+    build:
+      context: ../src/frontend
+      dockerfile: Dockerfile
+      args:
+        # Next.js cần biến công khai lúc BUILD. Chỉ đưa vào đây biến KHÔNG nhạy cảm.
+        NEXT_PUBLIC_API_BASE_URL: ${PUBLIC_API_BASE_URL}
+        NEXT_PUBLIC_CDN_BASE_URL: ${PUBLIC_CDN_BASE_URL}
+    image: signlight/web:uat
+    env_file: .env
+    environment:
+      NODE_ENV: production
+    ports:
+      - "<PORT_WEB>:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [app]
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      # Cần cho tìm kiếm tiếng Việt không dấu (ADR-05)
+      POSTGRES_INITDB_ARGS: "--locale=C.UTF-8 --encoding=UTF8"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      # Bật extension unaccent + pg_trgm lúc khởi tạo lần đầu
+      - ./init/01-extensions.sql:/docker-entrypoint-initdb.d/01-extensions.sql:ro
+    restart: unless-stopped
+    networks: [app]
+    # KHÔNG expose port DB ra ngoài trên UAT trừ khi anh Bryan yêu cầu.
+
+  cache:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - cache_data:/data
+    restart: unless-stopped
+    networks: [app]
+    # KHÔNG expose port Redis ra ngoài.
+
+  # Lưu trữ đối tượng giả lập cho UAT (video, ảnh đại diện, chứng chỉ PDF).
+  # Ở production dùng dịch vụ object storage + CDN thật — xem techstack.md.
+  storage:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY}
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - storage_data:/data
+    ports:
+      - "<PORT_STORAGE>:9000"        # API S3 — cần để trình duyệt tải video ở UAT
+      - "<PORT_STORAGE_CONSOLE>:9001" # Bảng điều khiển — cân nhắc KHÔNG mở nếu không cần
+    restart: unless-stopped
+    networks: [app]
+
+volumes:
+  db_data:
+  cache_data:
+  storage_data:
+
+networks:
+  app:
+    driver: bridge

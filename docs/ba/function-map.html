@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<!--
+  FUNCTION MAP / BẢN ĐỒ CÂY TÍNH NĂNG — mẫu của BA, Mytel SDLC Kit
+  ===========================================================================
+  MỤC ĐÍCH: 1 trang HTML để QUẢN LÝ nắm nhanh độ phủ tính năng —
+    • Cây tính năng gom theo MODULE / nhóm nghiệp vụ (thẻ lưới)
+    • Mỗi tính năng gắn NỀN TẢNG: 📱 App / 🖥 CMS / Cả hai
+    • TRẠNG THÁI đặc tả: Đã đặc tả / Một phần·chưa rõ / Chưa đặc tả / Ngoài phạm vi
+    • Badge VERSION (vd v0.5) đánh dấu tính năng mới đặc tả ở phiên bản nào
+    • Panel "Đã bổ sung ở <version>" tóm tắt thay đổi gần nhất
+    • Mã SCR màn hình tham chiếu FSD; mã FR tham chiếu SRS
+  Sinh ở B2 (cùng SRS), cập nhật xuyên suốt. Lưu: docs/ba/function-map.html
+    (kiểu B microservices: docs/function-map.html — mức tổng thể, gộp theo nghiệp vụ).
+
+  CÁCH DÙNG (BA): CHỈ sửa biến DATA bên dưới, trang tự render.
+    - platform: 'app' | 'cms' | 'both'
+    - status:   'done' (đặc tả đủ) | 'partial' (một phần/chưa rõ) | 'none' (chưa) | 'na' (ngoài phạm vi)
+    - version:  (tuỳ chọn) '0.5'… → hiện badge; đặt DATA.milestone để đếm "mới ở vX" trên thẻ thống kê
+    - fr / scr: mã truy vết về SRS (FR-xx) và FSD (SCR-xx)
+  Dữ liệu ví dụ dùng tình huống "gói cước data" — THAY bằng dự án thật rồi xoá phần mẫu.
+-->
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignLight — Bản đồ chức năng</title>
+<style>
+  :root{
+    --bg:#f4f6f8; --card:#fff; --ink:#1f2733; --muted:#69727f; --line:#e5e9ef;
+    --accent:#f26a21; --done:#1f9d55; --partial:#c98a12; --none:#c0392b; --na:#98a2b0;
+    --done-bg:#e9f7ef; --partial-bg:#fbf1de; --none-bg:#fbeceb; --na-bg:#eef1f5;
+    --ver:#127a3e; --ver-bg:#e4f4ea; --app:#31538f; --app-bg:#e9f0fb; --cms:#8a6d1f; --cms-bg:#f6efdc; --both:#1f7a52; --both-bg:#e5f4ec;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5}
+  .wrap{max-width:1160px;margin:0 auto;padding:26px 26px 70px}
+  .kick{font:600 12px/1.4 ui-monospace,monospace;letter-spacing:.14em;color:var(--done);text-transform:uppercase;margin-bottom:6px}
+  h1{margin:0 0 8px;font-size:30px;font-weight:800;letter-spacing:-.5px}
+  .lead{color:#40474f;max-width:760px;margin:0 0 6px}
+  .lead .v{color:var(--ver);font-weight:600}
+  .meta{color:var(--muted);font-size:13px}
+  /* stats */
+  .stats{display:flex;flex-wrap:wrap;gap:14px;margin:20px 0 6px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;min-width:150px;flex:1}
+  .tile .n{font-size:30px;font-weight:800;line-height:1}
+  .tile .l{font-size:12.5px;color:var(--muted);margin-top:6px}
+  .tile.done .n{color:var(--done)} .tile.mile .n{color:#1a7f8c} .tile.partial .n{color:var(--partial)} .tile.none .n{color:var(--none)}
+  /* tabs + legend */
+  .tabs{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:12px;padding:5px;gap:4px;margin:18px 0 12px}
+  .tab{padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13.5px;color:var(--muted);border:0;background:none}
+  .tab.on{background:var(--done);color:#fff}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted);margin-bottom:8px}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
+  .dot.done{background:var(--done)} .dot.partial{background:var(--partial)} .dot.none{background:var(--none)} .dot.na{background:var(--na)}
+  .vbadge{font:600 11px/1 ui-monospace,monospace;color:var(--ver);background:var(--ver-bg);padding:3px 6px;border-radius:5px}
+  .tools{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 14px}
+  .tools input,.tools select{padding:8px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:#fff}
+  .tools input[type=search]{flex:1;min-width:200px}
+  /* changelog */
+  .changelog{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--done);border-radius:12px;padding:16px 18px;margin:6px 0 20px}
+  .changelog h3{margin:0 0 4px;font-size:16px}
+  .changelog .cl-sub{color:var(--muted);font-size:12.5px;margin-bottom:10px}
+  .cl-item{display:flex;gap:10px;padding:7px 0;border-top:1px dashed var(--line)}
+  .cl-item:first-of-type{border-top:0}
+  .cl-code{font:600 11px/1.7 ui-monospace,monospace;color:var(--ver);background:var(--ver-bg);padding:2px 8px;border-radius:6px;white-space:nowrap;height:fit-content}
+  .cl-item b{font-weight:700}
+  .cl-item .d{color:#4a515a}
+  /* module grid */
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  .mod{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--done);border-radius:12px;padding:14px 16px}
+  .mcode{font:600 12px/1 ui-monospace,monospace;color:var(--muted)}
+  .mname{font-size:17px;font-weight:800;margin:3px 0 4px}
+  .mscr{font:12px/1.5 ui-monospace,monospace;color:var(--muted);margin-bottom:8px}
+  .feat{display:flex;align-items:flex-start;gap:9px;padding:9px 4px;border-top:1px solid #f1f3f6}
+  .feat:first-of-type{border-top:0}
+  .fname{flex:1;min-width:0}
+  .fname .t{font-weight:600}
+  .fname .fr{font:11px/1 ui-monospace,monospace;color:var(--muted)}
+  .fname .note{color:var(--muted);font-size:12px;margin-top:2px}
+  .badges{display:flex;flex-direction:column;gap:4px;align-items:flex-end;white-space:nowrap}
+  .plat{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px}
+  .plat.app{background:var(--app-bg);color:var(--app)} .plat.cms{background:var(--cms-bg);color:var(--cms)} .plat.both{background:var(--both-bg);color:var(--both)}
+  .hidden{display:none!important}
+  footer{max-width:1160px;margin:0 auto;padding:0 26px 40px;color:var(--muted);font-size:12px}
+  @media print{.tools,.tabs{display:none}.mod,.changelog{break-inside:avoid}body{background:#fff}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kick" id="kick"></div>
+  <h1 id="title"></h1>
+  <p class="lead" id="lead"></p>
+  <div class="meta" id="meta"></div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="tabs" id="tabs"></div>
+  <div class="legend">
+    <span><span class="dot done"></span>Đã đặc tả</span>
+    <span><span class="dot partial"></span>Một phần / chưa rõ</span>
+    <span><span class="dot none"></span>Chưa đặc tả</span>
+    <span><span class="dot na"></span>Ngoài phạm vi</span>
+    <span><span class="vbadge">v0.2</span> = mới đặc tả ở phiên bản đó</span>
+  </div>
+  <div class="tools">
+    <input type="search" id="q" placeholder="🔎 Tìm tính năng / mã FR / SCR…">
+    <select id="fStatus">
+      <option value="">Mọi trạng thái</option>
+      <option value="done">Đã đặc tả</option>
+      <option value="partial">Một phần / chưa rõ</option>
+      <option value="none">Chưa đặc tả</option>
+      <option value="na">Ngoài phạm vi</option>
+    </select>
+  </div>
+
+  <div id="changelog"></div>
+  <div class="grid" id="grid"></div>
+</div>
+<footer id="foot"></footer>
+
+<script>
+/* ===================== BA CHỈ SỬA PHẦN DATA NÀY ===================== */
+const DATA = {
+  project:"SignLight — Học Ngôn ngữ Ký hiệu Việt Nam (VSL) có AI",
+  category:"EdTech · VSL · AI Motion Recognition",
+  coverageLabel:"Theo SRS v0.2 / FSD v0.2",
+  updated:"2026-09",
+  milestone:"0.2",
+  platforms:[
+    {id:"app", name:"Web người học", icon:"🌐"},
+    {id:"cms", name:"CMS quản trị",  icon:"🖥"}
+  ],
+  changelog:{
+    title:"v0.2 — Chốt VSL + VNPay/MoMo + module AI nhận diện ký hiệu động",
+    sub:"46 FR · 35 màn hình · 12 module. Mô hình MVP-30 sẵn có: top1 0.901 · top3 1.000 · ONNX INT8 0,40 MB.",
+    items:[
+      {code:"M10", ver:"0.2", title:"MODULE MỚI — AI nhận diện ký hiệu động (FR-41→44, 46).", desc:"Người học làm trọn động tác trước camera, AI chấm và gợi ý sửa. Tái dùng repo EXE101. Khởi điểm 30 ký hiệu VSL."},
+      {code:"FR-29", ver:"0.2", title:"Thanh toán chuyển sang VNPay + MoMo.", desc:"Hai cổng KHÔNG hỗ trợ tự động gia hạn → bỏ auto-renew, chuyển sang mua từng kỳ + nhắc gia hạn (FR-31)."},
+      {code:"FR-17→19", ver:"0.2", title:"Trainer mở khoá theo TIẾN ĐỘ HỌC, không theo gói.", desc:"Phát hiện từ khảo sát thực tế: không thể luyện đánh vần trước khi học bảng chữ cái."},
+      {code:"FR-12", ver:"0.2", title:"Bài học là chuỗi bước hỗn hợp, không phải danh sách bài tập.", desc:"3 loại bước: TEACH (dạy ký hiệu mới) · EXPLAIN (thẻ giải thích) · EXERCISE (bài tập có chấm)."},
+      {code:"FR-45", ver:"0.2", title:"Báo thiếu ký hiệu.", desc:"Nguồn đầu vào rẻ nhất để biết nên quay thêm ký hiệu nào."},
+      {code:"FR-46", ver:"0.2", title:"Góp dữ liệu luyện tập — tự nguyện, mặc định TẮT.", desc:"Giải quyết rủi ro R-09: chỉ có 701 mẫu huấn luyện. Đồng ý riêng biệt, rút lại được, xoá trong 30 ngày."}
+    ]
+  },
+  modules:[
+    { code:"M0", fr:"FR-01→08", name:"Tài khoản & Onboarding", scr:{app:"SCR-01→07, SCR-21"},
+      features:[
+        {name:"Đăng ký bằng email", fr:"FR-01", platform:"app", status:"done", note:"Email trùng trả phản hồi giống thành công (chống dò tài khoản)."},
+        {name:"Đăng nhập", fr:"FR-02", platform:"app", status:"done"},
+        {name:"Đăng nhập Google (OAuth2 + PKCE)", fr:"FR-03", platform:"app", status:"done"},
+        {name:"Quên & đặt lại mật khẩu", fr:"FR-04", platform:"app", status:"done"},
+        {name:"Onboarding cá nhân hoá 11 bước", fr:"FR-05", platform:"app", status:"done", note:"Chốt mục tiêu phút/ngày — cơ sở tính streak."},
+        {name:"Quản lý hồ sơ, đổi email/mật khẩu", fr:"FR-06", platform:"app", status:"done"},
+        {name:"Đặt lại tiến độ học", fr:"FR-07", platform:"app", status:"done", note:"Huy hiệu & Khám phá được giữ lại."},
+        {name:"Xoá tài khoản (ân hạn 30 ngày, PDPL)", fr:"FR-08", platform:"app", status:"done"}
+      ]
+    },
+    { code:"M1", fr:"FR-09→10", name:"Danh mục & Lộ trình nội dung", scr:{app:"SCR-08"},
+      features:[
+        {name:"Duyệt lộ trình Unit→Chương→Bài", fr:"FR-09", platform:"app", status:"done", note:"Mở khoá tuần tự; bài Premium vẫn hiện tên."},
+        {name:"Chuyển khoá ngôn ngữ ký hiệu", fr:"FR-10", platform:"app", status:"done", version:"0.2", note:"GĐ1 chỉ mở khoá VSL; kiến trúc sẵn cho ngôn ngữ thứ hai."}
+      ]
+    },
+    { code:"M2", fr:"FR-11→16", name:"Học & Bài tập", scr:{app:"SCR-09→12b"},
+      features:[
+        {name:"Trình phát video + chế độ chậm 0.5×", fr:"FR-11", platform:"app", status:"done", note:"HLS đa bitrate, URL ký 15 phút."},
+        {name:"Bài học = chuỗi bước TEACH/EXPLAIN/EXERCISE", fr:"FR-12", platform:"app", status:"done", version:"0.2", note:"Sửa ở v0.2 theo khảo sát thực tế."},
+        {name:"7 loại bài tập (chấm ở server)", fr:"FR-12", platform:"app", status:"done", version:"0.2", note:"Loại thứ 7 SIGN_PERFORMANCE dùng AI chấm ký hiệu động."},
+        {name:"Quiz cuối chương (đạt ≥80%)", fr:"FR-13", platform:"app", status:"done"},
+        {name:"Bài mốc chấm 1–5 sao", fr:"FR-14", platform:"app", status:"done", note:"Chỉ giữ số sao cao nhất."},
+        {name:"Mở khoá Khám phá (Curiosity)", fr:"FR-15", platform:"app", status:"done"},
+        {name:"Ghi nhận hoàn thành bài (1 transaction, idempotent)", fr:"FR-16", platform:"app", status:"done"}
+      ]
+    },
+    { code:"M3", fr:"FR-17→20", name:"Luyện tập (SRS + đánh vần)", scr:{app:"SCR-13→16"},
+      features:[
+        {name:"Trainer từ vựng — mở sau Chương 1", fr:"FR-17", platform:"app", status:"done", version:"0.2", note:"Mở khoá theo TIẾN ĐỘ, không theo gói."},
+        {name:"Trainer đánh vần — mở sau chương bảng chữ cái", fr:"FR-18", platform:"app", status:"done", version:"0.2", note:"Nhận dạng hình tay TĨNH."},
+        {name:"Trainer số đếm — mở khi tới Unit 2", fr:"FR-19", platform:"app", status:"done", version:"0.2"},
+        {name:"Chế độ Gương (tự đối chiếu)", fr:"FR-20", platform:"app", status:"done", note:"Không chấm điểm, không ghi hình. Là phương án hạ cấp mềm của M10."}
+      ]
+    },
+    { code:"M10", fr:"FR-41→44,46", name:"🤖 AI nhận diện ký hiệu ĐỘNG", scr:{app:"SCR-31, SCR-33", cms:"SCR-34"},
+      features:[
+        {name:"Luyện ký hiệu động với AI (vòng quay & chấm)", fr:"FR-41", platform:"app", status:"done", version:"0.2", note:"Mô hình MVP-30 sẵn có: top1 0.901. CHỜ Q8: vị trí suy luận (client / landmark / server)."},
+        {name:"Phân đoạn thủ công & cổng chất lượng khung hình", fr:"FR-42", platform:"app", status:"done", version:"0.2", note:"Chặn tại chỗ khi thiếu tay/quá ngắn — không trừ lượt, không gọi API."},
+        {name:"Phản hồi + gợi ý sửa cụ thể + top-3", fr:"FR-43", platform:"app", status:"done", version:"0.2", note:"Nêu rõ 'hệ thống thấy bạn đang ký hiệu X' — dạy được chứ không chỉ nói sai."},
+        {name:"Quản lý vốn ký hiệu AI & phiên bản mô hình", fr:"FR-44", platform:"cms", status:"done", version:"0.2", note:"Mở rộng 30→50→100 ký hiệu không cần sửa code."},
+        {name:"Góp dữ liệu luyện tập (tự nguyện, mặc định TẮT)", fr:"FR-46", platform:"app", status:"partial", version:"0.2", note:"CHỜ Q9: có bật tính năng này không."},
+        {name:"Nhận diện câu / hội thoại liên tục", fr:"—", platform:"app", status:"na", note:"GĐ2 — khó hơn hẳn nhận diện từ đơn."},
+        {name:"Tự động phân đoạn (auto start/stop)", fr:"—", platform:"app", status:"na", note:"GĐ2 — repo khuyến nghị giữ thủ công tới khi ổn định."}
+      ]
+    },
+    { code:"M4", fr:"FR-21→22,45", name:"Từ điển ký hiệu", scr:{app:"SCR-17, SCR-18, SCR-32", cms:"SCR-35"},
+      features:[
+        {name:"Tìm kiếm ký hiệu (không dấu, gợi ý sai chính tả)", fr:"FR-21", platform:"app", status:"done", note:"Khách: 10 lượt/ngày/IP."},
+        {name:"Duyệt theo chủ đề", fr:"FR-21", platform:"app", status:"done", version:"0.2", note:"Tham chiếu: đối thủ có 26 chủ đề, ~1.773 ký hiệu."},
+        {name:"Chi tiết ký hiệu & biến thể vùng miền", fr:"FR-22", platform:"app", status:"done"},
+        {name:"Báo thiếu ký hiệu", fr:"FR-45", platform:"both", status:"done", version:"0.2", note:"Gộp yêu cầu trùng; thông báo khi đã bổ sung."}
+      ]
+    },
+    { code:"M5", fr:"FR-23→27", name:"Tiến độ & Gamification", scr:{app:"SCR-19, SCR-20"},
+      features:[
+        {name:"Chuỗi ngày học + Streak Freeze", fr:"FR-23", platform:"app", status:"done", note:"Tính theo múi giờ người dùng; 8 quy tắc BR-A44→A51."},
+        {name:"Mục tiêu học hằng ngày", fr:"FR-24", platform:"app", status:"done", note:"Đổi mục tiêu chỉ hiệu lực từ ngày hôm sau."},
+        {name:"6 huy hiệu có cấp bậc", fr:"FR-25", platform:"app", status:"done"},
+        {name:"Trang tiến độ & thống kê", fr:"FR-26", platform:"app", status:"done"},
+        {name:"Xuất chứng chỉ PDF + trang xác minh", fr:"FR-27", platform:"app", status:"done", note:"Chỉ Premium. Ghi rõ: không phải chứng chỉ thông dịch."}
+      ]
+    },
+    { code:"M6", fr:"FR-28→32", name:"Thanh toán VNPay & MoMo", scr:{app:"SCR-22→24"},
+      features:[
+        {name:"Bảng giá VND + ngày hết hạn dự kiến", fr:"FR-28", platform:"app", status:"done", version:"0.2", note:"Nêu rõ KHÔNG tự động trừ tiền lần sau."},
+        {name:"Thanh toán qua VNPay (HMAC-SHA512)", fr:"FR-29", platform:"app", status:"done", version:"0.2", note:"Lưu ý: vnp_Amount = VND × 100."},
+        {name:"Thanh toán qua MoMo (HMAC-SHA256)", fr:"FR-29", platform:"app", status:"done", version:"0.2"},
+        {name:"Giới hạn nội dung miễn phí (paywall)", fr:"FR-30", platform:"both", status:"done", version:"0.2", note:"Phân biệt khoá do CHƯA HỌC TỚI (032xx) và khoá do CẦN PREMIUM (062xx)."},
+        {name:"Nhắc gia hạn 7/3/1 ngày + gia hạn thủ công", fr:"FR-31", platform:"app", status:"done", version:"0.2", note:"Thay thế auto-renew. Gia hạn ≤ 3 thao tác."},
+        {name:"IPN đồng bộ trạng thái thanh toán", fr:"FR-32", platform:"cms", status:"done", version:"0.2", note:"returnUrl KHÔNG BAO GIỜ cấp quyền."},
+        {name:"Hoàn tiền tự động qua API", fr:"—", platform:"cms", status:"na", note:"VNPay/MoMo không hỗ trợ cho merchant thường — xử lý thủ công qua CSKH."}
+      ]
+    },
+    { code:"M7", fr:"FR-33→36", name:"CMS nội dung & Hỗ trợ", scr:{cms:"SCR-25→28"},
+      features:[
+        {name:"Quản lý ký hiệu & video (chuyển mã HLS)", fr:"FR-33", platform:"cms", status:"done"},
+        {name:"Soạn bài học, bước, bài tập", fr:"FR-34", platform:"cms", status:"done", version:"0.2"},
+        {name:"Duyệt & xuất bản (bắt buộc người Điếc duyệt)", fr:"FR-35", platform:"cms", status:"done", note:"Biên tập viên KHÔNG được tự xuất bản."},
+        {name:"Tra cứu & hỗ trợ người dùng (CSKH)", fr:"FR-36", platform:"cms", status:"done", note:"Lý do thao tác bắt buộc, ghi audit log."}
+      ]
+    },
+    { code:"M8", fr:"FR-37→38", name:"Marketing & SEO", scr:{app:"SCR-29, SCR-30"},
+      features:[
+        {name:"Landing + blog SEO 'Ký hiệu của từ X'", fr:"FR-37", platform:"app", status:"done", note:"SSG, đọc được khi tắt JavaScript."},
+        {name:"Form liên hệ doanh nghiệp", fr:"FR-38", platform:"app", status:"partial", note:"CHỜ Q6: GĐ1 chỉ tiếp nhận yêu cầu, chưa có cổng B2B."}
+      ]
+    },
+    { code:"M9", fr:"FR-39→40", name:"Nền tảng & Vận hành", scr:{cms:"—"},
+      features:[
+        {name:"Email giao dịch & nhắc học theo múi giờ", fr:"FR-39", platform:"both", status:"done"},
+        {name:"Nhật ký có traceId & số liệu sản phẩm", fr:"FR-40", platform:"cms", status:"done", note:"Cấm PII trong log. Đo BG-07: AI có giúp người học không."}
+      ]
+    },
+    { code:"M11", fr:"—", name:"Ngoài phạm vi Giai đoạn 1", scr:{},
+      features:[
+        {name:"Ứng dụng di động native (Flutter)", fr:"—", platform:"app", status:"na", note:"GĐ2 — repo EXE101 đã có flutter_mvp/, tái dùng được."},
+        {name:"Cổng B2B: tổ chức, ghế, dashboard admin", fr:"—", platform:"cms", status:"na", note:"GĐ2 — cần khách hàng doanh nghiệp thật trước."},
+        {name:"Đặt lịch luyện tập với giáo viên Điếc", fr:"—", platform:"app", status:"na", note:"GĐ2 — bài toán vận hành."},
+        {name:"Ngôn ngữ ký hiệu thứ hai (ASL, BSL…)", fr:"—", platform:"app", status:"na", note:"GĐ2 — mỗi ngôn ngữ cần kho nội dung VÀ mô hình AI riêng."},
+        {name:"Học ngoại tuyến, gói gia đình, tặng quà", fr:"—", platform:"app", status:"na", note:"GĐ2."}
+      ]
+    }
+  ]
+};
+/* =================== HẾT PHẦN BA CẦN SỬA =================== */
+
+const ST={done:"Đã đặc tả",partial:"Một phần / chưa rõ",none:"Chưa đặc tả",na:"Ngoài phạm vi"};
+const PLAT={app:{c:"app",t:"Web"},cms:{c:"cms",t:"CMS"},both:{c:"both",t:"Cả hai"}};
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+const allFeats=()=>DATA.modules.flatMap(m=>m.features);
+
+// counts
+let c={done:0,partial:0,none:0,na:0,mile:0};
+allFeats().forEach(f=>{c[f.status]=(c[f.status]||0)+1; if(DATA.milestone&&f.version===DATA.milestone)c.mile++;});
+const appN=allFeats().filter(f=>f.platform!=='cms').length, cmsN=allFeats().filter(f=>f.platform!=='app').length;
+
+document.getElementById('kick').textContent=[DATA.project,DATA.category,"ĐỘ PHỦ TÍNH NĂNG",DATA.coverageLabel].filter(Boolean).join("  ·  ");
+document.getElementById('title').textContent="Bản đồ cây tính năng theo module & nền tảng";
+document.getElementById('lead').innerHTML=`Toàn bộ tính năng gom theo <b>module</b>; mỗi tính năng gắn <b>nền tảng</b> (🌐 Web người học / 🖥 CMS quản trị / cả hai) và <b>trạng thái độ phủ đặc tả</b>.`+(DATA.milestone?` Nhãn <span class="v">v${DATA.milestone}</span> = mới đặc tả ở phiên bản đó.`:``);
+document.getElementById('meta').textContent=`${DATA.modules.length} module · ${appN} tính năng trên App · ${cmsN} trên CMS · Cập nhật ${DATA.updated}`;
+document.getElementById('foot').textContent="Sinh bởi BA (Mytel SDLC Kit) ở B2, cập nhật xuyên suốt. Trạng thái phản ánh mức độ đặc tả trong SRS/FSD — 'Chưa đặc tả' là lỗ hổng cần bổ sung trước khi thiết kế/thi công.";
+
+// stats
+const tiles=[
+  {cls:"",n:DATA.modules.length,l:"Module hiển thị"},
+  {cls:"done",n:c.done,l:"Đã đặc tả"}
+];
+if(DATA.milestone) tiles.push({cls:"mile",n:c.mile,l:`Mới ở v${DATA.milestone}`});
+tiles.push({cls:"partial",n:c.partial,l:"Một phần / chưa rõ"});
+tiles.push({cls:"none",n:c.none,l:"Chưa đặc tả"});
+document.getElementById('stats').innerHTML=tiles.map(t=>`<div class="tile ${t.cls}"><div class="n">${t.n}</div><div class="l">${t.l}</div></div>`).join('');
+
+// tabs
+const tabs=[{id:"",name:"Tất cả",icon:""}].concat(DATA.platforms.map(p=>({id:p.id,name:p.name,icon:p.icon})));
+document.getElementById('tabs').innerHTML=tabs.map((t,i)=>`<button class="tab${i===0?' on':''}" data-plat="${t.id}">${t.icon?t.icon+' ':''}${t.name}</button>`).join('');
+
+// module cards
+function featRow(f){
+  const p=PLAT[f.platform]||PLAT.both;
+  const row=el('div','feat');
+  row.dataset.plat=f.platform; row.dataset.status=f.status;
+  row.dataset.text=(f.name+' '+(f.fr||'')+' '+(f.note||'')).toLowerCase();
+  row.innerHTML=`<span class="dot ${f.status}" title="${ST[f.status]}"></span>
+    <div class="fname"><span class="t">${f.name}</span> <span class="fr">${f.fr||''}</span>
+      ${f.note?`<div class="note">${f.note}</div>`:''}</div>
+    <div class="badges"><span class="plat ${p.c}">${p.t}</span>${f.version?`<span class="vbadge">v${f.version}</span>`:''}</div>`;
+  return row;
+}
+const grid=document.getElementById('grid');
+DATA.modules.forEach(m=>{
+  const card=el('div','mod'); card.dataset.mod=m.code;
+  const scr=[m.scr&&m.scr.app?`📱 ${m.scr.app}`:'', m.scr&&m.scr.cms?`🖥 ${m.scr.cms}`:''].filter(Boolean).join(' · ');
+  card.innerHTML=`<div class="mcode">${m.code} · ${m.fr||''}</div><div class="mname">${m.name}</div>${scr?`<div class="mscr">${scr}</div>`:''}`;
+  m.features.forEach(f=>card.appendChild(featRow(f)));
+  grid.appendChild(card);
+});
+
+// changelog
+if(DATA.changelog){
+  const cl=DATA.changelog;
+  document.getElementById('changelog').innerHTML=
+   `<div class="changelog"><h3>✅ ${cl.title}</h3><div class="cl-sub">${cl.sub||''}</div>
+     ${cl.items.map(i=>`<div class="cl-item"><span class="cl-code">${i.code}${i.ver?' · v'+i.ver:''}</span>
+       <div><b>${i.title}</b> <span class="d">${i.desc||''}</span></div></div>`).join('')}</div>`;
+}
+
+// filter
+let curPlat="";
+function applyFilter(){
+  const q=document.getElementById('q').value.trim().toLowerCase(), s=document.getElementById('fStatus').value;
+  document.querySelectorAll('.mod').forEach(card=>{
+    let shown=0;
+    card.querySelectorAll('.feat').forEach(f=>{
+      const okP=!curPlat|| f.dataset.plat===curPlat || f.dataset.plat==='both';
+      const okS=!s|| f.dataset.status===s;
+      const okQ=!q|| f.dataset.text.includes(q);
+      const ok=okP&&okS&&okQ; f.classList.toggle('hidden',!ok); if(ok)shown++;
+    });
+    card.classList.toggle('hidden',shown===0);
+  });
+}
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('.tab'); if(!b)return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on')); b.classList.add('on');
+  curPlat=b.dataset.plat; applyFilter();
+});
+['q','fStatus'].forEach(id=>document.getElementById(id).addEventListener('input',applyFilter));
+</script>
+</body>
+</html>
