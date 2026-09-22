@@ -123,27 +123,63 @@ public class AiRecognitionService {
 
     @Transactional(readOnly = true)
     public AiPracticeSessionResult practiceSession(int size) {
+        return practiceSession(null, size);
+    }
+
+    @Transactional(readOnly = true)
+    public AiPracticeSessionResult practiceSession(UUID preferredSignId, int size) {
         AiModelVersion version = modelSyncService.activeVersion();
-        List<UUID> signIds = modelSyncService.enabledLabels(version.getId()).stream()
+        List<AiSignLabel> enabledLabels = labelRepository.findByModelVersionIdAndEnabledTrue(version.getId());
+
+        List<UUID> recognizableSignIds = enabledLabels.stream()
                 .map(AiSignLabel::getSignId)
                 .filter(java.util.Objects::nonNull)
-                .limit(size)
                 .toList();
 
-        List<Sign> signs = contentTree.publishedSigns(signIds);
-        Map<UUID, SignVideo> videos = contentTree.primaryVideos(signIds);
+        List<UUID> orderedSignIds = new ArrayList<>();
+        if (preferredSignId != null && recognizableSignIds.contains(preferredSignId)) {
+            orderedSignIds.add(preferredSignId);
+        }
 
-        List<AiPracticeSessionResult.PracticeItem> items = signs.stream()
-                .map(sign -> {
-                    SignVideo video = videos.get(sign.getId());
-                    return new AiPracticeSessionResult.PracticeItem(
-                            sign.getId(),
-                            sign.getWord(),
-                            sign.getTopic(),
-                            video == null ? null : mediaUrlService.signedUrl(video.getObjectKey()),
-                            video != null && video.getObjectKey().startsWith("seed/"));
+        // Ưu tiên các ký hiệu có video web cục bộ sẵn sàng (web/*.mp4) để người học luôn có video mẫu chuẩn
+        Map<UUID, SignVideo> videos = contentTree.primaryVideos(recognizableSignIds);
+
+        List<UUID> withLocalWebVideos = recognizableSignIds.stream()
+                .filter(id -> !orderedSignIds.contains(id))
+                .filter(id -> {
+                    SignVideo v = videos.get(id);
+                    return v != null && v.getObjectKey() != null && v.getObjectKey().startsWith("web/");
                 })
                 .toList();
+        orderedSignIds.addAll(withLocalWebVideos);
+
+        for (UUID id : recognizableSignIds) {
+            if (!orderedSignIds.contains(id)) {
+                orderedSignIds.add(id);
+            }
+            if (orderedSignIds.size() >= size) {
+                break;
+            }
+        }
+
+        List<UUID> selectedIds = orderedSignIds.stream().limit(size).toList();
+        Map<UUID, Sign> signsById = contentTree.publishedSigns(selectedIds).stream()
+                .collect(java.util.stream.Collectors.toMap(Sign::getId, java.util.function.Function.identity(), (a, b) -> a));
+
+        List<AiPracticeSessionResult.PracticeItem> items = new ArrayList<>();
+        for (UUID signId : selectedIds) {
+            Sign sign = signsById.get(signId);
+            if (sign == null) {
+                continue;
+            }
+            SignVideo video = videos.get(signId);
+            items.add(new AiPracticeSessionResult.PracticeItem(
+                    sign.getId(),
+                    sign.getWord(),
+                    sign.getTopic(),
+                    video == null ? null : mediaUrlService.resolveVideoUrl(video),
+                    video != null && video.getObjectKey() != null && video.getObjectKey().startsWith("seed/")));
+        }
 
         return new AiPracticeSessionResult(UUID.randomUUID(), version.getVersionCode(), items);
     }

@@ -30,7 +30,15 @@ logging.basicConfig(
 )
 log = logging.getLogger("signlight.ai")
 
-MODEL_DIR = Path(os.getenv("MODEL_DIR", "/app/runs/vsl_mvp30_v2_lite_transformer"))
+env_dir = os.getenv("MODEL_DIR")
+if env_dir and Path(env_dir).exists():
+    MODEL_DIR = Path(env_dir)
+else:
+    local_runs = Path(__file__).resolve().parent.parent / "runs"
+    if (local_runs / "vsl_mvp400_v2_lite_transformer").exists():
+        MODEL_DIR = local_runs / "vsl_mvp400_v2_lite_transformer"
+    else:
+        MODEL_DIR = local_runs / "vsl_mvp30_v2_lite_transformer"
 
 recognizer: Recognizer | None = None
 
@@ -186,12 +194,11 @@ def _as_tensor(rows: list[list[float]]) -> tuple[np.ndarray, str | None]:
 
 def _quality_from(features: np.ndarray) -> dict[str, Any]:
     """Đọc lại chỉ số chất lượng từ lát `quality` — dùng để đối chiếu với `clientQuality`."""
-    last_frame = features[-1]
-    hand_ratio = float(np.clip(last_frame[QUALITY_INDEX["handFrameRatio"]], 0.0, 1.0))
-    both_ratio = float(np.clip(last_frame[QUALITY_INDEX["bothHandsRatio"]], 0.0, 1.0))
-    pose_column = features[:, QUALITY_INDEX["poseDetected"]]
+    any_hand_col = features[:, QUALITY_INDEX["any_hand_detected"]]
+    both_hands_col = features[:, QUALITY_INDEX["both_hands_detected"]]
+    pose_column = features[:, QUALITY_INDEX["pose_detected"]]
     return {
-        "handFrameRatio": round(hand_ratio, 4),
-        "bothHandsRatio": round(both_ratio, 4),
+        "handFrameRatio": round(float(np.mean(any_hand_col)), 4),
+        "bothHandsRatio": round(float(np.mean(both_hands_col)), 4),
         "poseDetected": bool(float(np.mean(pose_column)) >= 0.5),
     }

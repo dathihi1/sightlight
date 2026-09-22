@@ -61,7 +61,7 @@ export default function LearningPathPage() {
         ? "Bạn cần đăng nhập để xem lộ trình học."
         : "Không tải được thông tin tài khoản.";
     return (
-      <div className="space-y-4">
+      <div className="mx-auto max-w-5xl px-4 py-8 space-y-4">
         <ErrorNotice message={message} />
         <Link href="/dang-nhap" className="text-[var(--color-brand-600)] underline">
           Tới trang đăng nhập
@@ -71,48 +71,80 @@ export default function LearningPathPage() {
   }
 
   if (me.isLoading || path.isLoading) {
-    return <p className="text-[var(--color-ink-600)]">Đang tải lộ trình…</p>;
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-8">
+        <p className="text-[var(--color-ink-600)]">Đang tải lộ trình…</p>
+      </div>
+    );
   }
 
   if (path.isError || !path.data) {
-    return <ErrorNotice message="Không tải được lộ trình học." />;
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-8">
+        <ErrorNotice message="Không tải được lộ trình học." />
+      </div>
+    );
   }
 
   const data = path.data;
 
   return (
-    <div className="space-y-8">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-bold">{data.courseName}</h1>
-        {data.nextLessonId && (
+    <div className="mx-auto max-w-5xl px-4 py-10 space-y-8">
+      <header className="bg-white rounded-3xl p-6 sm:p-8 border border-[#E2DBD0] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <span className="text-xs font-bold uppercase tracking-wider text-[#08757a] bg-[#e6f7f8] px-3 py-1 rounded-full border border-[#b2e7e9] inline-block mb-2">
+            Lộ trình học VSL
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A]">{data.courseName}</h1>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
           <Link
-            href={`/hoc/bai/${data.nextLessonId}`}
-            className="inline-flex rounded-lg bg-[var(--color-brand-600)] px-5 py-3 font-medium text-white hover:bg-[var(--color-brand-700)]"
+            href="/hanh-trinh"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-[#E2DBD0] bg-[#F4EFE6] hover:bg-white px-5 py-3.5 font-bold text-[#0F172A] shadow-2xs transition-all cursor-pointer"
           >
-            Tiếp tục học
+            <svg className="w-4 h-4 text-[#0d9fa5]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+            <span>Hành trình cá nhân</span>
           </Link>
-        )}
+
+          {data.nextLessonId && (
+            <Link
+              href={`/hoc/bai/${data.nextLessonId}`}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0d9fa5] hover:bg-[#0a8287] px-6 py-3.5 font-bold text-white shadow-xs transition-all hover:scale-102 cursor-pointer"
+            >
+              <span>Tiếp tục học</span>
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </Link>
+          )}
+        </div>
       </header>
 
       {data.units.map((unit) => (
-        <section key={unit.id} className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-semibold">{unit.title}</h2>
+        <section key={unit.id} className="bg-white rounded-3xl p-6 sm:p-8 border border-[#E2DBD0] shadow-sm space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-[#E2DBD0]">
+            <h2 className="text-xl font-bold text-[#0F172A]">{unit.title}</h2>
             {unit.isFree ? (
-              <span className="rounded-full bg-[var(--color-success-050)] px-2 py-0.5 text-xs text-[var(--color-success-700)]">
-                Miễn phí
+              <span className="rounded-full bg-[#e6f7f8] border border-[#b2e7e9] px-3 py-1 text-xs font-bold text-[#08757a]">
+                ✓ Miễn phí
               </span>
             ) : (
-              <span className="rounded-full bg-[var(--color-brand-050)] px-2 py-0.5 text-xs text-[var(--color-brand-600)]">
-                Premium
+              <span className="rounded-full bg-[#FEF3C7] border border-[#FDE68A] px-3 py-1 text-xs font-bold text-[#B45309]">
+                ★ Premium
               </span>
             )}
           </div>
 
           {unit.chapters.map((chapter) => (
-            <div key={chapter.id} className="space-y-2">
-              <h3 className="text-sm font-medium text-[var(--color-ink-600)]">{chapter.title}</h3>
-              <ul className="grid gap-2 sm:grid-cols-2">
+            <div key={chapter.id} className="space-y-3">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-[#64748B]">{chapter.title}</h3>
+              <ul className="grid gap-3 sm:grid-cols-2">
                 {chapter.lessons.map((lesson) => (
                   <li key={lesson.id}>
                     <LessonRow lesson={lesson} />
@@ -145,22 +177,33 @@ function LessonRow({ lesson }: { lesson: LessonNode }) {
 
   const content = (
     <div
-      className={`flex items-center justify-between gap-3 rounded-lg border px-4 py-3 ${
+      className={`flex items-center justify-between gap-3 rounded-2xl border p-4.5 transition-all shadow-2xs ${
         blocked
-          ? "border-[var(--color-border-default)] bg-[var(--color-bg-subtle)]"
-          : "border-[var(--color-border-default)] hover:border-[var(--color-brand-600)]"
+          ? "border-[#E2DBD0] bg-[#EDE6DA]/40 text-[#94A3B8]"
+          : "border-[#E2DBD0] bg-[#F4EFE6]/50 hover:bg-white hover:border-[#0d9fa5] hover:shadow-xs group cursor-pointer"
       }`}
     >
       <div>
-        <p className="font-medium">{lesson.title}</p>
-        <p className="text-xs text-[var(--color-ink-600)]">
-          {/* Biểu tượng + chữ, không chỉ dựa vào màu (nguyên tắc 3 của design.md). */}
-          {lesson.status === "COMPLETED" && <span aria-hidden="true">✓ </span>}
-          {reason ?? statusLabel}
-          {lesson.bestScorePercent != null && ` · ${lesson.bestScorePercent}%`}
+        <p className={`font-bold text-sm sm:text-base ${blocked ? "text-[#94A3B8]" : "text-[#0F172A] group-hover:text-[#0d9fa5] transition-colors"}`}>
+          {lesson.title}
+        </p>
+        <p className="text-xs text-[#64748B] mt-1 flex items-center gap-1.5">
+          {lesson.status === "COMPLETED" && (
+            <span className="text-[#0d9fa5] font-bold" aria-hidden="true">✓ </span>
+          )}
+          <span>{reason ?? statusLabel}</span>
+          {lesson.bestScorePercent != null && (
+            <span className="font-semibold text-[#0d9fa5]">· {lesson.bestScorePercent}%</span>
+          )}
         </p>
       </div>
-      {blocked && <span aria-hidden="true">🔒</span>}
+      {blocked ? (
+        <span className="text-base select-none" aria-hidden="true">🔒</span>
+      ) : (
+        <span className="w-8 h-8 rounded-full bg-white border border-[#E2DBD0] flex items-center justify-center text-[#0d9fa5] text-xs font-bold group-hover:bg-[#0d9fa5] group-hover:text-white group-hover:border-[#0d9fa5] transition-all">
+          ▶
+        </span>
+      )}
     </div>
   );
 

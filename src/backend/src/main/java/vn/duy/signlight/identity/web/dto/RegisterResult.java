@@ -9,6 +9,7 @@ import java.util.UUID;
 public record RegisterResult(
         UUID userId,
         String accessToken,
+        String refreshToken,
         String status,
         UUID activeCourseId) {
 }

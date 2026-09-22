@@ -51,7 +51,8 @@ này (đã duyệt) thắng**.
 | 3 | POST | `/api/v1/auth/login` | Đăng nhập | FR-02 | công khai |
 | 4 | POST | `/api/v1/auth/refresh` | Làm mới token | FR-02 | cookie refresh |
 | 5 | POST | `/api/v1/auth/logout` | Đăng xuất | FR-02 | đã đăng nhập |
-| 6 | GET | `/api/v1/auth/google/authorize` | Bắt đầu OAuth Google | FR-03 | công khai |
+| 6 | POST | `/api/v1/auth/google` | Đăng nhập/Đăng ký với Google OIDC ID token | FR-03 | công khai |
+| 6a | GET | `/api/v1/auth/google/authorize` | Bắt đầu OAuth Google | FR-03 | công khai |
 | 7 | GET | `/api/v1/auth/google/callback` | Callback OAuth | FR-03 | công khai |
 | 8 | POST | `/api/v1/auth/password/forgot` | Yêu cầu đặt lại mật khẩu | FR-04 | công khai |
 | 9 | POST | `/api/v1/auth/password/reset` | Đặt lại mật khẩu | FR-04 | công khai |
@@ -99,15 +100,18 @@ này (đã duyệt) thắng**.
 | 46 | GET | `/api/v1/curiosities` | Bộ sưu tập Curiosity | FR-15 | LEARNER |
 | 47 | POST | `/api/v1/certificates` | Tạo chứng chỉ PDF | FR-27 | PREMIUM |
 | 48 | GET | `/api/v1/certificates/verify/{code}` | Xác minh chứng chỉ | FR-27 | công khai |
-| **billing** |
-| 49 | GET | `/api/v1/billing/plans` | Bảng giá (VND) + ngày hết hạn dự kiến | FR-28 | công khai |
-| 50 | POST | `/api/v1/billing/checkout` | Tạo giao dịch, trả URL **VNPay/MoMo** | FR-29 | LEARNER |
+| **billing (payOS VietQR Gateway)** |
+| 49 | GET | `/api/v1/billing/plans` | Bảng giá (VND) các gói Premium đang mở | FR-28 | công khai |
+| 50 | POST | `/api/v1/billing/checkout` | Tạo giao dịch thanh toán payOS VietQR (trả `checkoutUrl`, `qrCode`) | FR-29 | LEARNER |
+| 50a | GET | `/api/v1/billing/status/{orderCode}` | Kiểm tra trạng thái giao dịch theo mã đơn payOS | FR-29 | LEARNER |
 | 51 | GET | `/api/v1/billing/subscription` | Thuê bao hiện tại + số ngày còn lại | FR-31 | LEARNER |
 | 52 | ~~cancel~~ | *(đã bỏ ở v0.2)* | **Không có gia hạn tự động → không có gì để huỷ** (BR-A69) | — | — |
 | 53 | ~~resume~~ | *(đã bỏ ở v0.2)* | — | — | — |
 | 54 | GET | `/api/v1/billing/transactions` | Lịch sử giao dịch + biên nhận | FR-31 | LEARNER |
-| 55 | GET/POST | `/api/v1/billing/ipn/{provider}` | **IPN từ VNPay / MoMo** | FR-32 | công khai + **HMAC** |
+| 55 | POST | `/api/v1/billing/ipn/payos` | **Webhook IPN từ payOS (xác thực HMAC SHA-256)** | FR-32 | công khai + **HMAC** |
 | 55b | GET | `/api/v1/billing/return/{provider}` | Trang kết quả sau thanh toán — **chỉ hiển thị** | FR-29 | công khai |
+| **media (Google Drive CDN Streaming)** |
+| 55c | GET | `/api/v1/media/stream/{signVideoId}` | Chuyển hướng stream video Google Drive (HTTP 307 + Range support) | FR-11 | công khai / LEARNER |
 | **M10 — AI nhận diện ký hiệu động** |
 | **56a** | GET | `/api/v1/ai/capabilities` | **Vốn ký hiệu AI + phiên bản mô hình + ngưỡng** | FR-41, FR-44 | LEARNER |
 | **56b** | POST | `/api/v1/ai/attempts` | **Chấm một lượt ký hiệu động** | **FR-41, FR-42, FR-43** | LEARNER |
@@ -587,92 +591,85 @@ này (đã duyệt) thắng**.
                 "purgeScheduledAt": "20/10/2026 00:00:00" } }
   ```
 
-### 3.13 `POST /api/v1/billing/checkout` — Tạo giao dịch VNPay/MoMo *(FR-29, SCR-23)*
+### 3.13 `POST /api/v1/billing/checkout` — Tạo giao dịch thanh toán payOS VietQR *(FR-29, SCR-23)*
 
-- **Mô tả & quyền:** `LEARNER_*` **đã xác thực email** (BR-A02).
+- **Mô tả & quyền:** `LEARNER_*`. Tạo liên kết thanh toán payOS kèm dữ liệu mã VietQR động chuẩn NAPAS 24/7.
 - **Request:**
 
-  | Trường | Kiểu | Bắt buộc | Ràng buộc (ref SRS) | Mô tả |
-  |--------|------|:--------:|----------------------|-------|
-  | `planCode` | string | ✓ | ∈ {`PREMIUM_1M`,`PREMIUM_3M`,`PREMIUM_12M`}, gói đang mở bán — FR-29 | |
-  | `provider` | string | ✓ | **`VNPAY`** \| **`MOMO`** | Phương thức người dùng chọn |
-  | `idempotencyKey` | string | ✓ | UUID v4, duy nhất/24h/người dùng | |
-  | `returnUrl` | string | ✓ | URL thuộc **danh sách trắng** của hệ thống | Chống open-redirect |
-  | `bankCode` | string | ✗ | Chỉ với VNPay — mã ngân hàng/`VNPAYQR`/`VNBANK`/`INTCARD` | Bỏ trống = để cổng hiện danh sách |
-  | ~~`amount`, `currency`~~ | — | **bị bỏ qua** | Giá lấy từ `plan_price` (BR-A60, AC-28.2) | |
+  | Trường | Kiểu | Bắt buộc | Ràng buộc | Mô tả |
+  |--------|------|:--------:|-----------|-------|
+  | `planId` | string | ✓ | ∈ {`PREMIUM_1M`,`PREMIUM_6M`,`PREMIUM_12M`} | Mã gói người dùng chọn |
+  | `requestId` | string | ✗ | Chuỗi định danh yêu cầu | |
 
-- **Response `result`:** `transactionId` · `orderRef` · `provider` · `checkoutUrl` (URL **đã ký** của
-  VNPay/MoMo) · `amountMinor` · `currency` (`VND`) · `expiresAt` · `expectedSubscriptionEnd` (ngày hết hạn
-  **dự kiến** nếu thanh toán thành công — **cộng dồn** nếu đang còn hạn, BR-A66b).
-- **Mã lỗi:** `06101` tham số không hợp lệ · `06103` chưa xác thực email · `06301` cổng thanh toán lỗi (502).
-
-  > ⚠️ **`06104` (đã có thuê bao) đã BỎ ở v0.2.** Đang còn hạn mà mua thêm là hành vi **hợp lệ** — đó chính
-  > là cách gia hạn khi không có tự động gia hạn (BR-A66b).
-
+- **Response `result`:** `orderCode` (int64) · `orderRef` · `amount` (VND) · `checkoutUrl` · `qrCode` (chuỗi VietQR) · `status` (`PENDING`) · `accountNumber` · `accountName` · `bin` · `bankName` · `description`.
+- **Mã lỗi:** `00404` không tìm thấy gói · `00401` chưa xác thực.
 - **Ví dụ:**
   ```json
   // Request
-  { "requestId": "a3b4c5d6", "version": "1.0", "planCode": "PREMIUM_12M", "provider": "VNPAY",
-    "idempotencyKey": "9f1c7e20-55aa-4c3d-8e91-2b6d4f0a1c77",
-    "returnUrl": "https://signlight.example/billing/return/vnpay" }
+  { "requestId": "a3b4c5d6", "planId": "PREMIUM_6M" }
   // 200
   { "requestId": "a3b4c5d6", "errorCode": "00000", "errorMessage": "Success",
-    "result": { "transactionId": "018f1001-...", "orderRef": "SL26092000123", "provider": "VNPAY",
-                "checkoutUrl": "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_Amount=99000000&…&vnp_SecureHash=…",
-                "amountMinor": 990000, "currency": "VND", "expiresAt": "20/09/2026 15:30:00",
-                "expectedSubscriptionEnd": "20/09/2027 23:59:59" } }
-  // 400 — chưa xác thực email
-  { "requestId": "a3b4c5d6", "errorCode": "06103",
-    "errorMessage": "Vui lòng xác thực email trước khi nâng cấp.", "result": null }
+    "result": {
+      "orderCode": 1790046846344,
+      "orderRef": "SL-1790046846344",
+      "amount": 499000,
+      "checkoutUrl": "https://pay.payos.vn/web/417242c7...8d2b",
+      "qrCode": "00020101021238540010A000000727012600069704180114V3CAS5111146929...",
+      "status": "PENDING",
+      "accountNumber": "V3CAS5111146929",
+      "accountName": "PHAN BUI BA DAT",
+      "bin": "970418",
+      "bankName": "BIDV (Ngân hàng TMCP Đầu tư và Phát triển Việt Nam)",
+      "description": "SL-1790046846344"
+    }
+  }
   ```
 
-### 3.14 `GET|POST /api/v1/billing/ipn/{provider}` — IPN từ VNPay / MoMo *(FR-32)*
+### 3.13a `GET /api/v1/billing/status/{orderCode}` — Đồng bộ & kiểm tra trạng thái đơn hàng *(FR-29)*
 
-- **Mô tả & quyền:** công khai về mặt mạng, **bắt buộc xác thực chữ ký HMAC**. **Không** dùng envelope
-  `BaseRequest` — payload và phản hồi theo đúng định dạng của từng cổng.
-- **Đường dẫn:** `provider` ∈ {`vnpay`, `momo`}.
+- **Mô tả & quyền:** `LEARNER_*`. Truy vấn trạng thái giao dịch theo mã đơn payOS. Khi chạy môi trường dev/local chưa có public webhook, endpoint này chủ động gọi sang API `GET /v2/payment-requests/{orderCode}` của payOS để đồng bộ trạng thái thực và tự kích hoạt Premium nếu đã thanh toán.
+- **Response `result`:** cấu trúc `CheckoutResult` tương tự checkout, trường `status` đổi thành `PAID` nếu đã chuyển khoản thành công.
 
-| Hạng mục | VNPay | MoMo |
-|----------|-------|------|
-| Phương thức | `GET` (query string) | `POST` (JSON body) |
-| Trường chữ ký | `vnp_SecureHash` | `signature` |
-| Thuật toán | **HMAC-SHA512** | **HMAC-SHA256** |
-| Chuỗi ký | Tham số sắp theo **bảng chữ cái**, **bỏ** `vnp_SecureHash` và `vnp_SecureHashType`, nối `k=v&…` | Chuỗi cố định theo tài liệu MoMo (`accessKey=…&amount=…&extraData=…&orderId=…&…`) |
-| Mã ta sinh | `vnp_TxnRef` | `orderId` |
-| Mã của cổng | `vnp_TransactionNo` | `transId` |
-| Số tiền | `vnp_Amount` = **VND × 100** ⚠️ | `amount` = VND |
-| Thành công khi | `vnp_ResponseCode = "00"` **và** `vnp_TransactionStatus = "00"` | `resultCode = 0` |
-| Phản hồi | `{"RspCode":"00","Message":"Confirm Success"}` | `204 No Content` |
+### 3.13b `POST /api/v1/billing/confirm/{orderCode}` — Xác nhận thủ công & chống gian lận bypass *(FR-29)*
 
-> ⚠️ **Bẫy dễ sai nhất:** VNPay nhân số tiền với **100**. So sánh số tiền phải quy đổi đúng, nếu không
-> mọi giao dịch sẽ rơi vào `AMOUNT_MISMATCH` (BR-A105).
+- **Mô tả & quyền:** `LEARNER_*`. Được gọi khi người dùng bấm nút "Tôi đã thanh toán trên payOS".
+- **Cơ chế xác thực an toàn:**
+  1. Nếu giao dịch trong CSDL đã là `PAID` -> trả về kết quả thành công ngay.
+  2. Nếu giao dịch còn `PENDING` -> backend **bắt buộc truy vấn trực tiếp máy chủ payOS** (`GET /v2/payment-requests/{orderCode}`) để kiểm tra trạng thái thực tế từ ngân hàng.
+  3. Chỉ khi payOS xác nhận `PAID`, hệ thống mới kích hoạt thuê bao và nâng quyền `ROLE_LEARNER_PREMIUM`.
+  4. Nếu payOS báo chưa thanh toán (`PENDING` / `CANCELLED`), hệ thống từ chối kích hoạt và ném mã lỗi **`06101`** (`PAYMENT_NOT_COMPLETED`), ngăn chặn 100% rủi ro người dùng bấm xác nhận khống để chiếm quyền Premium.
+- **Mã lỗi:** `06101` (Chưa nhận được thanh toán từ ngân hàng hoặc giao dịch chưa hoàn tất) · `00404` không tìm thấy đơn.
 
-- **Xử lý:** theo `LLD.md` §4.4 — **xác thực chữ ký trước, không ghi gì trước khi xác thực** (BR-A72),
-  idempotent theo `(provider, transaction_no)`, đối chiếu `order_ref` **và** số tiền.
+### 3.14 `POST /api/v1/billing/ipn/payos` — Webhook IPN từ payOS *(FR-32)*
 
-- **Phản hồi lỗi (theo định dạng cổng, không dùng envelope):**
-
-  | Tình huống | VNPay | MoMo |
-  |------------|-------|------|
-  | Chữ ký sai | `{"RspCode":"97","Message":"Invalid signature"}` | HTTP 400 |
-  | Không tìm thấy đơn | `{"RspCode":"01","Message":"Order not found"}` | HTTP 404 |
-  | Số tiền lệch | `{"RspCode":"04","Message":"Invalid amount"}` | HTTP 400 |
-  | Đã xử lý rồi | `{"RspCode":"02","Message":"Order already confirmed"}` | HTTP 204 |
-  | Thành công | `{"RspCode":"00","Message":"Confirm Success"}` | HTTP 204 |
-
-- **Ví dụ VNPay:**
-  ```
-  GET /api/v1/billing/ipn/vnpay?vnp_Amount=99000000&vnp_BankCode=NCB
-      &vnp_OrderInfo=SignLight+Premium+12M&vnp_ResponseCode=00&vnp_TmnCode=XXXXXXXX
-      &vnp_TransactionNo=14523698&vnp_TransactionStatus=00&vnp_TxnRef=SL26092000123
-      &vnp_PayDate=20260920152233&vnp_SecureHash=8f2c…
-  ```
+- **Mô tả & quyền:** Công khai về mặt mạng, **bắt buộc xác thực chữ ký HMAC SHA-256** của payOS.
+- **Đầu vào:** Raw body JSON do máy chủ payOS bắn sang kèm trường `signature`.
   ```json
-  // 200 — đã kích hoạt
-  { "RspCode": "00", "Message": "Confirm Success" }
+  {
+    "code": "00",
+    "desc": "success",
+    "data": {
+      "orderCode": 1790046846344,
+      "amount": 499000,
+      "description": "SL-1790046846344",
+      "accountNumber": "V3CAS5111146929",
+      "reference": "FT242...",
+      "transactionDateTime": "2026-09-22 10:20:00",
+      "currency": "VND",
+      "paymentLinkId": "417242c7...",
+      "code": "00",
+      "desc": "success"
+    },
+    "signature": "3c983a..."
+  }
   ```
-
-- **Ví dụ MoMo:**
+- **Xác thực:** Dữ liệu trong `data` được trích xuất, sắp xếp theo thứ tự bảng chữ cái của khoá, nối thành query string `k1=v1&k2=v2...`, băm HMAC SHA-256 bằng `checksumKey` và so khớp với `signature`.
+- **Xử lý:**
+  1. Ghi log kiểm toán `payment_webhook_log`.
+  2. Cập nhật `payment_transaction` sang `PAID`, lưu `paid_at`, `webhook_signature`.
+  3. Kích hoạt `subscription` mới (hoặc cộng dồn thời hạn nếu đang còn gói ACTIVE).
+  4. Nâng quyền người dùng lên `ROLE_LEARNER_PREMIUM`.
+- **Phản hồi:** `{"code":"00", "desc":"success", "success": true}`.
   ```json
   // Request
   { "partnerCode": "MOMOXXXX", "orderId": "SL26092000124", "requestId": "SL26092000124",
@@ -774,14 +771,18 @@ này (đã duyệt) thắng**.
 
 | Endpoint | Request chính | `result` chính | Mã lỗi riêng |
 |----------|---------------|----------------|--------------|
-| `POST /auth/refresh` | *(cookie refresh + CSRF token)* | `accessToken` | `01204` tái sử dụng token |
-| `POST /auth/logout` | — | `{}` | — |
-| `GET /auth/google/authorize` | query `redirectUri` (danh sách trắng) | *(302 tới Google)* | — |
-| `GET /auth/google/callback` | query `code`, `state` | `accessToken`, `userId`, `isNewUser` | `01301` state sai, `01302` email chưa xác thực |
-| `POST /auth/password/forgot` | `email` | `{}` *(luôn thành công — NFR-08)* | `00105` |
-| `POST /auth/password/reset` | `token`, `newPassword` | `{}` | `01401`, `01102` |
-| `POST /auth/email/verify` | `token` | `status: ACTIVE` | `01401` |
-| `POST /auth/email/resend` | — | `{}` | `00105` (3/giờ) |
+| `POST /auth/google` | `idToken` (Google OIDC) | `accessToken`, `userId`, `roles`, `activeCourseId`, `requiresEmailVerification` | `00401` token Google không hợp lệ |
+| `POST /auth/refresh` | *(cookie refresh `refresh_token` hoặc body `refreshToken`)* | `accessToken`, `expiresIn: 900`, `tokenType: "Bearer"` | `01204` tái sử dụng token (thu hồi cả family), `00401` |
+| `POST /auth/logout` | — | `{}` (xoá cookie refresh token) | — |
+| `POST /auth/email/verify` | `email`, `otp` (6 số) | `accessToken`, `userId`, `roles`, `activeCourseId`, `requiresEmailVerification: false` | `01105` sai OTP, `01106` hết hạn OTP, `01104` đã xác nhận trước đó |
+| `POST /auth/email/resend` | `email` | `{}` | `01109` quá tần suất (cooldown 60s), `01104` |
+| `POST /auth/password/forgot` | `email` | `{}` *(luôn trả thành công chống dò user)* | `00105` |
+| `POST /auth/password/reset` | `token`, `newPassword` | `{}` | `01107` token sai, `01108` token hết hạn, `01102` mật khẩu phổ biến |
+| `POST /billing/checkout` | `planId` | `orderCode`, `orderRef`, `amount`, `checkoutUrl`, `qrCode`, `accountNumber`, `bankName`, `description` | `00404` không tìm thấy gói |
+| `GET /billing/status/{orderCode}` | — | `CheckoutResult` (tự động đồng bộ từ payOS nếu chưa có IPN) | `00404` |
+| `POST /billing/confirm/{orderCode}` | — | `CheckoutResult` (đối soát trực tiếp API payOS, chống bypass) | `06101` chưa hoàn tất thanh toán trên payOS |
+| `POST /billing/ipn/payos` | raw payload JSON + HMAC SHA-256 signature | `{"code":"00","desc":"success"}` | `400` chữ ký sai |
+| `GET /media/stream/{id}` | header `Range: bytes=...` | Điều hướng 307 tới Google Drive CDN `lh3.googleusercontent.com` hoặc HTTP 206 Partial Content video tĩnh | `00404` |
 | `GET /onboarding/answers/{token}` | — | `currentStep`, `answers`, `expiresAt` | `00404` hết hạn (AC-05.4) |
 | `GET /me` | — | `profile`, `preferences`, `roles`, `subscription`, `emailVerified` | — |
 | `PATCH /me/profile` | `displayName`, `timezone` | `profile` | `01101` |

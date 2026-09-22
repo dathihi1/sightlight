@@ -25,7 +25,8 @@ public final class CurrentUser {
         if (authentication == null) {
             return false;
         }
+        String target = role.startsWith("ROLE_") ? role : "ROLE_" + role;
         return authentication.getAuthorities().stream()
-                .anyMatch(granted -> granted.getAuthority().equals("ROLE_" + role));
+                .anyMatch(granted -> granted.getAuthority().equals(target));
     }
 }

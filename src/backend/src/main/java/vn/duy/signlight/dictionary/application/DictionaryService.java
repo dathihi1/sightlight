@@ -61,13 +61,15 @@ public class DictionaryService {
         List<DictionarySearchResult.SignItem> items = results.getContent().stream()
                 .map(sign -> {
                     SignVideo video = videos.get(sign.getId());
+                    String videoUrl = video == null ? null : mediaUrlService.resolveVideoUrl(video);
                     return new DictionarySearchResult.SignItem(
                             sign.getId(),
                             sign.getWord(),
                             sign.getMeaning(),
                             sign.getTopic(),
                             sign.getWordClass(),
-                            video == null ? null : mediaUrlService.signedUrl(video.getObjectKey()),
+                            videoUrl,
+                            videoUrl,
                             recognizable.contains(sign.getId()));
                 })
                 .toList();
@@ -83,8 +85,8 @@ public class DictionaryService {
         List<SignDetailResult.VariantItem> variants = signVideoRepository.findBySignId(signId).stream()
                 .map(video -> new SignDetailResult.VariantItem(
                         video.getId(),
-                        mediaUrlService.signedUrl(video.getObjectKey()),
-                        video.getObjectKey().startsWith("seed/"),
+                        mediaUrlService.resolveVideoUrl(video),
+                        video.getObjectKey() != null && video.getObjectKey().startsWith("seed/"),
                         video.getRegionLabel(),
                         video.getSignerLabel(),
                         video.isPrimaryVariant()))

@@ -1,18 +1,22 @@
 # SRS — SignLight (Nền tảng học Ngôn ngữ Ký hiệu Việt Nam có AI luyện tập)
 
-| Phiên bản | **v0.3** | Ngày | 2026-09-20 | Trạng thái | DRAFT — chờ GATE-2 |
-|-----------|------|------|------------|------------|---------------------|
+| Phiên bản | **v0.4** | Ngày | 2026-09-22 | Trạng thái | DRAFT — Đồng bộ kiến trúc & tính năng thực tế |
+|-----------|------|------|------------|------------|---------------------------------------------|
+
+**Thay đổi so với v0.3:**
+- **Cổng thanh toán:** Chuyển từ VNPay/MoMo sang **payOS (chuẩn VietQR NAPAS)** — sinh mã VietQR động cho 40+ ngân hàng (BIDV, MBBank, VCB...), xác thực chữ ký Webhook IPN bằng **HMAC-SHA256** (sắp xếp tham số alpha), hỗ trợ active polling (2s) và xác thực 2 chiều chống gian lận (`confirmPayment`).
+- **Lưu trữ & phát Video:** Bỏ MinIO S3 nội bộ, chuyển sang **Google Drive CDN Direct Streaming** (`https://lh3.googleusercontent.com/d/{id}`) kết hợp Backend Streaming Proxy hỗ trợ HTTP 206 Partial Content (Byte Range requests) và HTTP 307 redirect.
+- **Xác thực & Danh tính:** Tích hợp **Google OAuth2 / OIDC ID Token verification** (`/api/v1/auth/google`), xác thực tài khoản qua **mã OTP email 6 chữ số** (TTL 15 phút, cooldown 60s), quy trình đặt lại mật khẩu bảo mật, và cơ chế **Refresh Token rotation** lưu bảng CSDL với khả năng phát hiện tái sử dụng phiên.
+- **🤖 Kiến trúc AI nhận diện kép (Dual Inference):** Hỗ trợ **Client-side WASM ONNX Runtime Web** (<20ms) trực tiếp trên trình duyệt bằng landmark MediaPipe Holistic 75 điểm (225 chiều x 30 khung = 6750 features) làm kênh chính; dự phòng qua Python FastAPI (`POST /api/infer/features`) trên mạng nội bộ. Hỗ trợ cả 30 nhãn (MVP-30) và 400 nhãn (MVP-400).
+- **Phân bổ nội dung:** Phân loại 400 ký hiệu VSL thành **17 Units** lớn (Unit 1 Miễn phí, Units 2–17 Premium).
+- **Phân quyền người dùng (RBAC):** 6 vai trò: `LEARNER_FREE`, `LEARNER_PREMIUM`, `CONTENT_CREATOR`, `CONTENT_APPROVER`, `ADMIN`, `SUPPORT`.
 
 **Thay đổi so với v0.2:** chốt **Q8 = phương án B** (trình duyệt trích landmark, server phân lớp) → viết lại
 **NFR-12**, loại bỏ phương án A/C khỏi phạm vi · chốt **Q9 = CÓ** → **FR-46 vào phạm vi GĐ1** (không còn là
 tuỳ chọn) · chốt **Q10 = nội dung giả lập trước** → thêm **§3.4 Chính sách nội dung giả lập (seed)** và
 **NFR-21**.
 
-**Thay đổi so với v0.1:** ngôn ngữ = **VSL** · thanh toán = **VNPay + MoMo, không tự động gia hạn** ·
-thêm **module M10 — AI nhận diện ký hiệu động (FR-41→FR-44)** · thêm FR-45 (báo thiếu ký hiệu), FR-46
-(góp dữ liệu tự nguyện) · sửa FR-12, FR-17→19, FR-28→32 theo khảo sát thực tế (BRD §9).
-
-**Tiền đề:** `docs/ba/BRD.md` v0.2 · **Đi kèm:** `docs/ba/function-map.html`
+**Tiền đề:** `docs/ba/BRD.md` v0.4 · **Đi kèm:** `docs/ba/function-map.html`
 **Đọc tiếp:** `docs/sa/HLD.md`, `docs/sa/LLD.md`, `docs/sa/api-spec.md`, `docs/ba/FSD.md`
 
 ---
@@ -635,16 +639,15 @@ flowchart LR
 #### FR-28 — Xem & chọn gói Premium
 
 - **Mô tả:** Trang giá hiển thị 3 kỳ hạn **1 tháng · 3 tháng · 12 tháng**, giá bằng **VND**, mức tiết kiệm so
-  với gói tháng, bảng so sánh Miễn phí ↔ Premium, và **lựa chọn phương thức: VNPay hoặc MoMo**.
+  với gói tháng, bảng so sánh Miễn phí ↔ Premium, và **phương thức thanh toán: payOS (chuyển khoản VietQR NAPAS cho 40+ ngân hàng BIDV, MBBank, VCB...)**.
 - **Quy tắc nghiệp vụ:**
   - **BR-A60:** giá lấy từ bảng `plan_price` phía **server**; **không bao giờ** nhận giá do client gửi lên.
-  - **BR-A61 (viết lại ở v0.2):** phải hiển thị rõ **"Thanh toán một lần cho kỳ đã chọn. Hệ thống KHÔNG tự
-    động trừ tiền lần sau."** — đây là điểm khác biệt có lợi so với mô hình tự động gia hạn, phải nói rõ để
-    tạo lòng tin, không giấu.
+  - **BR-A61:** phải hiển thị rõ **"Thanh toán một lần cho kỳ đã chọn qua mã VietQR. Hệ thống KHÔNG tự
+    động trừ tiền lần sau."** — minh bạch, bảo vệ người dùng, tạo lòng tin.
   - **BR-A61b:** hiển thị **ngày hết hạn dự kiến** ngay tại trang giá (hôm nay + số ngày của gói).
   - **BR-A104:** GĐ1 chỉ hỗ trợ **VND**; không đa tiền tệ (BRD §3.3).
 - **Validate:** `planCode` bắt buộc ∈ {`PREMIUM_1M`,`PREMIUM_3M`,`PREMIUM_12M`}, gói phải `is_active` →
-  "Gói đăng ký không tồn tại hoặc đã ngừng."; `provider` bắt buộc ∈ {`VNPAY`,`MOMO`} → "Vui lòng chọn phương thức thanh toán."
+  "Gói đăng ký không tồn tại hoặc đã ngừng."; `gateway` mặc định `PAYOS`.
 - **Tiêu chí chấp nhận:**
   - **AC-28.1:** Given người dùng mở trang giá — When xem — Then giá hiển thị bằng **VND** đúng bảng `plan_price`, kèm ngày hết hạn dự kiến.
   - **AC-28.2:** Given gọi API tạo thanh toán kèm `amount` tự chế — When backend xử lý — Then dùng giá từ server, bỏ qua giá client (`06101`).
@@ -653,7 +656,7 @@ flowchart LR
 
 ---
 
-#### FR-29 — Thanh toán qua VNPay / MoMo và kích hoạt Premium
+#### FR-29 — Thanh toán qua payOS (VietQR) và kích hoạt Premium
 
 - **Actor / Tiền điều kiện / Hậu điều kiện:** `LEARNER_FREE` **đã xác thực email** (BR-A02) / — /
   *Thành công:* `subscription` trạng thái `ACTIVE` với `expires_at` xác định, vai trò lên `LEARNER_PREMIUM`,
@@ -663,60 +666,50 @@ flowchart LR
 
   | # | Hành động người dùng | Phản ứng hệ thống | Dữ liệu (C/R/U/D) |
   |---|----------------------|-------------------|-------------------|
-  | 1 | Chọn kỳ hạn + chọn VNPay hoặc MoMo, bấm "Thanh toán" | Tra `plan_price`, tạo `payment_transaction` trạng thái `PENDING`, sinh `order_ref` duy nhất | C: `payment_transaction` |
-  | 2 | — | Dựng URL thanh toán **có chữ ký** (VNPay: HMAC-SHA512 trên chuỗi tham số đã sắp xếp; MoMo: HMAC-SHA256 trên chuỗi `accessKey&amount&...`) rồi chuyển hướng | — |
-  | 3 | Thanh toán trên ứng dụng/trang của VNPay hoặc MoMo | **SignLight không chạm vào thông tin thẻ/ví** (BR-A62) | — |
-  | 4 | Hoàn tất | Người dùng được chuyển về `returnUrl` — **chỉ để hiển thị**, không dùng để cấp quyền | — |
-  | 5 | — | **IPN** từ cổng (FR-32) là **nguồn sự thật duy nhất** → xác thực chữ ký → kích hoạt `subscription`, nâng vai trò, gửi biên nhận | C: `subscription`; U: `user_role`; C: `email_outbox` |
-  | 6 | — | Trang kết quả tự cập nhật sang "Đã kích hoạt Premium" | R: `subscription` |
+  | 1 | Chọn kỳ hạn, bấm "Nâng cấp ngay" | Tra `plan_price`, tạo `payment_transaction` trạng thái `PENDING`, sinh `order_code` và `order_ref` duy nhất | C: `payment_transaction` |
+  | 2 | — | Gọi API payOS tạo link thanh toán, nhận URL checkout hoặc mã QR VietQR (chuẩn NAPAS 24/7), mã ngân hàng thụ hưởng (BIN, số tài khoản, tên chủ tài khoản, nội dung CK dạng `SL-{orderCode}`) | U: `payment_transaction` |
+  | 3 | Quét mã QR bằng App ngân hàng (VietQR) hoặc chuyển khoản thủ công | Người dùng thực hiện trên app Mobile Banking của ngân hàng họ dùng | — |
+  | 4 | Trình duyệt thực hiện **active polling** mỗi 2 giây | Frontend gọi `GET /api/v1/billing/status/{orderCode}` kiểm tra trạng thái giao dịch | R: `payment_transaction` |
+  | 5 | Hoặc người dùng bấm "Tôi đã thanh toán trên payOS" | Hệ thống gọi **`POST /api/v1/billing/confirm/{orderCode}`** — backend bắt buộc xác thực lại trực tiếp với payOS API (`getPaymentLinkInformation`) trước khi kích hoạt. Nếu chưa thanh toán thì từ chối `06101` (`PAYMENT_NOT_COMPLETED`), chống gian lận bypass | U: `payment_transaction` |
+  | 6 | — | **Webhook IPN** từ payOS (`POST /api/v1/billing/ipn/payos`) xác thực chữ ký HMAC-SHA256 → kích hoạt `subscription`, nâng vai trò `LEARNER_PREMIUM`, gửi biên nhận | C: `subscription`; U: `user_role`; C: `email_outbox` |
+  | 7 | — | Trang kết quả tự động chuyển sang "Thanh toán thành công! Chúc mừng bạn đã nâng cấp Premium" | R: `subscription` |
 
 - **Luồng thay thế / ngoại lệ:**
   - 1a. Chưa xác thực email → `06103`.
   - 1b. Đang có thuê bao `ACTIVE` → **không chặn**; chuyển sang luồng **gia hạn** (FR-31): kỳ mới **cộng dồn** vào `expires_at` hiện tại (BR-A66b).
-  - 4a. Người dùng huỷ trên trang cổng → `payment_transaction` = `CANCELLED`.
-  - 4b. Giao dịch bị từ chối → `FAILED` + thông điệp thân thiện; **không** hiện mã lỗi thô của cổng.
-  - 5a. **Người dùng quay về trước khi IPN tới** → trang kết quả hiện "Đang xác nhận…", hỏi lại mỗi 3 giây tối đa 60 giây; quá 60 giây → "Sẽ kích hoạt trong ít phút, đã gửi email."
-  - 5b. **IPN gửi lại nhiều lần** → xử lý **idempotent** theo `(provider, transaction_no)` (BR-A63).
-  - 5c. IPN báo thành công nhưng **không có** `payment_transaction` khớp `order_ref` → ghi `payment_anomaly` + cảnh báo vận hành, **không** cấp Premium.
-  - 5d. **Số tiền trong IPN khác số tiền đã tạo** → từ chối, ghi `payment_anomaly`, **không** cấp Premium (BR-A105).
-  - 5e. IPN không bao giờ tới (sự cố cổng) → job đối soát chạy **mỗi 15 phút** gọi API truy vấn giao dịch của cổng để đồng bộ (BR-A106).
+  - 3a. Người dùng bấm "Huỷ giao dịch" → `payment_transaction` = `CANCELLED`.
+  - 4a. Giao dịch bị từ chối hoặc hết hạn thanh toán (sau 15 phút) → `EXPIRED`/`FAILED` + thông điệp thân thiện.
+  - 5a. **Người dùng bấm xác nhận khi chưa thanh toán thật** → Backend query payOS thấy `PENDING` → ném lỗi `06101` (`PAYMENT_NOT_COMPLETED`), tuyệt đối không kích hoạt Premium.
+  - 6a. **Webhook gửi lại nhiều lần** → xử lý **idempotent** theo `orderCode` / `paymentLinkId`.
+  - 6b. Webhook báo thành công nhưng **không có** `payment_transaction` khớp `orderCode` → ghi log `payment_anomaly`, cảnh báo vận hành, **không** cấp Premium.
+  - 6c. **Số tiền trong Webhook khác số tiền giao dịch** → từ chối, ghi `payment_anomaly`, **không** cấp Premium (BR-A105).
 
 - **Validate:**
 
   | Trường | Bắt buộc | Kiểu | Ràng buộc | Thông báo lỗi |
   |--------|:-------:|------|-----------|---------------|
   | `planCode` | Có | Chuỗi | ∈ 3 gói, đang mở bán | "Gói đăng ký không tồn tại hoặc đã ngừng." |
-  | `provider` | Có | Enum | `VNPAY` \| `MOMO` | "Vui lòng chọn phương thức thanh toán." |
-  | `idempotencyKey` | Có | UUID v4 | Duy nhất trong 24 giờ theo người dùng | "Yêu cầu trùng lặp." |
-  | `returnUrl` | Có | Chuỗi | Thuộc **danh sách trắng** của hệ thống | "Đường dẫn trả về không hợp lệ." |
+  | `orderCode` | Có | Số nguyên | Khớp mã đơn hàng đã sinh | "Đơn hàng không hợp lệ." |
   | `amount`, `currency` | — | — | **Client KHÔNG được gửi**; nếu gửi thì bỏ qua | — |
 
 - **Quy tắc nghiệp vụ:**
-  - **BR-A62 (bắt buộc):** hệ thống **không lưu, không truyền, không ghi log** thông tin thẻ/ví. Toàn bộ
-    nhập liệu diễn ra trên giao diện của VNPay/MoMo. Phạm vi PCI-DSS giữ ở mức **SAQ-A**.
-  - **BR-A63:** xử lý IPN **idempotent** theo `(provider, transaction_no)`; lưu mọi IPN thô để đối soát.
-  - **BR-A64:** nguồn sự thật về quyền Premium là **`subscription` trong CSDL SignLight**, không phải
-    `returnUrl` hay phản hồi trình duyệt. **`returnUrl` tuyệt đối không được dùng để cấp quyền** — người
-    dùng có thể tự gọi URL đó.
-  - **BR-A65:** kỳ hạn: 1M = 30 ngày · 3M = 90 ngày · 12M = 365 ngày, tính từ **thời điểm IPN xác nhận thành công**.
-  - **BR-A66 (viết lại ở v0.2):** **KHÔNG có tự động gia hạn.** Thay vào đó gửi email + thông báo trong
-    ứng dụng nhắc gia hạn vào **7 ngày · 3 ngày · 1 ngày** trước khi hết hạn, và **1 ngày sau** khi hết hạn.
-  - **BR-A66b:** gia hạn khi thuê bao **còn hiệu lực** → `expires_at` mới = `expires_at` cũ + số ngày gói
-    (cộng dồn, người dùng không mất ngày nào). Gia hạn khi **đã hết hạn** → tính từ thời điểm thanh toán.
-  - **BR-A105:** đối chiếu **số tiền** và **`order_ref`** trong IPN với bản ghi đã tạo; lệch → từ chối.
-  - **BR-A106:** job đối soát mỗi 15 phút cho các `payment_transaction` ở `PENDING` quá 5 phút.
+  - **BR-A62 (bắt buộc):** hệ thống **không lưu, không truyền, không ghi log** thông tin tài khoản ngân hàng của người dùng. Toàn bộ thanh toán chuyển khoản qua chuẩn VietQR của cổng payOS. Phạm vi PCI-DSS giữ ở mức **SAQ-A**.
+  - **BR-A63:** xử lý Webhook **idempotent** theo `orderCode`; lưu sự kiện để đối soát.
+  - **BR-A64:** nguồn sự thật về quyền Premium là **`subscription` trong CSDL SignLight**, được kích hoạt sau khi webhook IPN hoặc API xác thực trực tiếp với cổng payOS trả về trạng thái `PAID`. Tuyệt đối không tin cậy cờ từ client.
+  - **BR-A65:** kỳ hạn: 1M = 30 ngày · 3M = 90 ngày · 12M = 365 ngày, tính từ thời điểm xác nhận thanh toán.
+  - **BR-A66:** **KHÔNG có tự động gia hạn.** Gửi email + thông báo nhắc gia hạn trước **7 ngày · 3 ngày · 1 ngày** và sau **1 ngày** khi hết hạn.
+  - **BR-A66b:** gia hạn khi thuê bao **còn hiệu lực** → `expires_at` mới = `expires_at` cũ + số ngày gói (cộng dồn). Gia hạn khi **đã hết hạn** → tính từ thời điểm thanh toán.
+  - **BR-A105:** đối chiếu **số tiền** và **`orderCode`** trong Webhook với bản ghi; lệch → từ chối.
+  - **BR-A106:** cơ chế kiểm tra chủ động (Active Polling 2s) và xác thực 2 chiều khi người dùng bấm xác nhận (`confirmPayment`).
 
 - **Tiêu chí chấp nhận:**
-  - **AC-29.1:** Given thanh toán `PREMIUM_3M` qua VNPay thành công — When IPN xử lý xong — Then có đúng 1 `subscription` `ACTIVE` hết hạn sau **90 ngày**, vai trò `LEARNER_PREMIUM`, có email biên nhận.
-  - **AC-29.2:** Given cùng một IPN gửi lại 3 lần — When xử lý — Then vẫn chỉ 1 `subscription`, hạn **không** cộng dồn.
+  - **AC-29.1:** Given thanh toán `PREMIUM_3M` qua payOS VietQR thành công — When Webhook hoặc confirm xử lý xong — Then có đúng 1 `subscription` `ACTIVE` hết hạn sau **90 ngày**, vai trò `LEARNER_PREMIUM`.
+  - **AC-29.2:** Given cùng một Webhook gửi lại 3 lần — When xử lý — Then vẫn chỉ 1 `subscription`, hạn **không** cộng dồn.
   - **AC-29.3:** Given chưa xác thực email — When tạo thanh toán — Then `06103`, không tạo giao dịch.
-  - **AC-29.4:** Given rà log ứng dụng sau một giao dịch thật — When tìm chuỗi 13–19 chữ số liền nhau — Then **không** có dữ liệu thẻ.
-  - **AC-29.5:** Given giao dịch bị từ chối — When xem giao diện — Then thông báo thân thiện + nút thử lại, **không** lộ mã lỗi nội bộ của cổng.
-  - **AC-29.6:** Given IPN chưa tới sau 60 giây — When người dùng chờ ở trang kết quả — Then hiện hướng dẫn rõ ràng, **không** kẹt vòng quay vô hạn.
-  - **AC-29.7 🔒:** Given người dùng **tự gọi `returnUrl`** với tham số thành công **giả mạo** (không có IPN hợp lệ) — When hệ thống xử lý — Then **KHÔNG** cấp Premium; trang chỉ hiển thị trạng thái đọc từ CSDL.
-  - **AC-29.8:** Given IPN có `amount` **khác** số tiền của `order_ref` — When xử lý — Then từ chối, ghi `payment_anomaly`, không cấp Premium.
-  - **AC-29.9:** Given đang có Premium còn 40 ngày — When mua thêm gói 1M — Then `expires_at` mới = cũ + 30 ngày (tổng 70 ngày).
-  - **AC-29.10:** Given giao dịch `PENDING` quá 5 phút — When job đối soát chạy — Then truy vấn cổng và cập nhật đúng trạng thái.
+  - **AC-29.4 🔒:** Given người dùng bấm "Tôi đã thanh toán trên payOS" khi chưa chuyển tiền thật — When hệ thống kiểm tra qua payOS API — Then trả lỗi `06101`, **KHÔNG** kích hoạt Premium.
+  - **AC-29.5:** Given giao dịch hết hạn thanh toán — When xem giao diện — Then thông báo rõ ràng + nút tạo đơn mới.
+  - **AC-29.6:** Given Webhook có `amount` **khác** số tiền của đơn hàng — When xử lý — Then từ chối, ghi `payment_anomaly`, không cấp Premium.
+  - **AC-29.7:** Given đang có Premium còn 40 ngày — When mua thêm gói 1M — Then `expires_at` mới = cũ + 30 ngày (tổng 70 ngày).
 
 ---
 
@@ -797,49 +790,43 @@ flowchart LR
 
 ---
 
-#### FR-32 — Đồng bộ trạng thái thanh toán qua IPN của VNPay/MoMo
+#### FR-32 — Đồng bộ trạng thái thanh toán qua Webhook IPN của payOS
 
-- **Mô tả:** Nhận và xử lý **IPN (Instant Payment Notification)** — bản tin server-to-server từ cổng, là
-  **nguồn sự thật duy nhất** về kết quả thanh toán.
+- **Mô tả:** Nhận và xử lý **Webhook IPN (Instant Payment Notification)** — bản tin server-to-server từ cổng thanh toán payOS, là một trong hai kênh xác thực thanh toán chính xác (cùng với active verification qua API payOS).
 
-- **Khác biệt giữa hai cổng (phải hiện thực riêng sau cùng một interface `PaymentProvider`):**
+- **Quy cách xác thực Webhook payOS:**
 
-  | Hạng mục | VNPay | MoMo |
-  |----------|-------|------|
-  | Thuật toán chữ ký | **HMAC-SHA512** | **HMAC-SHA256** |
-  | Cách dựng chuỗi ký | Sắp xếp tham số theo **thứ tự bảng chữ cái**, nối `key=value&…`, **loại bỏ** `vnp_SecureHash` | Chuỗi cố định theo tài liệu MoMo (`accessKey=…&amount=…&extraData=…&…`) |
-  | Mã thành công | `vnp_ResponseCode = "00"` **và** `vnp_TransactionStatus = "00"` | `resultCode = 0` |
-  | Phản hồi cho cổng | JSON `{"RspCode":"00","Message":"Confirm Success"}` | HTTP 204 / JSON theo tài liệu |
-  | Định danh giao dịch | `vnp_TxnRef` (của ta) + `vnp_TransactionNo` (của cổng) | `orderId` (của ta) + `transId` (của cổng) |
+  | Hạng mục | Quy cách payOS |
+  |----------|----------------|
+  | Thuật toán chữ ký | **HMAC-SHA256** với `checksumKey` từ payOS |
+  | Cách dựng chuỗi ký | Sắp xếp tất cả các trường dữ liệu trong đối tượng `data` theo **thứ tự bảng chữ cái**, nối theo định dạng `key1=value1&key2=value2...` |
+  | Mã thành công | `code = "00"` trong payload webhook |
+  | Phản hồi cho cổng | JSON `{"success": true}` hoặc HTTP 200 |
+  | Định danh giao dịch | `orderCode` (mã số đơn hàng SignLight) |
 
-- **Luồng xử lý (áp dụng cho cả hai):**
-  1. Nhận IPN → **đọc body thô**, chưa parse nghiệp vụ.
-  2. **Xác thực chữ ký.** Sai → trả lỗi theo định dạng cổng, ghi **cảnh báo bảo mật**, **không thay đổi dữ liệu gì**.
-  3. Lưu **nguyên văn** vào `payment_event`.
-  4. Kiểm **idempotent** theo `(provider, transaction_no)`; đã xử lý → trả thành công để cổng ngừng gửi lại.
-  5. Đối chiếu `order_ref` **và số tiền** với `payment_transaction` (BR-A105). Lệch → `payment_anomaly`.
-  6. Theo mã kết quả: thành công → kích hoạt/cộng dồn `subscription`; thất bại → `FAILED`.
-  7. Trả phản hồi đúng định dạng cổng yêu cầu.
+- **Luồng xử lý:**
+  1. Nhận Webhook IPN tại `POST /api/v1/billing/ipn/payos`.
+  2. **Xác thực chữ ký `signature`** bằng HMAC-SHA256 so với chuỗi tham số `data` đã sắp xếp. Chữ ký sai → từ chối ngay `00401` / `06102`, ghi log cảnh báo bảo mật, không thay đổi dữ liệu.
+  3. Lưu thông tin thô vào log/sự kiện thanh toán.
+  4. Kiểm **idempotent** theo `orderCode`: nếu giao dịch đã ở trạng thái `PAID` → trả về `{"success": true}` ngay để cổng dừng gửi lại.
+  5. Đối chiếu `orderCode` và `amount` với bản ghi `payment_transaction` trong CSDL.
+  6. Nếu hợp lệ: chuyển trạng thái `payment_transaction` sang `PAID`, kích hoạt hoặc cộng dồn `subscription` cho người dùng, nâng quyền `LEARNER_PREMIUM`.
+  7. Trả phản hồi thành công `{"success": true}` cho payOS.
 
-- **Validate:** `signature` bắt buộc, so sánh **chống tấn công thời gian** → sai thì từ chối + cảnh báo;
-  `order_ref` bắt buộc, phải tồn tại; `amount` bắt buộc, phải **khớp chính xác**; `transaction_no` bắt buộc,
-  dùng làm khoá idempotent.
+- **Validate:** `signature` bắt buộc, xác thực bằng `MessageDigest.isEqual` chống timing attack; `orderCode` bắt buộc, phải tồn tại; `amount` bắt buộc, phải khớp chính xác.
 
 - **Quy tắc nghiệp vụ:**
-  - **BR-A72:** IPN chưa xác thực chữ ký thì **tuyệt đối không** được thay đổi dữ liệu.
-  - **BR-A73:** mọi IPN lưu thô vào `payment_event` trước khi xử lý (phục vụ đối soát và tranh chấp).
-  - **BR-A74 (viết lại ở v0.2):** **không có gia hạn tự động nên không có "gia hạn thất bại"**. Thay vào đó
-    là job **hết hạn** chạy hằng giờ: `expires_at < now()` → hạ vai trò về `LEARNER_FREE`.
-  - **BR-A110:** `returnUrl` (người dùng quay về trình duyệt) **chỉ để hiển thị**; mọi quyết định cấp quyền
-    dựa trên IPN đã xác thực (AC-29.7).
+  - **BR-A72:** Webhook chưa xác thực chữ ký thì **tuyệt đối không** được thay đổi dữ liệu.
+  - **BR-A73:** Ghi log chi tiết mọi sự kiện webhook để phục vụ tra soát.
+  - **BR-A74:** **Không có gia hạn tự động**, người dùng mua từng kỳ qua VietQR. Job kiểm tra hết hạn chạy định kỳ: `expires_at < now()` → hạ vai trò về `LEARNER_FREE`.
+  - **BR-A110:** Giao diện frontend không tự quyết định trạng thái thanh toán mà phải gọi backend xác thực.
 
 - **Tiêu chí chấp nhận:**
-  - **AC-32.1:** Given IPN có chữ ký sai — When nhận — Then từ chối, **không** đổi bản ghi nào, có cảnh báo bảo mật trong log.
-  - **AC-32.2:** Given IPN VNPay hợp lệ với `vnp_ResponseCode = "00"` — When xử lý — Then `subscription` `ACTIVE` và phản hồi cho VNPay đúng định dạng `{"RspCode":"00",...}`.
-  - **AC-32.3:** Given IPN MoMo hợp lệ với `resultCode = 0` — When xử lý — Then kết quả tương đương AC-32.2 theo định dạng MoMo.
-  - **AC-32.4:** Given IPN báo `order_ref` không tồn tại — When xử lý — Then ghi `payment_anomaly` + cảnh báo, **không** cấp Premium.
-  - **AC-32.5:** Given thuê bao có `expires_at` đã qua — When job hết hạn hằng giờ chạy — Then vai trò về `LEARNER_FREE`, tiến độ học giữ nguyên.
-  - **AC-32.6:** Given IPN thành công gửi lại lần 2 với cùng `transaction_no` — When xử lý — Then không cộng thêm ngày, trả phản hồi thành công.
+  - **AC-32.1:** Given Webhook payOS có chữ ký sai — When nhận — Then từ chối, **không** đổi bản ghi nào, có cảnh báo bảo mật trong log.
+  - **AC-32.2:** Given Webhook payOS hợp lệ với `code = "00"` — When xử lý — Then `subscription` `ACTIVE`, trạng thái giao dịch `PAID`, phản hồi `{"success": true}`.
+  - **AC-32.3:** Given Webhook payOS thành công gửi lại lần 2 với cùng `orderCode` — When xử lý — Then không cộng thêm ngày, trả phản hồi thành công (idempotent).
+  - **AC-32.4:** Given Webhook báo `orderCode` không tồn tại — When xử lý — Then ghi `payment_anomaly` + cảnh báo, **không** cấp Premium.
+  - **AC-32.5:** Given thuê bao có `expires_at` đã qua — When job hết hạn chạy — Then vai trò về `LEARNER_FREE`, tiến độ học giữ nguyên.
 
 ---
 
@@ -1190,8 +1177,8 @@ nội dung thật** cho ít nhất 1 Unit; đây là **rủi ro R-01 chưa đư�
 | **NFR-08** | Bảo mật — Chống dò tài khoản | Đăng ký/đăng nhập/quên mật khẩu trả phản hồi **không phân biệt được** giữa email tồn tại và không tồn tại; chênh lệch thời gian < **100 ms** |
 | **NFR-09** | Bảo mật — Mật khẩu & phiên | Argon2id; access token 15 phút; refresh token 30 ngày, **xoay vòng**, phát hiện tái sử dụng thì thu hồi toàn bộ |
 | **NFR-10** | Bảo mật — Giới hạn tần suất | Đăng nhập 10/phút/IP · đăng ký 5/giờ/IP · quên mật khẩu 3/giờ/email · tìm kiếm 60/phút/người dùng · webhook không giới hạn nhưng bắt buộc xác thực chữ ký |
-| **NFR-11** | Bảo mật — Thanh toán | Phạm vi **PCI-DSS SAQ-A**: không lưu/truyền/ghi log dữ liệu thẻ/ví (BR-A62). Chữ ký IPN xác thực bằng **HMAC-SHA512 (VNPay)** / **HMAC-SHA256 (MoMo)**, so sánh chống tấn công thời gian |
-| **NFR-12** | **Quyền riêng tư — Camera** *(viết lại ở v0.3 — Q8 đã chốt)* | ✅ **Phương án B đã chốt (anh Duy, 2026-09-20): trình duyệt trích landmark, server phân lớp.**<br/>• **Không một pixel nào** từ camera rời khỏi thiết bị trong luồng chấm AI. Thứ duy nhất được gửi lên là **tensor số `64×327`** (float) + vài chỉ số chất lượng.<br/>• **Không hình ảnh hay video nào được LƯU TRỮ** ở bất kỳ đâu trong luồng chấm AI.<br/>• **API bắt buộc từ chối** (HTTP 400, `errorCode = 10103`) mọi payload chứa trường ảnh/video/base64 — kể cả khi client gửi nhầm.<br/>• Ngoại lệ **duy nhất**: người dùng **chủ động bật** góp dữ liệu theo **FR-46** (Q9 = CÓ) — khi đó clip được lưu vào **bucket riêng** `signlight-donation`, gắn định danh giả, xoá khi rút đồng ý.<br/>Kiểm chứng bằng theo dõi lưu lượng mạng thật ở B5 (TC-FR41-01/02/03, TC-FR46-01) |
+| **NFR-11** | Bảo mật — Thanh toán | Phạm vi **PCI-DSS SAQ-A**: không lưu/truyền/ghi log dữ liệu thẻ/tài khoản ngân hàng của người dùng (BR-A62). Chữ ký Webhook IPN từ payOS xác thực bằng **HMAC-SHA256** trên chuỗi tham số đã sắp xếp theo thứ tự bảng chữ cái, so sánh chống tấn công thời gian (`MessageDigest.isEqual`). Xác thực 2 chiều chống gian lận bypass (`confirmPayment`) qua truy vấn trực tiếp cổng payOS |
+| **NFR-12** | **Quyền riêng tư — Camera & Dual-Inference AI** | ✅ **Kiến trúc AI nhận diện kép (Dual Inference):**<br/>• **Client-side WASM ONNX Runtime Web (<20ms)**: Mô hình INT8 siêu nhẹ (~0.45MB) chạy trực tiếp trong trình duyệt, trích landmark MediaPipe 75 điểm (225 chiều) và suy luận tại chỗ.<br/>• **Dự phòng qua Server**: Khi client không hỗ trợ WebAssembly SIMD, gửi chuỗi đặc trưng số (tensor 64x327 hoặc 30x225) lên backend FastAPI.<br/>• **Không một pixel nào** từ camera rời khỏi thiết bị trong luồng chấm AI.<br/>• **Không hình ảnh hay video nào được LƯU TRỮ** ở bất kỳ đâu trong luồng chấm AI.<br/>• **API bắt buộc từ chối** (HTTP 400, `errorCode = 10103`) mọi payload chứa trường ảnh/video/base64 — kể cả khi client gửi nhầm.<br/>• Ngoại lệ **duy nhất**: người dùng **chủ động bật** góp dữ liệu theo **FR-46** (Q9 = CÓ) — khi đó clip được lưu vào **bucket riêng**, gắn định danh giả, xoá khi rút đồng ý |
 | **NFR-13** | Tuân thủ dữ liệu | Tuân **Nghị định 13/2023/NĐ-CP**: có cơ sở pháp lý xử lý dữ liệu, cho phép xuất & xoá dữ liệu (FR-08), không PII trong log (BR-A90) |
 | **NFR-14** | Khả năng tiếp cận | **WCAG 2.1 AA** trên toàn luồng học: tương phản ≥ 4,5:1, thao tác đủ bằng bàn phím, có nhãn cho mọi điều khiển, vùng chạm ≥ 44×44 px, **không thông tin chỉ bằng âm thanh** |
 | **NFR-15** | Tương thích | 2 phiên bản gần nhất của Chrome/Edge/Firefox/Safari, desktop & mobile; **hạ cấp mềm** khi thiếu camera/WebAssembly |

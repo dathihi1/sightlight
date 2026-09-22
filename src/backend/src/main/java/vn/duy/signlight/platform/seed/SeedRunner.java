@@ -142,30 +142,60 @@ public class SeedRunner implements ApplicationRunner {
             signRepository.save(sign);
             existing.put(seed.word(), sign);
 
-            upsertPlaceholderVideo(sign);
+            upsertSignVideo(sign, seed.video());
         }
         return existing;
     }
 
     /**
-     * Video placeholder tự dựng (SEED-6). Khoá bắt đầu bằng {@code seed/} — API dùng tiền tố này để
-     * báo cho giao diện biết đây là nội dung giả lập và hiện khối thay thế thay vì trình phát hỏng.
+     * Nạp hoặc cập nhật biến thể video cho ký hiệu.
+     * Nếu seed có thông tin video thực tế (web MP4 hoặc raw front-view), lưu đường dẫn thật;
+     * nếu không, tạo placeholder dự phòng.
      */
-    private void upsertPlaceholderVideo(Sign sign) {
-        if (!signVideoRepository.findBySignId(sign.getId()).isEmpty()) {
-            return;
+    private void upsertSignVideo(Sign sign, SeedVideo seedVideo) {
+        List<SignVideo> existingVideos = signVideoRepository.findBySignId(sign.getId());
+        SignVideo video = existingVideos.stream()
+                .filter(SignVideo::isPrimaryVariant)
+                .findFirst()
+                .orElseGet(() -> existingVideos.isEmpty() ? null : existingVideos.get(0));
+
+        if (video == null) {
+            video = SignVideo.builder()
+                    .id(UUID.randomUUID())
+                    .signId(sign.getId())
+                    .primaryVariant(true)
+                    .build();
         }
-        signVideoRepository.save(SignVideo.builder()
-                .id(UUID.randomUUID())
-                .signId(sign.getId())
-                .objectKey("seed/placeholder/" + sign.getId() + ".mp4")
-                .status("READY")
-                .regionLabel("Miền Bắc")
-                .signerLabel("Người ký hiệu mẫu")
-                .primaryVariant(true)
-                .durationMs(2000)
-                .seed(true)
-                .build());
+
+        if (seedVideo != null) {
+            if (seedVideo.driveFileId() != null && !seedVideo.driveFileId().isBlank()) {
+                video.setDriveFileId(seedVideo.driveFileId());
+                video.setStorageProvider("GDRIVE");
+                video.setDirectUrl(seedVideo.directUrl());
+            } else if (seedVideo.storageProvider() != null) {
+                video.setStorageProvider(seedVideo.storageProvider());
+            }
+            if (seedVideo.objectKey() != null) {
+                video.setObjectKey(seedVideo.objectKey());
+            }
+            video.setStatus("READY");
+            video.setRegionLabel(seedVideo.regionLabel() != null ? seedVideo.regionLabel() : "Toàn quốc");
+            video.setSignerLabel(seedVideo.signerLabel() != null ? seedVideo.signerLabel() : "Người ký hiệu mẫu");
+            video.setDurationMs(seedVideo.durationMs() != null ? seedVideo.durationMs() : 2000);
+            video.setSeed(true);
+            video.setPrimaryVariant(true);
+            signVideoRepository.save(video);
+        } else if (video.getObjectKey() == null && video.getDriveFileId() == null) {
+            video.setStorageProvider("GDRIVE");
+            video.setObjectKey("seed/placeholder/" + sign.getId() + ".mp4");
+            video.setStatus("READY");
+            video.setRegionLabel("Miền Bắc");
+            video.setSignerLabel("Người ký hiệu mẫu");
+            video.setDurationMs(2000);
+            video.setSeed(true);
+            video.setPrimaryVariant(true);
+            signVideoRepository.save(video);
+        }
     }
 
     // ------------------------------------------------------------ lộ trình học
@@ -303,25 +333,37 @@ public class SeedRunner implements ApplicationRunner {
 
     // ------------------------------------------------- hình dạng file seed
 
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
     record SeedData(int seedVersion, SeedCourse course, List<SeedSign> signs, List<SeedUnit> units) {
     }
 
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
     record SeedCourse(String code, String name, String alphabetLetters, String status) {
     }
 
-    record SeedSign(String word, String meaning, String topic, String wordClass,
-                    boolean aiVocabulary) {
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+    record SeedVideo(String objectKey, String videoId, Integer durationMs, String regionLabel, String signerLabel,
+                     String driveFileId, String directUrl, String storageProvider) {
     }
 
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+    record SeedSign(String word, String meaning, String topic, String wordClass,
+                    boolean aiVocabulary, SeedVideo video) {
+    }
+
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
     record SeedUnit(String title, boolean free, List<SeedChapter> chapters) {
     }
 
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
     record SeedChapter(String title, List<SeedLesson> lessons) {
     }
 
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
     record SeedLesson(String title, int estimatedMinutes, List<SeedExercise> exercises) {
     }
 
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
     record SeedExercise(String type, String sign, String prompt, List<String> options,
                         String answer, List<String> acceptedAnswers) {
     }

@@ -27,9 +27,19 @@ public class SignVideo {
     @Column(name = "sign_id", nullable = false)
     private UUID signId;
 
-    /** Khoá trong object storage; URL phát cho client luôn là URL ký hạn 15 phút (BR-A17). */
-    @Column(name = "object_key", nullable = false, length = 512)
+    /** Khoá trong object storage (legacy MinIO/S3); để null khi dùng Google Drive. */
+    @Column(name = "object_key", length = 512)
     private String objectKey;
+
+    @Column(name = "storage_provider", nullable = false, length = 32)
+    @Builder.Default
+    private String storageProvider = "GDRIVE";
+
+    @Column(name = "drive_file_id", length = 128)
+    private String driveFileId;
+
+    @Column(name = "direct_url", length = 1024)
+    private String directUrl;
 
     @Column(name = "hls_manifest_key", length = 512)
     private String hlsManifestKey;

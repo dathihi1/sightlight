@@ -16,10 +16,12 @@ import vn.duy.signlight.common.error.BusinessException;
 import vn.duy.signlight.common.error.ErrorCode;
 import vn.duy.signlight.content.application.ContentCatalogService;
 import vn.duy.signlight.identity.domain.AppUser;
+import vn.duy.signlight.identity.domain.AuthIdentity;
 import vn.duy.signlight.identity.domain.UserPreference;
 import vn.duy.signlight.identity.domain.UserProfile;
 import vn.duy.signlight.identity.domain.UserStatus;
 import vn.duy.signlight.identity.repository.AppUserRepository;
+import vn.duy.signlight.identity.repository.AuthIdentityRepository;
 import vn.duy.signlight.identity.repository.UserPreferenceRepository;
 import vn.duy.signlight.identity.repository.UserProfileRepository;
 import vn.duy.signlight.identity.web.dto.LoginRequest;
@@ -36,6 +38,10 @@ public class AuthService {
 
     public static final String ROLE_LEARNER_FREE = "LEARNER_FREE";
     public static final String ROLE_LEARNER_PREMIUM = "LEARNER_PREMIUM";
+    public static final String ROLE_CONTENT_CREATOR = "CONTENT_CREATOR";
+    public static final String ROLE_CONTENT_APPROVER = "CONTENT_APPROVER";
+    public static final String ROLE_ADMIN = "ADMIN";
+    public static final String ROLE_SUPPORT = "SUPPORT";
 
     private static final int MAX_FAILED_LOGINS = 5;
     private static final int LOCK_MINUTES = 15;
@@ -55,19 +61,31 @@ public class AuthService {
     private final ContentCatalogService contentCatalog;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final AuthIdentityRepository authIdentityRepository;
+    private final GoogleTokenVerifier googleTokenVerifier;
+    private final EmailVerificationService emailVerificationService;
+    private final TokenService tokenService;
 
     public AuthService(AppUserRepository userRepository,
             UserProfileRepository profileRepository,
             UserPreferenceRepository preferenceRepository,
             ContentCatalogService contentCatalog,
             PasswordEncoder passwordEncoder,
-            JwtService jwtService) {
+            JwtService jwtService,
+            AuthIdentityRepository authIdentityRepository,
+            GoogleTokenVerifier googleTokenVerifier,
+            EmailVerificationService emailVerificationService,
+            TokenService tokenService) {
         this.userRepository = userRepository;
         this.profileRepository = profileRepository;
         this.preferenceRepository = preferenceRepository;
         this.contentCatalog = contentCatalog;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.authIdentityRepository = authIdentityRepository;
+        this.googleTokenVerifier = googleTokenVerifier;
+        this.emailVerificationService = emailVerificationService;
+        this.tokenService = tokenService;
     }
 
     // ------------------------------------------------------------------ đăng ký
@@ -97,6 +115,7 @@ public class AuthService {
             UUID decoyId = UUID.randomUUID();
             return new RegisterResult(decoyId,
                     jwtService.issueAccessToken(decoyId, List.of(ROLE_LEARNER_FREE)),
+                    UUID.randomUUID().toString(),
                     UserStatus.PENDING_VERIFICATION.value(), activeCourseId);
         }
 
@@ -130,8 +149,12 @@ public class AuthService {
                 .marketingEmailOptIn(false)
                 .build());
 
+        emailVerificationService.sendOtp(userId, email);
+
+        TokenService.TokenPair tokenPair = tokenService.issueTokenPair(userId, List.of(ROLE_LEARNER_FREE));
         return new RegisterResult(userId,
-                jwtService.issueAccessToken(userId, List.of(ROLE_LEARNER_FREE)),
+                tokenPair.accessToken(),
+                tokenPair.refreshToken(),
                 UserStatus.PENDING_VERIFICATION.value(), activeCourseId);
     }
 
@@ -171,8 +194,11 @@ public class AuthService {
                 .map(UserPreference::getActiveCourseId)
                 .orElse(null);
         List<String> roles = List.copyOf(user.getRoles());
+        TokenService.TokenPair tokenPair = tokenService.issueTokenPair(user.getId(), roles);
+
         return new LoginResult(
-                jwtService.issueAccessToken(user.getId(), roles),
+                tokenPair.accessToken(),
+                tokenPair.refreshToken(),
                 user.getId(),
                 roles,
                 activeCourseId,
@@ -189,6 +215,157 @@ public class AuthService {
         }
         user.setUpdatedAt(now);
         userRepository.save(user);
+    }
+
+    // ------------------------------------------------------------- google login
+
+    @Transactional
+    public LoginResult loginWithGoogle(String idToken) {
+        GoogleTokenVerifier.GoogleUserPayload payload = googleTokenVerifier.verify(idToken);
+        Instant now = Instant.now();
+
+        Optional<AuthIdentity> existingIdentity = authIdentityRepository
+                .findByProviderAndProviderUserId("GOOGLE", payload.sub());
+
+        AppUser user;
+        if (existingIdentity.isPresent()) {
+            user = userRepository.findById(existingIdentity.get().getUserId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHENTICATED));
+        } else {
+            Optional<AppUser> existingEmailUser = userRepository.findByEmailIgnoreCase(payload.email());
+            if (existingEmailUser.isPresent()) {
+                user = existingEmailUser.get();
+                if (user.getEmailVerifiedAt() == null && payload.emailVerified()) {
+                    user.setEmailVerifiedAt(now);
+                }
+            } else {
+                UUID userId = UUID.randomUUID();
+                user = AppUser.builder()
+                        .id(userId)
+                        .email(payload.email())
+                        .status(UserStatus.ACTIVE.value())
+                        .emailVerifiedAt(payload.emailVerified() ? now : null)
+                        .failedLoginCount((short) 0)
+                        .createdAt(now)
+                        .updatedAt(now)
+                        .roles(new java.util.LinkedHashSet<>(List.of(ROLE_LEARNER_FREE)))
+                        .build();
+                userRepository.save(user);
+
+                profileRepository.save(UserProfile.builder()
+                        .userId(userId)
+                        .displayName(payload.name() != null ? payload.name() : payload.email().split("@")[0])
+                        .avatarObjectKey(payload.picture())
+                        .timezone(DEFAULT_TIMEZONE)
+                        .build());
+
+                UUID activeCourseId = contentCatalog.defaultCourseId().orElse(null);
+                preferenceRepository.save(UserPreference.builder()
+                        .userId(userId)
+                        .activeCourseId(activeCourseId)
+                        .dailyGoalMinutes((short) 10)
+                        .uiLocale("vi")
+                        .videoSpeed(new BigDecimal("1.00"))
+                        .marketingEmailOptIn(false)
+                        .build());
+            }
+
+            authIdentityRepository.save(AuthIdentity.builder()
+                    .id(UUID.randomUUID())
+                    .userId(user.getId())
+                    .provider("GOOGLE")
+                    .providerUserId(payload.sub())
+                    .createdAt(now)
+                    .build());
+        }
+
+        if (user.getLockedUntil() != null && user.getLockedUntil().isAfter(now)) {
+            throw new BusinessException(ErrorCode.ACCOUNT_LOCKED);
+        }
+        if (UserStatus.SUSPENDED.value().equals(user.getStatus())) {
+            throw new BusinessException(ErrorCode.ACCOUNT_SUSPENDED);
+        }
+
+        user.setFailedLoginCount((short) 0);
+        user.setLockedUntil(null);
+        user.setUpdatedAt(now);
+        userRepository.save(user);
+
+        UUID activeCourseId = preferenceRepository.findById(user.getId())
+                .map(UserPreference::getActiveCourseId)
+                .orElse(null);
+        List<String> roles = List.copyOf(user.getRoles());
+        TokenService.TokenPair tokenPair = tokenService.issueTokenPair(user.getId(), roles);
+
+        return new LoginResult(
+                tokenPair.accessToken(),
+                tokenPair.refreshToken(),
+                user.getId(),
+                roles,
+                activeCourseId,
+                user.getEmailVerifiedAt() == null,
+                UserStatus.PENDING_DELETION.value().equals(user.getStatus()));
+    }
+
+    @Transactional
+    public void upgradeToPremium(UUID userId) {
+        userRepository.findById(userId).ifPresent(user -> {
+            user.getRoles().add(ROLE_LEARNER_PREMIUM);
+            user.setUpdatedAt(Instant.now());
+            userRepository.save(user);
+        });
+    }
+
+    @Transactional
+    public LoginResult demoLogin() {
+        String demoEmail = "demo.learner@signlight.vn";
+        AppUser user = userRepository.findByEmailIgnoreCase(demoEmail).orElseGet(() -> {
+            Instant now = Instant.now();
+            AppUser newUser = AppUser.builder()
+                    .id(UUID.randomUUID())
+                    .email(demoEmail)
+                    .emailVerifiedAt(now)
+                    .status(UserStatus.ACTIVE.value())
+                    .failedLoginCount((short) 0)
+                    .birthYear((short) 2000)
+                    .roles(new java.util.HashSet<>(List.of(ROLE_LEARNER_FREE)))
+                    .createdAt(now)
+                    .updatedAt(now)
+                    .build();
+            userRepository.save(newUser);
+
+            profileRepository.save(UserProfile.builder()
+                    .userId(newUser.getId())
+                    .displayName("Học viên Demo")
+                    .timezone(DEFAULT_TIMEZONE)
+                    .build());
+
+            UUID activeCourseId = contentCatalog.defaultCourseId().orElse(null);
+            preferenceRepository.save(UserPreference.builder()
+                    .userId(newUser.getId())
+                    .activeCourseId(activeCourseId)
+                    .dailyGoalMinutes((short) 10)
+                    .uiLocale("vi")
+                    .videoSpeed(new BigDecimal("1.00"))
+                    .marketingEmailOptIn(false)
+                    .build());
+            return newUser;
+        });
+
+        UUID activeCourseId = preferenceRepository.findById(user.getId())
+                .map(UserPreference::getActiveCourseId)
+                .orElse(null);
+        List<String> roles = List.copyOf(user.getRoles());
+        TokenService.TokenPair tokenPair = tokenService.issueTokenPair(user.getId(), roles);
+        return new LoginResult(
+                tokenPair.accessToken(),
+                tokenPair.refreshToken(),
+                user.getId(),
+                roles,
+                activeCourseId,
+                false,
+                false
+        );
     }
 
     // --------------------------------------------------------------------- hồ sơ
@@ -238,6 +415,16 @@ public class AuthService {
         } catch (java.time.DateTimeException ex) {
             return DEFAULT_TIMEZONE;
         }
+    }
+
+    // ------------------------------------------------------------------ refresh & logout
+
+    public TokenService.TokenPair refreshToken(String rawRefreshToken) {
+        return tokenService.rotateRefreshToken(rawRefreshToken);
+    }
+
+    public void logout(String rawRefreshToken) {
+        tokenService.revokeToken(rawRefreshToken);
     }
 
     /** Log không bao giờ chứa email đầy đủ (BR-A90, NFR-13). */

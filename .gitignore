@@ -9,8 +9,13 @@ Desktop.ini
 .idea/
 *.swp
 
-# Logs
+# Logs & temporary
 *.log
+logs/
+.claude/
+*.tsbuildinfo
+code.html
+screen.png
 
 # Env
 .env

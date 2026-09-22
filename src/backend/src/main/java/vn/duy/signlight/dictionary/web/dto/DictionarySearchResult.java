@@ -16,6 +16,7 @@ public record DictionarySearchResult(
             String topic,
             String wordClass,
             String thumbnailUrl,
+            String videoUrl,
             boolean aiRecognizable) {
     }
 }

@@ -31,7 +31,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (header != null && header.startsWith(PREFIX)) {
             jwtService.verify(header.substring(PREFIX.length()).trim()).ifPresent(user -> {
                 List<SimpleGrantedAuthority> authorities = user.roles().stream()
-                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                        .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
+                        .map(SimpleGrantedAuthority::new)
                         .toList();
                 var authentication = new UsernamePasswordAuthenticationToken(
                         user.userId(), null, authorities);

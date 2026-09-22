@@ -13,17 +13,11 @@ from pathlib import Path
 
 # 30 nhãn của MVP-30 — nguồn: BRD §3.1. Thứ tự PHẢI khớp `labels.json` của mô hình đã huấn luyện.
 MVP30_LABELS: list[str] = [
-    # Xưng hô & gia đình (8)
-    "Anh", "Chị", "Em", "Cháu", "Chú", "Cô", "Cậu", "Họ hàng",
-    # Đồ vật trong nhà (9)
-    "Cái bàn", "Cái cửa", "Cái đèn", "Cái chảo", "Cửa sổ", "Giường",
-    "Nồi cơm điện", "Máy điều hòa", "Quạt (đứng)",
-    # Địa điểm (5)
-    "Trường học", "Trường Đại học", "Ngân hàng", "Nhà hàng", "Nhà trọ",
-    # Thời gian & thời tiết (6)
-    "Chủ nhật", "Mùa hè", "Mùa khô", "Nắng", "Ướt", "Ngày Nhà giáo Việt Nam",
-    # Khác (2)
-    "Nghề nghiệp", "Dễ",
+    "Anh", "Cháu", "Chú", "Chị", "Chủ nhật", "Cái bàn", "Cái chảo", "Cái cửa",
+    "Cái đèn", "Cô", "Cậu", "Cửa sổ", "Dễ", "Em", "Giường", "Họ hàng",
+    "Máy điều hòa", "Mùa hè", "Mùa khô", "Nghề nghiệp", "Ngày Nhà giáo Việt Nam",
+    "Ngân hàng", "Nhà hàng", "Nhà trọ", "Nắng", "Nồi cơm điện", "Quạt (đứng)",
+    "Trường học", "Trường Đại học", "Ướt",
 ]
 
 _NON_ALNUM = re.compile(r"[^a-z0-9]+")

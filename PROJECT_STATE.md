@@ -35,6 +35,7 @@
 | **Q2** | Dải port UAT | ✅ **`18080–18090`** | 2026-09-20 | `18080` api · `18081` web · `18082` storage · `18083` storage-console · `18084–18090` dự phòng. Đã điền vào `docker-compose.yml` + `.env.example`. ⚠️ `ai` (7860) **cố ý không mở** — ADR-10, DR-12 |
 | **R-07** | Tuổi tối thiểu | ✅ **16 tuổi** (cho góp dữ liệu) | 2026-09-20 | Dưới 16 **vẫn học đầy đủ** nhưng không được mời/bật góp dữ liệu; API trả **403**. Cập nhật **BR-A137**, pentest **DR-06**. ⚠️ Tự khai, không xác minh được — chặn phải nằm ở **backend** |
 | **R-11** | Tài khoản thanh toán | ✅ **Đã có tài khoản merchant/sandbox VNPay + MoMo** (SĐT `0866678802`) | 2026-09-20 | **Rủi ro R-11 đóng.** Việc còn lại là thao tác: lấy 5 khoá (`VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`, `MOMO_PARTNER_CODE`, `MOMO_ACCESS_KEY`, `MOMO_SECRET_KEY`) đặt vào `deploy/.env`. 🔐 **Không commit, không ghi log** |
+| **Q12** | Tích hợp EXE101 & Tái cấu trúc Database | ✅ **Hoàn thành toàn diện** | 2026-09-21 | - Phân loại 400 ký hiệu VSL thành **17 Units** lớn (Unit 1 Free, Units 2–17 Premium)<br>- Lưu trữ và phát video qua **Google Drive CDN** (`lh3.googleusercontent.com/d/{id}` & stream proxy), bỏ MinIO<br>- Tích hợp cổng thanh toán **payOS** (VietQR, HMAC IPN webhook, checkout, activation)<br>- Tích hợp **Google OAuth2/OIDC** (`/api/v1/auth/google`)<br>- Phân quyền **RBAC** 6 vai trò (`LEARNER_FREE`, `LEARNER_PREMIUM`, `CONTENT_CREATOR`, `CONTENT_APPROVER`, `ADMIN`, `SUPPORT`)<br>- AI **Dual Inference**: mô hình ONNX INT8 siêu nhẹ (~0.45MB), chạy WASM tại trình duyệt (<20ms) + backend API đồng bộ hạn mức<br>- Tập trung **100% Web Next.js 15**, bỏ Flutter app |
 
 ### Tài sản kỹ thuật đã có sẵn (từ repo EXE101)
 
@@ -67,10 +68,10 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 | LLD.md                | SA       | DONE         | 2026-09-20 | v0.2 — 30 bảng |
 | api-spec.md           | SA       | DONE         | 2026-09-20 | **v0.3** — **75 endpoint**; §4.3 là endpoint suy luận duy nhất |
 | design.md             | Designer | DONE         | 2026-09-20 | v0.2 |
-| scaffold-backend      | Backend  | DONE         | 2026-09-21 | `src/backend` — Spring Boot 3.5 / Java 21, Flyway V1+V2, 20 repository, build Docker sạch |
-| scaffold-frontend     | Frontend | DONE         | 2026-09-21 | `src/frontend` — Next.js 15 / React 19 / Tailwind 4, 7 màn, build standalone sạch |
-| scaffold-ai           | AI/BE    | DONE         | 2026-09-21 | `src/ai` — FastAPI + ONNX Runtime; **đã bổ sung `POST /api/infer/features`** (V-3 phần code) |
-| src (code)            | dev      | IN_PROGRESS  | 2026-09-21 | **Lát cắt demo chạy được đầu-cuối** — xem `src/README.md`. Chưa làm: billing, CMS, quiz/mốc, chứng chỉ, góp dữ liệu, OAuth Google |
+| scaffold-backend      | Backend  | DONE         | 2026-09-21 | `src/backend` — Spring Boot 3.5 / Java 21, Flyway V1+V2+V3, 17 Units seed 400 signs, Google OAuth2, payOS VietQR gateway, Google Drive streaming |
+| scaffold-frontend     | Frontend | DONE         | 2026-09-21 | `src/frontend` — Next.js 15 / React 19 / Tailwind 4, 11 màn, ONNX WASM client inference (<20ms), Google Login, payOS upgrade page |
+| scaffold-ai           | AI/BE    | DONE         | 2026-09-21 | `src/ai` — FastAPI + ONNX Runtime; hỗ trợ mô hình 30 và 400 nhãn `model.int8.onnx` (<0.5MB), `POST /api/infer/features` |
+| src (code)            | dev      | DONE         | 2026-09-21 | Tích hợp hoàn tất EXE101: 17 Units VSL, Google Drive CDN video, Google OAuth, payOS billing, WASM AI |
 | test-plan.md          | Tester   | DONE         | 2026-09-20 | **v0.3** — phạm vi mở tới NFR-21 |
 | test-cases.md         | Tester   | DONE         | 2026-09-20 | **v0.3** — **217 case** + 3 nhóm case mới cần soạn (DR-12, seed); chưa chạy |
 | test-report.md        | Tester   | IN_PROGRESS  | 2026-09-20 | Khung — **chưa chạy**, chờ B4 |

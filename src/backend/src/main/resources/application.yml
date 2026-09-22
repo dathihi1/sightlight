@@ -26,6 +26,18 @@ spring:
     basename: messages
     encoding: UTF-8
     use-code-as-default-message: false   # thiếu khoá -> ném lỗi để phát hiện sớm
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
   jackson:
     default-property-inclusion: non_null
   web:
@@ -70,12 +82,31 @@ signlight:
   security:
     jwt:
       # Bắt buộc đặt lại ở mọi môi trường thật. Ứng dụng từ chối khởi động nếu khoá ngắn hơn 32 byte.
-      secret: ${JWT_SECRET:doi-khoa-nay-o-moi-truong-that-toi-thieu-32-byte}
+      secret: ${JWT_SECRET:vCEPEfv6syrGzMhFqWFYAHsNpq15V5zobjAovyjwy9l}
       access-token-ttl: PT${JWT_ACCESS_TTL_MINUTES:15}M
       issuer: signlight
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:100731444772-131o3e5vavaf5b7egduddhjpkf2l918f.apps.googleusercontent.com}
+      client-secret: ${GOOGLE_CLIENT_SECRET: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}
   media:
-    base-url: ${PUBLIC_CDN_BASE_URL:http://localhost:18082}/${STORAGE_BUCKET_MEDIA:signlight-media}
+    base-url: ${PUBLIC_API_BASE_URL:http://localhost:18080}
+    web-videos-dir: ${SIGNLIGHT_WEB_VIDEOS_DIR:src/backend/src/main/resources/static/videos/web}
+    raw-videos-dir: ${SIGNLIGHT_RAW_VIDEOS_DIR:E:/EXE101/data/raw/VSL400/front_view}
     signing-key: ${MEDIA_SIGNING_KEY:doi-khoa-ky-url-media-o-moi-truong-that}
+    # Base URL công khai của bucket Cloudflare R2 (r2.dev hoặc custom domain), không có dấu / ở cuối.
+    # Bỏ trống để quay về phát luồng qua backend (/api/v1/media/stream).
+    r2-public-base-url: ${R2_PUBLIC_BASE_URL:https://pub-8c6d1cfd8dcf4247a3c8b412746b506f.r2.dev}
   ai:
     base-url: ${SIGNLIGHT_AI_BASE_URL:http://localhost:7860}
     timeout-ms: ${SIGNLIGHT_AI_TIMEOUT_MS:5000}
+  payos:
+    client-id: ${PAYOS_CLIENT_ID:59b27e45-228f-4c64-a411-c835d9e1348a}
+    api-key: ${PAYOS_API_KEY:dbe544eb-23c7-42bd-8f1d-28a4b39339d9}
+    checksum-key: ${PAYOS_CHECKSUM_KEY:64752d3da4bc357c367fbb0bf0e69b3ae31a5488881764729445c1f3776967ae}
+    endpoint: ${PAYOS_ENDPOINT:https://api-merchant.payos.vn}
+    return-url: ${PAYOS_RETURN_URL:http://localhost:3000/thanh-toan/thanh-cong}
+    cancel-url: ${PAYOS_CANCEL_URL:http://localhost:3000/nang-cap}
+  mail:
+    from: ${MAIL_FROM:noreply@signlight.vn}
+    enabled: ${MAIL_ENABLED:false}
+    frontend-base-url: ${NEXT_PUBLIC_APP_URL:http://localhost:3000}

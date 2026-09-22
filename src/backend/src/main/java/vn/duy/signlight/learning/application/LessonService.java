@@ -118,8 +118,8 @@ public class LessonService {
                     exercise.getId(),
                     exercise.getType(),
                     exercise.getPromptText(),
-                    video == null ? null : mediaUrlService.signedUrl(video.getObjectKey()),
-                    video != null && video.getObjectKey().startsWith("seed/"),
+                    video == null ? null : mediaUrlService.resolveVideoUrl(video),
+                    video != null && video.getObjectKey() != null && video.getObjectKey().startsWith("seed/"),
                     options,
                     shuffledTokens(exercise)));
         }

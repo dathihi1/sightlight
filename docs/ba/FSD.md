@@ -283,37 +283,37 @@ flowchart LR
   | 2 | Bảng so sánh Free ↔ Premium | table | Theo bảng FR-30 | tĩnh | — | — |
   | 3 | 3 thẻ gói | cards | 1T/3T/12T; thẻ 12T gắn nhãn "Tiết kiệm {n}%" | `GET /billing/plans` | — | — |
   | 4 | Giá hiển thị | text | **Định dạng theo tiền tệ vùng**; lấy từ server (BR-A60) | idem | — | — |
-  | 5 | **Dòng minh bạch thanh toán** | text | **Bắt buộc hiện trước nút mua** (BR-A61) | tĩnh | — | "Thanh toán một lần cho kỳ đã chọn. Hệ thống **KHÔNG** tự động trừ tiền lần sau." |
+  | 5 | **Dòng minh bạch thanh toán** | text | **Bắt buộc hiện trước nút mua** (BR-A61) | tĩnh | — | "Thanh toán một lần cho kỳ đã chọn qua cổng payOS VietQR. Hệ thống **KHÔNG** tự động trừ tiền lần sau." |
   | 5b | Ngày hết hạn dự kiến | text | Hôm nay + số ngày gói; **cộng dồn** nếu đang còn hạn | `GET /billing/plans` | — | "Premium sẽ có hiệu lực tới {ngày}." |
-  | 5c | Chọn phương thức | radio | **VNPay** hoặc **MoMo**; bắt buộc chọn | tĩnh | FR-28 validate | "Vui lòng chọn phương thức thanh toán." |
-  | 6 | Nút "Nâng cấp" | button primary | Disable khi đang có thuê bao hiệu lực | `POST /billing/checkout` | — | — |
-  | 7 | Nhắc xác thực email | alert | Hiện khi `emailVerified = false` | `GET /me` | — | "Vui lòng xác thực email trước khi nâng cấp." + nút "Gửi lại thư" |
+  | 5c | Cổng thanh toán | text/badge | **payOS (VietQR NAPAS 24/7)** hỗ trợ chuyển khoản từ mọi ngân hàng | tĩnh | — | "Quét mã VietQR chuyển khoản nhanh 24/7." |
+  | 6 | Nút "Nâng cấp" | button primary | Tạo đơn hàng thanh toán | `POST /billing/checkout` | — | — |
+  | 7 | Nhắc xác thực email | alert | Khuyến nghị xác thực tài khoản | `GET /me` | — | "Nên xác thực email để lưu trữ chứng nhận và hoá đơn gói học." |
 
-- **Luồng thao tác:** 1· Vào màn → tải bảng giá | 2· Chọn gói → bấm "Nâng cấp" → gọi `POST /billing/checkout` | 3· Chuyển sang trang cổng thanh toán → SCR-23.
+- **Luồng thao tác:** 1· Vào màn → tải bảng giá | 2· Chọn gói → bấm "Nâng cấp" → gọi `POST /billing/checkout` | 3· Nhận `orderCode` → chuyển hướng tới trang thanh toán VietQR `/thanh-toan?orderCode={orderCode}` (SCR-23).
 - **Luồng thay thế / ngoại lệ trên UI:**
-  - 2a. errorCode `06103` → hiện alert (7), **không** chuyển cổng thanh toán.
-  - 2b. Đang có Premium còn hiệu lực → **không chặn**; nút đổi nhãn thành **"Gia hạn ngay"**, hiện rõ ngày hết hạn mới sau khi cộng dồn (BR-A66b).
-  - 2c. errorCode `06301` (cổng lỗi) → "Không kết nối được cổng thanh toán, vui lòng thử lại." + nút Thử lại.
-- **Trạng thái UI:** Loading: skeleton 3 thẻ giá · Lỗi tải giá: "Không tải được bảng giá" + nút Thử lại · Thành công: chuyển cổng.
+  - 2a. Đang có Premium còn hiệu lực → **không chặn**; nút đổi nhãn thành **"Gia hạn ngay"**, hiện rõ ngày hết hạn mới sau khi cộng dồn (BR-A66b).
+  - 2b. Lỗi mạng/cổng → thông báo thân thiện kèm nút Thử lại.
+- **Trạng thái UI:** Loading: skeleton các thẻ giá · Lỗi tải giá: "Không tải được bảng giá" + nút Thử lại.
 
 ---
 
-### SCR-23 — Thanh toán / đang xử lý *(phủ FR-29; nhận kết quả từ FR-32)*
+### SCR-23 — Trang thanh toán payOS VietQR (`/thanh-toan`) *(phủ FR-29, FR-32)*
 
 - **Bảng element:**
 
   | # | Element | Loại | Hành vi / điều kiện | Nguồn dữ liệu / API | Thông báo trên UI |
   |---|---------|------|----------------------|---------------------|--------------------|
-  | 1 | Màn "Đang xử lý" | status | Hỏi lại **mỗi 3 giây, tối đa 60 giây** (FR-29 5a) | `GET /billing/subscription` | "Đang xác nhận thanh toán…" |
-  | 2 | Màn thành công | status | Khi `status = ACTIVE` | idem | "🎉 Premium đã được kích hoạt!" + nút "Bắt đầu học" |
-  | 3 | Màn quá hạn chờ | status | Sau 60 giây chưa có kết quả | — | "Thanh toán đang được xử lý. Premium sẽ kích hoạt trong ít phút và chúng tôi đã gửi email xác nhận." |
-  | 4 | Màn thất bại | status | Khi cổng trả thất bại | — | "Thanh toán chưa thành công." + nút "Thử lại" (về SCR-22) |
+  | 1 | Khung mã VietQR | image/qr | Render mã QR VietQR động (chứa số tiền, STK BIDV, nội dung chuyển khoản) | `GET /billing/status/{orderCode}` (`qrCode`) | Quét mã VietQR để thanh toán |
+  | 2 | Bảng chi tiết chuyển khoản | table | Hiển thị: Ngân hàng (BIDV), Chủ tài khoản (PHAN BUI BA DAT), STK (V3CAS5111146929), Nội dung CK chính xác, Số tiền chính xác | `CheckoutResult` | Kèm các nút "Chép" nhanh một chạm vào clipboard |
+  | 3 | Nút mở trang payOS | link/button | Mở trang thanh toán web chính thức của payOS trên tab mới | `checkoutUrl` | "Mở trang thanh toán cổng payOS ↗" |
+  | 4 | Bộ đếm Polling đồng bộ | status | Tự động truy vấn trạng thái đơn hàng mỗi 2 giây | `GET /billing/status/{orderCode}` (refetchInterval: 2000) | "Đang tự động đồng bộ trạng thái từ payOS… (2s)" |
+  | 5 | Nút xác nhận thủ công | button | Gọi `POST /billing/confirm/{orderCode}` đối soát trực tiếp máy chủ payOS (chống gian lận) | `POST /billing/confirm/{orderCode}` | "Tôi đã thanh toán trên payOS" |
+  | 6 | Nút chọn gói khác / Huỷ | link | Quay lại trang nâng cấp | — | "Chọn gói khác" / "Hủy bỏ" |
 
-- **Luồng thay thế / ngoại lệ trên UI:**
-  - Người dùng **huỷ ở trang cổng** → quay về SCR-22, **không hiện lỗi đỏ**, không trách móc.
-  - **Thẻ bị từ chối** → màn (4). **Không hiển thị mã lỗi kỹ thuật của cổng** (AC-29.5).
-  - Người dùng **đóng tab rồi quay lại** → vào lại SCR-23, tiếp tục hỏi trạng thái từ đầu.
-- **Trạng thái UI:** Loading: spinner + chữ + gợi ý "Việc này thường mất vài giây" · Lỗi: màn (4) · Thành công: màn (2).
+- **Luồng xử lý nghiệp vụ:**
+  - Khi CSDL ghi nhận trạng thái `PAID` (từ webhook IPN hoặc qua polling đồng bộ), client **tự động chuyển hướng** sang trang thành công `/thanh-toan/thanh-cong?orderCode=...`.
+  - Khi người dùng nhấn nút (5) "Tôi đã thanh toán trên payOS", backend truy vấn máy chủ payOS. Nếu payOS vẫn báo `PENDING`, hệ thống hiển thị thông báo lỗi: *"Cổng payOS chưa ghi nhận thanh toán thành công cho đơn hàng này. Vui lòng quét mã QR chuyển khoản hoặc hoàn tất giao dịch rồi thử lại."*
+- **Trạng thái UI:** Đang tải dữ liệu: Skeleton box · Đang đối soát: Spinner "Đang kiểm tra payOS…" · Đã thanh toán: Chuyển hướng sang trang chúc mừng.
 
 ---
 

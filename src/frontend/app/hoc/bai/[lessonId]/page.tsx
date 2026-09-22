@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ErrorNotice } from "@/components/ErrorNotice";
-import { PlaceholderVideo } from "@/components/PlaceholderVideo";
+import { SignVideoPlayer } from "@/components/SignVideoPlayer";
 import { ApiError, apiCall } from "@/lib/api";
 
 interface LessonResult {
@@ -155,107 +155,110 @@ export default function LessonPage() {
   const canSubmit = isTypedExercise ? typedAnswer.trim().length > 0 : Boolean(selectedOptionId);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <header className="space-y-2">
-        <Link href="/hoc" className="text-sm text-[var(--color-ink-600)] underline">
-          ← {lesson.data.title}
-        </Link>
-        <div
-          className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-border-default)]"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={exercises.length}
-          aria-valuenow={index}
-          aria-label="Tiến độ bài học"
-        >
+    <div className="mx-auto max-w-2xl px-4 py-8">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#E2DBD0] shadow-sm space-y-6">
+        <header className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Link href="/hoc" className="text-sm font-bold text-[#64748B] hover:text-[#0d9fa5] flex items-center gap-1 transition-colors">
+              <span>←</span>
+              <span>{lesson.data.title}</span>
+            </Link>
+            <span className="text-xs font-bold text-[#08757a] bg-[#e6f7f8] px-2.5 py-1 rounded-full border border-[#b2e7e9]">
+              Câu {index + 1} / {exercises.length}
+            </span>
+          </div>
+
           <div
-            className="h-full bg-[var(--color-brand-600)]"
-            style={{ width: `${(index / exercises.length) * 100}%` }}
-          />
-        </div>
-        <p className="text-xs text-[var(--color-ink-600)]">
-          Câu {index + 1} / {exercises.length}
-        </p>
-      </header>
+            className="h-2.5 w-full overflow-hidden rounded-full bg-[#E2DBD0]"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={exercises.length}
+            aria-valuenow={index}
+            aria-label="Tiến độ bài học"
+          >
+            <div
+              className="h-full bg-[#0d9fa5] rounded-full transition-all duration-300"
+              style={{ width: `${(index / exercises.length) * 100}%` }}
+            />
+          </div>
+        </header>
 
-      {exercise.placeholderVideo || !exercise.videoUrl ? (
-        <PlaceholderVideo label="Video ký hiệu mẫu" />
-      ) : (
-        <video
+        <SignVideoPlayer
           key={exercise.id}
-          src={exercise.videoUrl}
-          controls
-          playsInline
-          className="aspect-video w-full rounded-xl bg-[var(--color-bg-video)]"
+          videoUrl={exercise.videoUrl}
+          placeholderVideo={exercise.placeholderVideo}
+          title={exercise.promptText || "Video ký hiệu mẫu"}
+          className="border border-[#E2DBD0]"
         />
-      )}
 
-      <h1 className="text-xl font-semibold">{exercise.promptText}</h1>
+        <h1 className="text-xl sm:text-2xl font-extrabold text-[#0F172A]">{exercise.promptText}</h1>
 
-      {isTypedExercise ? (
-        <div className="space-y-1">
-          <label htmlFor="typed" className="block text-sm font-medium">
-            Câu trả lời của bạn
-          </label>
-          <input
-            id="typed"
-            value={typedAnswer}
-            disabled={Boolean(feedback)}
-            onChange={(event) => setTypedAnswer(event.target.value)}
-            className="w-full rounded-lg border border-[var(--color-border-strong)] bg-transparent px-3 py-2"
-          />
-        </div>
-      ) : (
-        <ul className="grid gap-2 sm:grid-cols-2">
-          {(exercise.options ?? []).map((option) => (
-            <li key={option.id}>
-              <OptionCard
-                option={option}
-                selected={selectedOptionId === option.id}
-                feedback={feedback}
-                onSelect={() => !feedback && setSelectedOptionId(option.id)}
-              />
-            </li>
-          ))}
-        </ul>
-      )}
+        {isTypedExercise ? (
+          <div className="space-y-2">
+            <label htmlFor="typed" className="block text-sm font-bold text-[#0F172A]">
+              Câu trả lời của bạn
+            </label>
+            <input
+              id="typed"
+              value={typedAnswer}
+              disabled={Boolean(feedback)}
+              onChange={(event) => setTypedAnswer(event.target.value)}
+              placeholder="Nhập nghĩa ký hiệu VSL…"
+              className="w-full rounded-xl border border-[#E2DBD0] bg-[#F4EFE6] px-4 py-3 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0d9fa5]"
+            />
+          </div>
+        ) : (
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {(exercise.options ?? []).map((option) => (
+              <li key={option.id}>
+                <OptionCard
+                  option={option}
+                  selected={selectedOptionId === option.id}
+                  feedback={feedback}
+                  onSelect={() => !feedback && setSelectedOptionId(option.id)}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
 
-      {error && <ErrorNotice message={error} />}
+        {error && <ErrorNotice message={error} />}
 
-      {feedback ? (
-        <div
-          className={`space-y-2 rounded-lg px-4 py-3 ${
-            feedback.isCorrect
-              ? "bg-[var(--color-success-050)] text-[var(--color-success-700)]"
-              : "bg-[var(--color-danger-050)] text-[var(--color-danger-700)]"
-          }`}
-        >
-          <p className="font-semibold">
-            <span aria-hidden="true">{feedback.isCorrect ? "✓ " : "✗ "}</span>
-            {feedback.isCorrect ? "Chính xác!" : "Chưa đúng"}
-          </p>
-          {!feedback.isCorrect && feedback.correctAnswerText && (
-            <p className="text-sm">Đáp án đúng: {feedback.correctAnswerText}</p>
-          )}
+        {feedback ? (
+          <div
+            className={`space-y-3 rounded-2xl p-5 border transition-all ${
+              feedback.isCorrect
+                ? "bg-[#e6f7f8] border-[#b2e7e9] text-[#08757a]"
+                : "bg-red-50 border-red-200 text-red-800"
+            }`}
+          >
+            <p className="font-extrabold text-base flex items-center gap-2">
+              <span className="text-lg">{feedback.isCorrect ? "✓" : "✗"}</span>
+              <span>{feedback.isCorrect ? "Chính xác tuyệt vời!" : "Chưa chính xác"}</span>
+            </p>
+            {!feedback.isCorrect && feedback.correctAnswerText && (
+              <p className="text-sm font-medium">Đáp án đúng: <span className="font-bold">{feedback.correctAnswerText}</span></p>
+            )}
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={busy}
+              className="rounded-full bg-[#0d9fa5] hover:bg-[#0a8287] px-6 py-3 font-bold text-white shadow-xs transition-all hover:scale-102 cursor-pointer"
+            >
+              {index + 1 < exercises.length ? "Câu tiếp theo →" : "Hoàn thành bài học 🎉"}
+            </button>
+          </div>
+        ) : (
           <button
             type="button"
-            onClick={goNext}
-            disabled={busy}
-            className="rounded-lg bg-[var(--color-brand-600)] px-5 py-2 font-medium text-white hover:bg-[var(--color-brand-700)]"
+            onClick={submitAnswer}
+            disabled={!canSubmit || busy}
+            className="w-full rounded-full bg-[#0d9fa5] hover:bg-[#0a8287] px-6 py-3.5 font-bold text-white shadow-xs transition-all disabled:cursor-not-allowed disabled:bg-[#E2DBD0] disabled:text-[#94A3B8] cursor-pointer"
           >
-            {index + 1 < exercises.length ? "Câu tiếp theo" : "Hoàn thành bài học"}
+            {busy ? "Đang kiểm tra…" : "Kiểm tra đáp án"}
           </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={submitAnswer}
-          disabled={!canSubmit || busy}
-          className="w-full rounded-lg bg-[var(--color-brand-600)] px-4 py-3 font-medium text-white hover:bg-[var(--color-brand-700)] disabled:cursor-not-allowed disabled:bg-[var(--color-border-default)] disabled:text-[var(--color-ink-400)]"
-        >
-          {busy ? "Đang kiểm tra…" : "Kiểm tra"}
-        </button>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -274,16 +277,16 @@ function OptionCard({
   const isRevealedCorrect = feedback && feedback.correctOptionId === option.id;
   const isWrongChoice = feedback && selected && !feedback.isCorrect;
 
-  let tone = "border-[var(--color-border-default)]";
+  let tone = "border-[#E2DBD0] bg-[#F4EFE6]/50 hover:border-[#0d9fa5] hover:bg-white";
   let marker = "";
   if (isRevealedCorrect) {
-    tone = "border-[var(--color-success-700)] bg-[var(--color-success-050)]";
+    tone = "border-[#0d9fa5] bg-[#e6f7f8] text-[#08757a] ring-1 ring-[#0d9fa5]";
     marker = "✓ ";
   } else if (isWrongChoice) {
-    tone = "border-[var(--color-danger-700)] bg-[var(--color-danger-050)]";
+    tone = "border-red-400 bg-red-50 text-red-700";
     marker = "✗ ";
   } else if (selected) {
-    tone = "border-[var(--color-brand-600)] bg-[var(--color-brand-050)]";
+    tone = "border-[#0d9fa5] bg-[#e6f7f8] text-[#08757a] ring-2 ring-[#0d9fa5]";
   }
 
   return (
@@ -292,9 +295,9 @@ function OptionCard({
       onClick={onSelect}
       aria-pressed={selected}
       disabled={Boolean(feedback)}
-      className={`w-full rounded-lg border-2 px-4 py-3 text-left ${tone}`}
+      className={`w-full rounded-2xl border-2 px-4 py-3.5 text-left font-bold text-sm sm:text-base transition-all cursor-pointer ${tone}`}
     >
-      <span aria-hidden="true">{marker}</span>
+      <span aria-hidden="true" className="font-extrabold">{marker}</span>
       {option.labelText}
     </button>
   );
@@ -302,30 +305,33 @@ function OptionCard({
 
 function LessonSummary({ summary, title }: { summary: CompleteResult; title: string }) {
   return (
-    <div className="mx-auto max-w-md space-y-6 text-center">
-      <h1 className="text-2xl font-bold">Hoàn thành: {title}</h1>
-      <p className="text-5xl font-bold text-[var(--color-brand-600)]">{summary.scorePercent}%</p>
-      <dl className="grid grid-cols-2 gap-3 text-left text-sm">
-        <Stat label="Chuỗi ngày học" value={`${summary.streak.current} ngày`} />
-        <Stat label="Dài nhất" value={`${summary.streak.longest} ngày`} />
-        <Stat label="Thời gian học" value={`${summary.effectiveMinutes} phút`} />
-        <Stat label="Ký hiệu mới" value={`${summary.newSignsLearned}`} />
-      </dl>
-      <div className="flex flex-col gap-2">
-        {summary.nextLessonId && (
+    <div className="mx-auto max-w-md px-4 py-12">
+      <div className="bg-white rounded-3xl p-8 border border-[#E2DBD0] shadow-sm space-y-6 text-center">
+        <span className="text-4xl block">🎉</span>
+        <h1 className="text-2xl font-extrabold text-[#0F172A]">Hoàn thành: {title}</h1>
+        <p className="text-6xl font-extrabold text-[#0d9fa5] tracking-tight">{summary.scorePercent}%</p>
+        <dl className="grid grid-cols-2 gap-3 text-left text-sm">
+          <Stat label="Chuỗi ngày học" value={`${summary.streak.current} ngày`} />
+          <Stat label="Dài nhất" value={`${summary.streak.longest} ngày`} />
+          <Stat label="Thời gian học" value={`${summary.effectiveMinutes} phút`} />
+          <Stat label="Ký hiệu mới" value={`${summary.newSignsLearned}`} />
+        </dl>
+        <div className="flex flex-col gap-3 pt-2">
+          {summary.nextLessonId && (
+            <Link
+              href={`/hoc/bai/${summary.nextLessonId}`}
+              className="rounded-full bg-[#0d9fa5] hover:bg-[#0a8287] px-6 py-3.5 font-bold text-white shadow-xs transition-all hover:scale-102 cursor-pointer"
+            >
+              Học bài tiếp theo →
+            </Link>
+          )}
           <Link
-            href={`/hoc/bai/${summary.nextLessonId}`}
-            className="rounded-lg bg-[var(--color-brand-600)] px-5 py-3 font-medium text-white"
+            href="/luyen-ai"
+            className="rounded-full border border-[#E2DBD0] bg-[#F4EFE6] hover:bg-white px-6 py-3 font-bold text-[#0F172A] transition-colors"
           >
-            Học bài tiếp theo
+            Luyện tập Camera 📹
           </Link>
-        )}
-        <Link
-          href="/luyen-ai"
-          className="rounded-lg border border-[var(--color-border-strong)] px-5 py-3 font-medium"
-        >
-          Luyện ký hiệu với AI
-        </Link>
+        </div>
       </div>
     </div>
   );
@@ -333,9 +339,9 @@ function LessonSummary({ summary, title }: { summary: CompleteResult; title: str
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-[var(--color-border-default)] px-3 py-2">
-      <dt className="text-xs text-[var(--color-ink-600)]">{label}</dt>
-      <dd className="font-semibold">{value}</dd>
+    <div className="rounded-2xl border border-[#E2DBD0] bg-[#F4EFE6]/50 px-3.5 py-2.5">
+      <dt className="text-xs font-medium text-[#64748B]">{label}</dt>
+      <dd className="font-bold text-[#0F172A] text-base mt-0.5">{value}</dd>
     </div>
   );
 }

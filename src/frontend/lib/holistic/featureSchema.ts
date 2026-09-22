@@ -37,29 +37,25 @@ export const SLICES = {
 export const POSE_LANDMARK_INDICES = [0, 11, 12, 13, 14, 15, 16, 23, 24];
 
 /**
- * 41 điểm Face Mesh: viền mặt, hai mắt, hai chân mày, sống mũi, miệng.
- * Ký hiệu VSL dùng nét mặt làm ngữ pháp nên không thể bỏ hẳn lát này.
+ * 41 điểm Face Mesh khớp hoàn toàn với cấu hình huấn luyện của mô hình
+ * (vsl_mvp30_v2_lite_transformer & vsl_mvp400_v2_lite_transformer).
  */
 export const FACE_LANDMARK_INDICES = [
-  10, 152, 234, 454, 162, 389,
-  33, 133, 159, 145, 157, 154,
-  362, 263, 386, 374, 384, 381,
-  70, 63, 105, 107,
-  300, 293, 334, 336,
-  1, 4, 5, 195, 197,
-  61, 291, 13, 14, 78, 308, 0, 17, 37, 267,
+  10, 33, 61, 78, 81, 82, 87, 88, 91, 95, 133, 146, 159, 160, 161, 173,
+  178, 181, 185, 191, 199, 263, 291, 308, 311, 312, 317, 318, 321, 324,
+  362, 374, 386, 387, 388, 398, 402, 405, 409, 415, 454,
 ];
 
-/** Thứ tự cố định của 8 chiều trong lát `quality`. */
+/** Thứ tự cố định của 8 chiều trong lát `quality` (khớp config.json). */
 export const QUALITY_FIELDS = [
-  "leftHandPresent",
-  "rightHandPresent",
-  "poseDetected",
-  "faceDetected",
-  "handFrameRatio",
-  "bothHandsRatio",
-  "frameIndexNorm",
-  "normScale",
+  "left_hand_detected",
+  "right_hand_detected",
+  "pose_detected",
+  "face_detected",
+  "any_hand_detected",
+  "both_hands_detected",
+  "hand_missing_rate",
+  "face_missing_rate",
 ] as const;
 
 /** Giá trị tuyệt đối tối đa của một phần tử tensor (api-spec §3.12c). */

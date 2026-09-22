@@ -64,9 +64,10 @@ public class AiController {
     @Operation(summary = "Phiên luyện ký hiệu động — chỉ ký hiệu có chấm AI (BR-A111)")
     public ResponseEntity<TransactionResponse<AiPracticeSessionResult>> practiceSession(
             @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId,
+            @RequestParam(required = false) java.util.UUID signId,
             @RequestParam(defaultValue = "" + DEFAULT_SESSION_SIZE) int size) {
         int bounded = Math.clamp(size, 1, 50);
         return ResponseEntity.ok(
-                ApiResponses.ok(requestId, recognitionService.practiceSession(bounded)));
+                ApiResponses.ok(requestId, recognitionService.practiceSession(signId, bounded)));
     }
 }

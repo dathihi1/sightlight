@@ -41,43 +41,42 @@ khác phần còn lại, **hoặc** (c) có đội thứ hai sở hữu riêng m
 ```mermaid
 flowchart TB
     subgraph CLIENT["Kênh / Client"]
-        WEB["Web người học<br/>Next.js 15 (SSR+CSR)"]
+        WEB["Web người học<br/>Next.js 15 (SSR+CSR) · React 19"]
         CMSUI["CMS nội dung<br/>Next.js /admin"]
         MKT["Landing + Blog<br/>Next.js SSG"]
     end
     subgraph EDGE["Cổng / Edge"]
         PROXY["Reverse proxy (Caddy)<br/>TLS · security header · rate-limit thô"]
     end
-    subgraph APP["SignLight API — Modular monolith (Spring Boot 3.5 / Java 21)"]
-        IDN["identity<br/>FR-01→08"]
-        CNT["content<br/>FR-09,10,33→35"]
+    subgraph APP["SignLight API — Modular monolith (Spring Boot 3.3.4 / Java 21)"]
+        IDN["identity<br/>FR-01→08 · Google OIDC · Refresh Token Family · Email OTP"]
+        CNT["content<br/>FR-09,10,33→35 · Media Stream Proxy"]
         LRN["learning<br/>FR-11→16"]
         PRC["practice<br/>FR-17→20"]
         DIC["dictionary<br/>FR-21,22"]
         GAM["gamification<br/>FR-23→27"]
-        BIL["billing<br/>FR-28→32"]
+        BIL["billing<br/>FR-28→32 · payOS VietQR · Polling & Anti-bypass"]
         SUP["cms/support<br/>FR-36"]
-        AIR["airecognition<br/>FR-41→44,46 · cổng trung chuyển"]
+        AIR["airecognition<br/>FR-41→44,46 · Dual Inference Orchestrator"]
         PLT["platform<br/>FR-39,40 · outbox · scheduler"]
     end
-    subgraph AISVC["Dịch vụ AI (Python) — tiến trình riêng, KHÔNG trạng thái"]
+    subgraph AISVC["Dịch vụ AI (Python) — Fallback / Dự phòng máy chủ"]
         FAPI["FastAPI"]
-        ONNX["ONNX Runtime<br/>vsl_mvp30 INT8 · 0,40 MB"]
+        ONNX["ONNX Runtime<br/>vsl_mvp30 / vsl_mvp400 INT8"]
     end
     subgraph DATA["Dữ liệu"]
-        PG[("PostgreSQL 17<br/>nguồn sự thật")]
+        PG[("PostgreSQL 16<br/>nguồn sự thật · Flyway V1-V6")]
         RDS[("Redis 7.4<br/>cache · rate-limit · token thu hồi")]
-        OBJ[("Object storage S3<br/>video gốc + HLS + ảnh")]
+        GDRV[("Google Drive CDN + Local Web Videos<br/>Direct Streaming lh3.googleusercontent.com")]
     end
     subgraph EXT["Tích hợp ngoài"]
-        CDN["CDN"]
-        PAY["Cổng thanh toán"]
-        MAIL["Dịch vụ email"]
-        TRC["Chuyển mã video"]
-        GG["Google OAuth2"]
+        PAY["Cổng payOS (VietQR NAPAS 24/7)"]
+        MAIL["Dịch vụ Email (SMTP)"]
+        GG["Google OIDC Identity Provider"]
     end
-    subgraph BROWSER["Chạy trong trình duyệt — pixel KHÔNG rời thiết bị"]
-        MP["MediaPipe Holistic (WASM)<br/>→ tensor 64×327"]
+    subgraph BROWSER["Chạy trong trình duyệt — Kiến trúc Dual Inference"]
+        MP["MediaPipe Holistic (WASM)<br/>→ 75 điểm mốc (225 features)"]
+        ONNXWEB["ONNX Runtime Web (WASM INT8)<br/>→ Suy luận tại chỗ <20ms"]
     end
 
     WEB --> PROXY
@@ -85,8 +84,11 @@ flowchart TB
     MKT --> PROXY
     PROXY --> IDN & CNT & LRN & PRC & DIC & GAM & BIL & SUP & AIR
     IDN & CNT & LRN & PRC & DIC & GAM & BIL & SUP & AIR --> PG
-    AIR -->|"tensor số, timeout 5s<br/>circuit breaker"| FAPI
+    CNT -.-> GDRV
+    BIL <--> PAY
+    AIR -->|"tensor số dự phòng (timeout 5s)<br/>circuit breaker"| FAPI
     FAPI --> ONNX
+```
     CNT & DIC & LRN --> RDS
     IDN --> RDS
     CNT --> OBJ
@@ -231,29 +233,47 @@ sequenceDiagram
 3. **Dịch vụ AI không chạm CSDL** → cô lập hoàn toàn, thay mô hình không ảnh hưởng dữ liệu.
 4. **Lỗi dịch vụ AI không phải lỗi của người học** → không trừ hạn mức, không đánh dấu sai (NFR-20).
 
-### 4.3 Thanh toán và kích hoạt Premium (FR-29 + FR-32)
+### 4.3 Thanh toán qua payOS VietQR và kích hoạt Premium (FR-29, FR-32)
 
 ```mermaid
 sequenceDiagram
     participant U as Người học
-    participant FE as Web
-    participant B as billing
-    participant PAY as Cổng thanh toán
+    participant FE as Web (Next.js)
+    participant B as Billing (Spring Boot)
+    participant PAY as Cổng payOS (VietQR)
     participant DB as PostgreSQL
 
-    U->>FE: chọn gói
-    FE->>B: POST /billing/checkout {planCode, idempotencyKey}
-    B->>DB: tra BẢNG GIÁ SERVER (bỏ qua giá client — BR-A60)
-    B->>PAY: tạo phiên thanh toán
-    PAY-->>FE: chuyển tới giao diện thanh toán
-    U->>PAY: nhập thẻ (SignLight KHÔNG chạm vào — BR-A62)
-    PAY-->>FE: quay về trang "đang xử lý"
-    PAY->>B: webhook (chữ ký HMAC)
-    B->>B: xác thực chữ ký + kiểm timestamp ≤5 phút (FR-32)
-    B->>DB: lưu payment_event thô, kiểm idempotent theo providerEventId
-    B->>DB: tạo subscription ACTIVE, nâng vai trò
-    FE->>B: hỏi lại mỗi 3s (tối đa 60s)
-    B-->>FE: đã kích hoạt Premium
+    U->>FE: Chọn gói dịch vụ (1 tháng / 6 tháng / 1 năm)
+    FE->>B: POST /api/v1/billing/checkout {planId}
+    B->>DB: Tra bảng giá server (bỏ qua giá client — BR-A60)
+    B->>PAY: Tạo payment link (orderCode số nguyên 53-bit, số tiền VND)
+    PAY-->>B: {checkoutUrl, qrCode, accountNumber, accountName, bin: 970418, description}
+    B->>DB: Lưu payment_transaction (PENDING, thông tin ngân hàng giải mã BIDV)
+    B-->>FE: Trả kết quả đơn hàng + mã QR VietQR + tài khoản BIDV
+    FE-->>U: Hiển thị mã VietQR động + nút sao chép STK / Nội dung chuyển khoản
+
+    alt Người học quét mã QR trên Mobile Banking
+        U->>PAY: Chuyển khoản 24/7 NAPAS qua ứng dụng ngân hàng
+        PAY->>B: Webhook POST /api/v1/billing/ipn/payos (HMAC SHA-256)
+        B->>B: Xác thực chữ ký HMAC SHA-256 dữ liệu webhook
+        B->>DB: Cập nhật payment_transaction (PAID), kích hoạt subscription ACTIVE, nâng vai trò ROLE_LEARNER_PREMIUM
+        B-->>PAY: Phản hồi {"code":"00", "desc":"success"}
+    else Người học bấm nút "Tôi đã thanh toán trên payOS"
+        U->>FE: Bấm xác nhận
+        FE->>B: POST /api/v1/billing/confirm/{orderCode}
+        B->>PAY: Gọi API đối soát trực tiếp payOS GET /v2/payment-requests/{orderCode}
+        alt payOS xác nhận PAID
+            B->>DB: Cập nhật PAID, kích hoạt Subscription, nâng Premium
+            B-->>FE: Trả về trạng thái PAID
+        else payOS vẫn PENDING
+            B-->>FE: Ném mã lỗi 06101 (PAYMENT_NOT_COMPLETED) — chống gian lận bypass
+        end
+    end
+
+    loop Polling mỗi 2 giây
+        FE->>B: GET /api/v1/billing/status/{orderCode}
+        B-->>FE: Trạng thái hiện tại (nếu PAID -> điều hướng trang thành công)
+    end
 ```
 
 ### 4.4 Xuất bản nội dung (FR-33→35)
@@ -265,28 +285,30 @@ danh mục ở Redis** → nội dung xuất hiện với người học.
 
 | Hệ thống | Giao thức | Xác thực | Chiều | Xử lý lỗi & thử lại |
 |----------|-----------|----------|-------|----------------------|
-| Cổng thanh toán | REST (ra) + Webhook (vào) | API key / **HMAC** | Hai chiều | Ra: timeout 10s, thử lại 3 lần luỹ thừa. Vào: lưu thô trước, xử lý idempotent (BR-A63) |
-| Dịch vụ email | REST | API key | Ra | Qua `email_outbox`, thử lại tới 5 lần, sau đó cảnh báo |
-| Object storage (S3) | S3 API / HTTPS | Khoá truy cập, **URL ký 15 phút** | Ra | Trình phát thử lại; lỗi kéo dài → thông báo thân thiện |
-| CDN | HTTPS | Token/URL ký | Ra | Dự phòng về origin |
-| Chuyển mã video | REST + Webhook | API key | Hai chiều | `FAILED` → biên tập tải lại |
-| Google OAuth2 | OIDC + PKCE | Client ID/Secret | Ra | Lỗi → quay về đăng nhập mật khẩu |
-| Prometheus | HTTP scrape | Mạng nội bộ | Vào | — |
+| Cổng thanh toán payOS | REST (ra) + Webhook (vào) | Client ID / Api Key / **Checksum Key (HMAC SHA-256)** | Hai chiều | Ra: gọi tạo link và đối soát API. Vào: Webhook xác thực chữ ký số HMAC SHA-256 dữ liệu; polling chủ động 2s (BR-A63) |
+| Dịch vụ email | SMTP / JavaMailSender | Username / App Password | Ra | Gửi email mã OTP xác thực (6 số, 15 phút) và liên kết khôi phục mật khẩu |
+| Video Streaming | CDN Google Drive + HTTP Range Controller | Public Direct Stream | Ra | Phát trực tiếp qua CDN `lh3.googleusercontent.com` hoặc stream qua Spring Boot `/api/v1/media/stream/{id}` (HTTP 206) |
+| Google Identity (SSO) | Google OIDC ID Token | Google Client ID | Ra/Vào | Xác minh ID Token phía server qua GoogleTokenVerifier (`https://oauth2.googleapis.com/tokeninfo`) |
+| AI Inference Engine | HTTP REST (Nội bộ) | Internal Docker Network | Ra/Vào | Suy luận chính: ONNX Runtime Web WASM trong trình duyệt (<20ms). Suy luận dự phòng: FastAPI `POST /api/infer/features` |
+| Prometheus | HTTP scrape | Mạng nội bộ | Vào | Giám sát Actuator metrics |
 
 ## 6. Hạ tầng & Môi trường
 
 | Môi trường | Mục đích | Cấu hình | Dữ liệu |
 |------------|----------|----------|---------|
-| **dev** | Máy lập trình viên | Docker Compose: api + web + postgres + redis; storage giả lập S3 | Dữ liệu mẫu ẩn danh |
-| **uat** | Nghiệm thu (B6) | Docker Compose theo `deploy/docker-compose.yml`; dải port **`18080–18090`** (api `18080` · web `18081` · storage `18082/18083`; `ai` **không mở**) | Dữ liệu ẩn danh, **không PII thật** |
-| **prod** (định hướng) | Người dùng thật | 1 máy chủ + Caddy + api + postgres + redis; object storage & CDN là dịch vụ quản lý; sao lưu hằng ngày | Dữ liệu thật, mã hoá khi lưu nghỉ |
+| **dev** | Máy lập trình viên | Docker Compose: api + web + postgres + redis; video stream Google Drive CDN | Dữ liệu mẫu seed (`vsl-seed.json`) |
+| **uat** | Nghiệm thu (B6) | Docker Compose theo `deploy/docker-compose.yml`; dải port **`18080–18090`** (api `18080` · web `18081`; `ai` nội bộ) | Dữ liệu ẩn danh, **không PII thật** |
+| **prod** (định hướng) | Người dùng thật | 1 máy chủ + Caddy + api + postgres + redis; video Google Drive CDN; sao lưu CSDL hằng ngày | Dữ liệu thật, mã hoá khi lưu nghỉ |
 
 ```
-Internet ──► CDN ──► Object storage (video, ảnh)
+Internet ──► Google Drive CDN (video stream)
     │
     └──► Caddy (TLS, security header)
-             ├──► Next.js (SSR)
-             └──► Spring Boot API ──► PostgreSQL (sao lưu hằng ngày)
+             ├──► Next.js (Web Frontend, MediaPipe + ONNX Web WASM)
+             └──► Spring Boot API (Java 21) ──► PostgreSQL 16 (Flyway V1-V6)
+                       │
+                       └──► Dịch vụ AI FastAPI (Python, Server Fallback)
+```
                                   └──► Redis
 ```
 
@@ -351,39 +373,18 @@ PostgreSQL. **Không** cần đổi kiến trúc trong cả ba bước.
   *Hệ quả:* phải có bảo vệ CSRF cho endpoint làm mới token (token chống CSRF gửi kèm); đổi lại giảm mạnh
   hậu quả của XSS.
 
-- **ADR-07 — Trừu tượng hoá nhà cung cấp thanh toán sau interface `PaymentProvider`.** *(cập nhật v0.2)*
-  *Bối cảnh:* đã chốt **hai** cổng — VNPay và MoMo — với **thuật toán chữ ký khác nhau** (HMAC-SHA512 vs
-  HMAC-SHA256), chuỗi ký khác nhau, mã kết quả khác nhau, định dạng phản hồi IPN khác nhau.
-  *Quyết định:* `billing` chỉ làm việc với interface `PaymentProvider`; `VnpayProvider` và `MomoProvider`
-  là hai lớp hiện thực; luật nghiệp vụ (cộng dồn hạn, idempotency, đối chiếu số tiền) nằm **ngoài** provider.
-  *Hệ quả:* thêm ZaloPay sau này chỉ là thêm một lớp; đổi lại phải kỷ luật **không để chi tiết của cổng rò
-  rỉ ra ngoài interface**.
+- **ADR-07 — Tích hợp cổng thanh toán payOS (VietQR NAPAS 24/7) và kiểm chứng 2 chiều.** *(cập nhật v0.3)*
+  *Bối cảnh:* Các cổng thanh toán truyền thống như VNPay/MoMo đòi hỏi thủ tục merchant doanh nghiệp phức tạp và người dùng phải cài app ví riêng. Cần một giải pháp chuyển khoản ngân hàng chuẩn quốc gia (VietQR) hoạt động với toàn bộ 40+ ngân hàng tại Việt Nam (BIDV, MBBank, VCB,...).
+  *Quyết định:* Tích hợp cổng thanh toán **payOS** tạo payment link và mã VietQR chuẩn EMVCo/NAPAS. Backend lưu trữ mã BIN ngân hàng và số tài khoản thụ hưởng, tự động giải mã BIN sang tên ngân hàng chuẩn (VD: BIDV cho BIN 970418). Đồng bộ trạng thái đa kênh:
+  1. Webhook IPN nhận dữ liệu từ payOS với chữ ký số HMAC SHA-256.
+  2. Polling chu kỳ 2s từ client tới API backend để chủ động kéo trạng thái từ payOS khi chưa có public webhook URL.
+  3. Cơ chế kiểm chứng 2 chiều tại `POST /api/v1/billing/confirm/{orderCode}`: gọi thẳng sang máy chủ payOS để đối soát trước khi kích hoạt gói, chặn đứng hoàn toàn việc bypass thanh toán.
 
-- **ADR-08 — 🤖 Vị trí suy luận AI: trích đặc trưng ở client, phân lớp ở server.** *(mới ở v0.2 — ✅ **ĐÃ CHỐT: phương án B**, anh Duy 2026-09-20)*
-  *Bối cảnh:* mô hình nhận **tensor 64×327**, không nhận pixel. Có ba phương án khả thi.
-
-  | | A — toàn bộ trong trình duyệt | **B — landmark lên server** *(khuyến nghị)* | C — gửi ảnh lên server |
-  |---|---|---|---|
-  | Pixel rời thiết bị? | ❌ Không | ❌ **Không** | ✅ Có |
-  | Payload mỗi lượt | 0 | **~84 KB** (fp32) / ~42 KB (fp16) | ~2 MB (8–32 ảnh JPEG) |
-  | Đổi mô hình | Phải phát hành lại client | **Chỉ đổi server** | Chỉ đổi server |
-  | Tái dùng repo EXE101 | Phải port MediaPipe + ONNX sang web | **Sửa nhỏ: thêm endpoint nhận tensor** | **Dùng nguyên trạng** |
-  | Chi phí server | 0 | Thấp (0,5 ms/lượt) | Cao (MediaPipe chạy ở server) |
-  | Hoạt động khi mạng yếu | ✅ | ⚠️ | ❌ |
-  | Bảo vệ mô hình khỏi sao chép | ❌ Mô hình tải về máy người dùng | ✅ | ✅ |
-
-  *Quyết định (đã chốt):* **phương án B** — anh Duy chốt ngày **2026-09-20**. Nó giữ trọn cam kết quyền
-  riêng tư (không pixel nào rời thiết bị), chỉ cần **một endpoint mới** ở dịch vụ AI nhận tensor thay vì
-  ảnh, và vẫn cho phép nâng cấp mô hình mà không đụng tới client. Phương án A là **đường nâng cấp tự nhiên**
-  khi đã đo được hiệu năng MediaPipe trên máy thật; giữ nguyên interface thì đổi sang A sau này không phá
-  kiến trúc. Phương án C **bị loại** khỏi phạm vi.
-  *Hệ quả bắt buộc thực hiện:*
-  1. Dịch vụ AI **phải bổ sung** `POST /api/infer/features` nhận tensor `64×327` (api-spec §4.3);
-     endpoint `POST /api/infer/frames` (nhận ảnh) của repo EXE101 **không được bật** trong sản phẩm.
-  2. Frontend **bắt buộc** chạy MediaPipe Holistic tại chỗ — không có đường nào khác để lấy landmark.
-  3. Backend **từ chối 400 (`10103`)** mọi payload chứa trường ảnh/video (INV-1, TC-FR41-02).
-  4. Chấp nhận ~84 KB mỗi lượt thử và phụ thuộc mạng; nếu MediaPipe không đạt ≥ 15 fps trên máy tầm trung
-     (GĐ-06) thì **leo thang lên anh Duy**, không tự ý rơi về phương án C.
+- **ADR-08 — 🤖 Kiến trúc nhận diện AI kép (Dual Inference Architecture).** *(cập nhật v0.3)*
+  *Bối cảnh:* Mô hình LiteTransformer lượng tử hoá INT8 chỉ nặng khoảng ~400 KB, nhận vector đặc trưng 75 landmark (225 chiều) qua 30 khung hình. Trình duyệt hiện đại có WebAssembly SIMD cho phép suy luận siêu nhanh mà không phụ thuộc hạ tầng backend.
+  *Quyết định:* Triển khai **Kiến trúc nhận diện AI kép**:
+  1. **Nhánh chính (Client-side WASM - Phương án A):** Nạp `onnxruntime-web` trực tiếp ở frontend cùng MediaPipe Holistic. Suy luận cục bộ ngay trên máy người học (<20 ms độ trễ), không tốn chi phí máy chủ, quyền riêng tư 100% (không landmark/pixel nào truyền qua mạng).
+  2. **Nhánh dự phòng (Server Fallback - Phương án B):** Duy trì dịch vụ AI Python FastAPI (`POST /api/infer/features`) trên mạng nội bộ Docker. Backend Java gọi sang dịch vụ này khi client cần đối soát hoặc khi thiết bị người dùng không hỗ trợ WASM SIMD.
 
 - **ADR-09 — 🤖 Backend Java quyết định đúng/sai, dịch vụ AI chỉ trả nhãn.** *(mới ở v0.2)*
   *Bối cảnh:* "đúng hay sai" phụ thuộc ngưỡng tin cậy, biên giữa top1/top2, và ký hiệu mục tiêu — đều là

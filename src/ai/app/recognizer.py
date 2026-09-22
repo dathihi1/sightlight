@@ -68,7 +68,7 @@ class Recognizer:
             )
 
     def _load_session(self) -> None:
-        candidates = ["model_int8.onnx", "model.onnx", "model_fp32.onnx"]
+        candidates = ["model.int8.onnx", "model_int8.onnx", "model.onnx", "model_fp32.onnx"]
         for name in candidates:
             path = self.model_dir / name
             if path.is_file():
@@ -96,7 +96,7 @@ class Recognizer:
 
     @property
     def version_code(self) -> str:
-        base = os.getenv("MODEL_VERSION_CODE", DEFAULT_VERSION_CODE)
+        base = os.getenv("MODEL_VERSION_CODE", self.model_dir.name.replace("_", "-"))
         return f"{base}-stub" if self.stub_mode else base
 
     @property

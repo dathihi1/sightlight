@@ -94,8 +94,18 @@ erDiagram
 | | `result` | VARCHAR(16) | N | | | | | `SUCCESS`/`FAILED`/`LOCKED` |
 | `user_role` | `user_id` | UUID | N | PK(`user_id`,`role`), FK | | | | |
 | | `role` | VARCHAR(24) | N | | | | | 7 vai trò ở SRS §2.2 |
-| `email_verification_token` | `token_hash` | CHAR(64) | N | PK | | | **Nhạy cảm** | Hiệu lực 24h, dùng 1 lần (BR-A03) |
-| `password_reset_token` | `token_hash` | CHAR(64) | N | PK | | | **Nhạy cảm** | Hiệu lực 60 phút, dùng 1 lần (BR-A05) |
+| `email_verification_token` | `id` | UUID | N | PK | | | | Token OTP xác thực email 6 số |
+| | `user_id` | UUID | N | FK→`app_user.id` | `idx_evt_user` | | | |
+| | `token_hash` | VARCHAR(64) | N | | UNIQUE (`uq_evt_hash`) | | **Nhạy cảm** | SHA-256 mã OTP, TTL 15 phút, dùng 1 lần |
+| | `expires_at` | TIMESTAMPTZ | N | | `idx_evt_expires` | | | |
+| | `used_at` | TIMESTAMPTZ | Y | | | | NULL | |
+| | `created_at` | TIMESTAMPTZ | N | | | now() | | |
+| `password_reset_token` | `id` | UUID | N | PK | | | | Token đặt lại mật khẩu ngẫu nhiên |
+| | `user_id` | UUID | N | FK→`app_user.id` | `idx_prt_user` | | | |
+| | `token_hash` | VARCHAR(64) | N | | UNIQUE (`uq_prt_hash`) | | **Nhạy cảm** | SHA-256 token ngẫu nhiên, TTL 60 phút, dùng 1 lần |
+| | `expires_at` | TIMESTAMPTZ | N | | `idx_prt_expires` | | | |
+| | `used_at` | TIMESTAMPTZ | Y | | | | NULL | |
+| | `created_at` | TIMESTAMPTZ | N | | | now() | | |
 | `onboarding_answer` | `id` | UUID | N | PK | | | | |
 | | `onboarding_token` | UUID | Y | | `idx_onb_token` | | | Khách chưa có tài khoản; TTL 24h |
 | | `user_id` | UUID | Y | FK→`app_user.id` | | | | |
@@ -150,9 +160,12 @@ erDiagram
 | | `status` | VARCHAR(20) | N | | `idx_sign_status` | `'DRAFT'` | Chỉ `PUBLISHED` mới ra kết quả tìm kiếm (BR-A42) |
 | `sign_video` | `id` | UUID | N | PK | | | |
 | | `sign_id` | UUID | N | FK→`sign.id` | `idx_sv_sign` | | |
-| | `object_key` | VARCHAR(512) | N | | | | Khoá gốc trong object storage |
-| | `hls_manifest_key` | VARCHAR(512) | Y | | | | Sinh sau chuyển mã |
-| | `status` | VARCHAR(16) | N | | `idx_sv_status` | `'UPLOADED'` | `UPLOADED`/`TRANSCODING`/`READY`/`FAILED` (BR-A75) |
+| | `storage_provider` | VARCHAR(32) | N | | `idx_sv_storage` | `'GDRIVE'` | `'GDRIVE'` (mặc định), `'MINIO'`, `'S3'` |
+| | `drive_file_id` | VARCHAR(128) | Y | | `idx_sv_drive_id` | NULL | Google Drive File ID phát qua CDN `lh3.googleusercontent.com` |
+| | `direct_url` | VARCHAR(1024) | Y | | | NULL | URL video stream trực tiếp |
+| | `object_key` | VARCHAR(512) | Y | | | NULL | Khoá object storage (tuỳ chọn khi dùng MinIO/S3) |
+| | `hls_manifest_key` | VARCHAR(512) | Y | | | NULL | Sinh sau chuyển mã |
+| | `status` | VARCHAR(16) | N | | `idx_sv_status` | `'READY'` | `UPLOADED`/`TRANSCODING`/`READY`/`FAILED` |
 | | `region_label` | VARCHAR(64) | Y | | | | Nhãn vùng miền (BR-A43) |
 | | `signer_label` | VARCHAR(64) | Y | | | | Người ký hiệu |
 | | `is_primary` | BOOLEAN | N | | | false | Biến thể hiển thị mặc định |
@@ -248,15 +261,29 @@ erDiagram
 | | ~~`auto_renew`~~ | — | — | — | **Đã bỏ ở v0.2** — không có gia hạn tự động (BR-A69) |
 | | `last_reminder_stage` | SMALLINT | Y | | 7 / 3 / 1 / 0 (sau hết hạn) — chống gửi nhắc trùng (AC-31.1, AC-31.5) |
 | `payment_transaction` | `id` | UUID | N | PK | |
-| | `order_ref` | VARCHAR(34) | N | UNIQUE | Mã ta sinh, gửi sang cổng (`vnp_TxnRef` / `orderId`). **VNPay giới hạn độ dài** → dùng chuỗi ngắn, không dùng UUID đầy đủ |
-| | `idempotency_key` | UUID | N | UNIQUE(`user_id`,`idempotency_key`) | |
-| | `provider` | VARCHAR(8) | N | `idx_pt_provider` | `VNPAY` / `MOMO` |
-| | `amount_minor`,`currency` | — | N | | **Lấy từ `plan_price`**, không từ client (BR-A60) |
-| | `status` | VARCHAR(16) | N | `idx_pt_status_created` | `PENDING`/`SUCCEEDED`/`FAILED`/`CANCELLED`/`REFUNDED` |
-| | `provider_transaction_no` | VARCHAR(64) | Y | UNIQUE(`provider`,`provider_transaction_no`) | **Khoá idempotent của IPN** (BR-A63) |
-| | `provider_response_code` | VARCHAR(16) | Y | | `vnp_ResponseCode` / `resultCode` |
-| | `paid_at` | TIMESTAMPTZ | Y | | Thời điểm IPN xác nhận — mốc tính hạn (BR-A65) |
+| | `order_code` | BIGINT | N | UNIQUE | Mã đơn hàng số nguyên 53-bit cho cổng payOS |
+| | `order_ref` | VARCHAR(64) | N | UNIQUE | Mã tham chiếu giao dịch (`PAYOS-...` / `vnp_TxnRef`) |
+| | `idempotency_key` | UUID | Y | UNIQUE(`user_id`,`idempotency_key`) | Chống tạo đơn trùng lặp |
+| | `provider` | VARCHAR(16) | N | `idx_pt_provider` | `PAYOS` (mặc định), `VNPAY`, `MOMO` |
+| | `amount` / `amount_minor` | INT / BIGINT | N | | Đơn vị VND (đồng), lấy từ bảng `plan` |
+| | `status` | VARCHAR(24) | N | `idx_pt_status_created` | `PENDING`/`PAID`/`FAILED`/`CANCELLED`/`REFUNDED` |
+| | `payment_link_id` | VARCHAR(128) | Y | | ID link thanh toán payOS |
+| | `checkout_url` | VARCHAR(1024) | Y | | URL chuyển hướng trang thanh toán payOS VietQR |
+| | `qr_code` | TEXT | Y | | Chuỗi VietQR payload thanh toán |
+| | `account_number` | VARCHAR(64) | Y | | Số tài khoản nhận tiền thụ hưởng (VD: `V3CAS5111146929`) |
+| | `account_name` | VARCHAR(128) | Y | | Tên chủ tài khoản thụ hưởng (VD: `PHAN BUI BA DAT`) |
+| | `bin` | VARCHAR(16) | Y | | Mã BIN ngân hàng NAPAS (VD: `970418` - BIDV) |
+| | `bank_name` | VARCHAR(128) | Y | | Tên ngân hàng thụ hưởng giải mã chuẩn NAPAS |
+| | `description` | VARCHAR(256) | Y | | Nội dung chuyển khoản yêu cầu |
+| | `provider_transaction_no` | VARCHAR(128) | Y | UNIQUE(`provider`,`provider_transaction_no`) | **Khoá idempotent của IPN** |
+| | `paid_at` | TIMESTAMPTZ | Y | | Thời điểm IPN xác nhận — mốc tính hạn |
 | | *(không có cột nào chứa dữ liệu thẻ/ví)* | — | — | — | **BR-A62 — bất biến** |
+| `payment_webhook_log` | `id` | UUID | N | PK | |
+| | `provider` | VARCHAR(16) | N | | `PAYOS` |
+| | `webhook_type` | VARCHAR(32) | N | | `PAYMENT_SUCCESS` / `PAYMENT_CANCELLED` |
+| | `raw_payload` | TEXT | N | | Lưu nguyên văn webhook IPN |
+| | `signature_valid` | BOOLEAN | N | | Kết quả xác thực chữ ký HMAC SHA-256 |
+| | `processed` | BOOLEAN | N | | Trạng thái xử lý nghiệp vụ thành công |
 | `payment_event` | `id` | UUID | N | PK | |
 | | `provider`,`provider_transaction_no` | — | N | UNIQUE kép | **Khoá idempotent** (BR-A63) |
 | | `raw_payload` | JSONB | N | | Lưu **nguyên văn** IPN trước khi xử lý (BR-A73); lọc bỏ trường nhạy cảm (DR-05) |
@@ -536,50 +563,48 @@ API -> FE  : { verified, status, confidence, predictedLabel, top3, qualityHints[
 phải hiệu chỉnh** sau khi đo trên webcam thật (rủi ro R-02). Để ở backend thì chỉnh bằng cấu hình trong
 `ai_model_version`; để ở dịch vụ AI thì phải đóng gói và triển khai lại mô hình mỗi lần chỉnh một con số.
 
-### 4.4 IPN thanh toán VNPay / MoMo (FR-32) *(viết lại ở v0.2)*
+### 4.4 Webhook IPN & Quy trình xác thực thanh toán payOS VietQR (FR-29, FR-32)
 
 ```
-PAY -> API : GET/POST /api/v1/billing/ipn/{provider}     provider ∈ {vnpay, momo}
+Cổng payOS -> API : POST /api/v1/billing/ipn/payos (hoặc /api/v1/billing/webhook)
 
-API -> IpnController
-  1. Đọc BODY/QUERY THÔ, chưa parse nghiệp vụ.
-  2. provider.verifySignature(raw):
-        VNPAY : sắp xếp tham số theo bảng chữ cái, bỏ vnp_SecureHash/vnp_SecureHashType,
-                nối "k=v&..", HMAC-SHA512 với secret, so sánh CHỐNG TẤN CÔNG THỜI GIAN
-        MOMO  : dựng chuỗi cố định theo tài liệu MoMo, HMAC-SHA256
-        sai   -> ghi CẢNH BÁO BẢO MẬT + payment_anomaly(SIGNATURE_INVALID)
-                 trả về theo định dạng cổng; *** KHÔNG THAY ĐỔI DỮ LIỆU GÌ *** (BR-A72)
-  3. INSERT payment_event(provider, provider_transaction_no, raw_payload, signature_valid=true)
-        ON CONFLICT (provider, provider_transaction_no) DO NOTHING
-        0 dòng bị ảnh hưởng -> ĐÃ XỬ LÝ RỒI -> trả phản hồi thành công để cổng ngừng gửi lại
-                               (BR-A63, AC-32.6)
-  4. Tìm payment_transaction theo order_ref
-        không thấy      -> payment_anomaly(UNKNOWN_ORDER) + cảnh báo, KHÔNG cấp Premium (AC-32.4)
-  5. So khớp SỐ TIỀN (BR-A105)
-        lệch            -> payment_anomaly(AMOUNT_MISMATCH), KHÔNG cấp Premium (AC-29.8)
-  6. Mã kết quả:
-        VNPAY : vnp_ResponseCode == "00" AND vnp_TransactionStatus == "00"
-        MOMO  : resultCode == 0
-        thành công -> BEGIN TRANSACTION
-                        payment_transaction: status=SUCCEEDED, paid_at=now(),
-                                             provider_transaction_no, provider_response_code
-                        SubscriptionService.activateOrExtend(userId, plan):
-                            đang ACTIVE  -> expires_at += duration_days   (cộng dồn, BR-A66b)
-                            không/hết hạn-> expires_at = now() + duration_days
-                        user_role: thêm LEARNER_PREMIUM
-                        subscription.last_reminder_stage = NULL   (đặt lại chu kỳ nhắc)
-                        email_outbox: biên nhận + ngày hết hạn mới (BR-A71)
-                      COMMIT
-        thất bại   -> payment_transaction: status=FAILED, provider_response_code
-  7. UPDATE payment_event SET processed_at = now()
-  8. Phản hồi ĐÚNG ĐỊNH DẠNG CỔNG:
-        VNPAY : {"RspCode":"00","Message":"Confirm Success"}
-        MOMO  : 204 No Content (hoặc theo tài liệu hiện hành)
+API -> BillingController -> BillingService.handlePayOsWebhook(payload, rawPayload)
+  1. Đọc RAW PAYLOAD và signature từ header/body.
+  2. payOsClient.verifyWebhookSignature(data, signature):
+        Sắp xếp các khoá trong object `data` theo bảng chữ cái A-Z, dựng chuỗi query string "k1=v1&k2=v2...",
+        tính HMAC SHA-256 với payos.checksum-key và so khớp hằng số thời gian với payload.signature.
+        sai   -> ghi payment_webhook_log(valid=false, "Chữ ký HMAC không hợp lệ") -> reject (400)
+                 *** KHÔNG THAY ĐỔI DỮ LIỆU GIAO DỊCH GÌ *** (BR-A72)
+  3. Ghi payment_webhook_log(valid=true, rawPayload, signature).
+  4. Kiểm tra orderCode:
+        nếu orderCode null / webhook test từ Dashboard -> ghi log test_success, phản hồi HTTP 200.
+  5. Tìm payment_transaction theo orderCode:
+        không thấy -> ghi log "unmatched orderCode", HTTP 200 (chống cổng retry).
+  6. Nếu tx.status == "PAID" -> idempotency: đã xử lý trước đó -> HTTP 200.
+  7. Kích hoạt giao dịch (activateSubscriptionForTransaction):
+        BEGIN TRANSACTION
+          payment_transaction: status = "PAID", paid_at = now(), webhook_signature = signature
+          SubscriptionService:
+             nếu user đã có gói ACTIVE -> expires_at = activeSub.expiresAt + durationDays (cộng dồn)
+             nếu chưa có / đã hết hạn -> expires_at = now() + durationDays
+             INSERT subscription (status = "ACTIVE")
+          authService.upgradeToPremium(userId) -> cấp quyền ROLE_LEARNER_PREMIUM
+        COMMIT
+  8. Trả về {"code":"00","desc":"Success"} cho payOS.
+
+--- Luồng Polling & Xác thực chủ động (Active Verification / Anti-Bypass) ---
+1. Khi ở môi trường phát triển / mạng nội bộ webhook chưa trỏ tới được:
+   - Frontend thực hiện polling mỗi 2 giây: GET /api/v1/billing/status/{orderCode}
+   - Backend (BillingService.syncAndGetTransactionStatus) chủ động gọi payOsClient.getPaymentLinkInformation(orderCode)
+     để đồng bộ trạng thái thực từ cổng payOS và tự kích hoạt Premium ngay khi payOS báo PAID.
+2. Khi người dùng nhấn nút "Tôi đã thanh toán trên payOS":
+   - Frontend gửi: POST /api/v1/billing/confirm/{orderCode}
+   - Backend gọi trực tiếp API tra cứu của payOS (/v2/payment-requests/{orderCode}).
+   - Chỉ khi payOS trả về trạng thái PAID thì mới chuyển giao dịch sang PAID và cấp quyền.
+   - Nếu payOS vẫn trả về PENDING / CANCELLED, ném mã lỗi 06101 (PAYMENT_NOT_COMPLETED), ngăn chặn hoàn toàn gian lận bypass.
 ```
 
-**`returnUrl` KHÔNG nằm trong luồng này.** Khi người dùng quay về trình duyệt, frontend chỉ gọi
-`GET /billing/subscription` để **đọc trạng thái từ CSDL**. Tham số trên `returnUrl` **không bao giờ** được
-dùng để cấp quyền (BR-A110, AC-29.7) — người dùng có thể tự gõ URL đó.
+**Lưu ý bảo mật:** Client hoặc returnUrl tuyệt đối không có quyền tự kích hoạt giao dịch thành PAID nếu chưa qua kiểm chứng chữ ký số webhook hoặc qua truy vấn đối soát API trực tiếp từ máy chủ payOS.
 
 ### 4.4b Job hết hạn & nhắc gia hạn (FR-31) *(mới ở v0.2)*
 
@@ -625,13 +650,19 @@ SchedulerJobs.subscriptionLifecycle()      // chạy MỖI GIỜ
 | `00403` | chung | — | 403 | Không có quyền | Bạn không có quyền thực hiện thao tác này. |
 | `00404` | chung | nghiệp vụ | 404 | Không tìm thấy tài nguyên | Không tìm thấy nội dung yêu cầu. |
 | `00499` | chung | nội bộ | 500 | Lỗi hệ thống | Hệ thống đang gặp sự cố, vui lòng thử lại sau. |
-| `01101` | identity | validate | 400 | Dữ liệu đăng ký sai định dạng | *(theo bảng validate FR-01)* |
+| `01101` | identity | validate | 400 | Dữ liệu đăng ký sai định dạng | Thông tin đăng ký chưa hợp lệ, vui lòng kiểm tra lại. |
 | `01102` | identity | validate | 400 | Mật khẩu quá phổ biến | Mật khẩu này quá phổ biến, vui lòng chọn mật khẩu khác. |
 | `01103` | identity | validate | 400 | Chưa đồng ý Điều khoản | Bạn cần đồng ý Điều khoản sử dụng để tiếp tục. |
+| `01104` | identity | nghiệp vụ | 400 | Email đã xác nhận trước đó | Email này đã được xác nhận trước đó. |
+| `01105` | identity | validate | 400 | Mã OTP không đúng | Mã OTP không đúng, vui lòng kiểm tra lại. |
+| `01106` | identity | validate | 400 | Mã OTP đã hết hạn | Mã OTP đã hết hiệu lực, vui lòng yêu cầu gửi lại. |
+| `01107` | identity | validate | 400 | Token đặt lại mật khẩu không hợp lệ | Liên kết đặt lại mật khẩu không hợp lệ. |
+| `01108` | identity | validate | 400 | Token đặt lại mật khẩu hết hạn | Liên kết đặt lại mật khẩu đã hết hiệu lực, vui lòng thực hiện lại. |
+| `01109` | identity | validate | 429 | Gửi OTP quá tần suất (cooldown 60s) | Vui lòng chờ ít nhất 60 giây trước khi gửi lại mã. |
 | `01201` | identity | nghiệp vụ | 400 | Sai thông tin đăng nhập | Email hoặc mật khẩu không đúng. |
 | `01202` | identity | nghiệp vụ | 400 | Tài khoản tạm khoá do sai nhiều lần | Bạn đã nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút. |
 | `01203` | identity | nghiệp vụ | 400 | Tài khoản bị đình chỉ | Tài khoản đang bị tạm khoá. Vui lòng liên hệ hỗ trợ. |
-| `01204` | identity | nghiệp vụ | 401 | Refresh token bị tái sử dụng | Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại. |
+| `01204` | identity | nghiệp vụ | 401 | Refresh token bị tái sử dụng (Token reuse) | Phiên đăng nhập không hợp lệ hoặc đã bị dùng lại. Vui lòng đăng nhập lại. |
 | `01301` | identity | nghiệp vụ | 400 | `state` OAuth không khớp | Đăng nhập Google thất bại, vui lòng thử lại. |
 | `01302` | identity | nghiệp vụ | 400 | Email Google chưa xác thực | Tài khoản Google chưa xác thực email. |
 | `01401` | identity | nghiệp vụ | 400 | Token đặt lại hết hạn/đã dùng | Liên kết đặt lại đã hết hạn hoặc đã được dùng. |
@@ -644,7 +675,7 @@ SchedulerJobs.subscriptionLifecycle()      // chạy MỖI GIỜ
 | `03202` | learning | nghiệp vụ | 400 | Quiz chưa đạt | Bạn cần đạt tối thiểu 80% để hoàn thành chương. |
 | `04201` | dictionary | nghiệp vụ | 400 | Khách vượt hạn mức tra cứu | Bạn đã hết lượt tra cứu miễn phí hôm nay. Đăng ký để tra không giới hạn. |
 | `05201` | gamification | nghiệp vụ | 400 | Chưa hoàn thành phần yêu cầu chứng chỉ | Bạn chưa hoàn thành phần này. |
-| `06101` | billing | validate | 400 | Tham số thanh toán không hợp lệ | Thông tin thanh toán không hợp lệ. |
+| `06101` | billing | nghiệp vụ | 400 | Giao dịch thanh toán chưa hoàn tất trên payOS | Chưa nhận được thanh toán từ ngân hàng hoặc giao dịch chưa hoàn tất. Vui lòng thử lại sau. |
 | `06103` | billing | nghiệp vụ | 400 | Chưa xác thực email | Vui lòng xác thực email trước khi nâng cấp. |
 | ~~`06104`~~ | billing | — | — | **ĐÃ BỎ ở v0.2** — mua khi đang còn hạn là **hành vi hợp lệ** (gia hạn cộng dồn, BR-A66b). **Không tái dùng mã này.** | — |
 | `06201` | billing | nghiệp vụ | 400 | Hết hạn mức Trainer miễn phí | Bạn đã dùng hết lượt luyện tập miễn phí hôm nay. |

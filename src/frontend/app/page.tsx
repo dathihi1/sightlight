@@ -1,69 +1,82 @@
-import Link from "next/link";
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
+import { HeroSection } from "@/components/home/HeroSection";
+import { StatsBar } from "@/components/home/StatsBar";
+import { CoreValues } from "@/components/home/CoreValues";
+import { CoreFeatures } from "@/components/home/CoreFeatures";
+import { AppShowcase } from "@/components/home/AppShowcase";
+import { Testimonials } from "@/components/home/Testimonials";
+import { LivePractice } from "@/components/home/LivePractice";
+import { BusinessSection } from "@/components/home/BusinessSection";
+import { DownloadCta } from "@/components/home/DownloadCta";
 
 /**
- * Trang chủ (SCR-01). Render tĩnh để đạt LCP < 2,5 giây và phục vụ SEO (NFR-02, BR-A85).
+ * SignLight Landing Page (VSL).
+ * - Full fidelity UI structure inspired by modern sign learning platforms.
+ * - SignLight branding & SVG assets from stitch_signlight_learning_platform_design.zip.
+ * - Deep Blue color palette according to design.md.
+ * - Strictly VSL (Vietnamese Sign Language) with bilingual (VI / EN) support.
+ * - Clean human/educational icons, no AI-looking artifacts.
  */
 export default function HomePage() {
+  const { lang, setLang } = useLanguage();
+
   return (
-    <div className="space-y-16">
-      <section className="space-y-6">
-        <p className="inline-block rounded-full bg-[var(--color-brand-050)] px-3 py-1 text-xs font-medium text-[var(--color-brand-600)]">
-          Ngôn ngữ Ký hiệu Việt Nam · VSL
-        </p>
-        <h1 className="text-4xl font-bold leading-tight sm:text-5xl">
-          Học ký hiệu và biết ngay mình làm đúng hay sai
-        </h1>
-        <p className="max-w-2xl text-lg text-[var(--color-ink-600)]">
-          Xem video mẫu, tự thực hiện trước camera, và nhận phản hồi kèm gợi ý sửa cụ thể. Không có ai
-          sửa sai là trở ngại lớn nhất của người tự học — đó là thứ SignLight giải quyết.
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href="/dang-ky"
-            className="inline-flex items-center rounded-lg bg-[var(--color-brand-600)] px-6 py-3 font-medium text-white hover:bg-[var(--color-brand-700)]"
-          >
-            Bắt đầu học miễn phí
-          </Link>
-          <Link
-            href="/luyen-ai"
-            className="inline-flex items-center rounded-lg border border-[var(--color-border-strong)] px-6 py-3 font-medium"
-          >
-            Thử luyện với AI
-          </Link>
-        </div>
-      </section>
+    <div className="w-full overflow-hidden bg-[#F4EFE6]">
+      {/* Floating Language Mode Indicator Pill */}
+      <div className="fixed bottom-6 right-6 z-40 hidden sm:flex items-center gap-2 p-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-xl border border-[#E2DBD0] text-xs">
+        <span className="text-[11px] font-bold text-[#64748B] px-2">
+          {lang === "vi" ? "Ngôn ngữ giao diện:" : "Display language:"}
+        </span>
+        <button
+          onClick={() => setLang("vi")}
+          className={`px-3 py-1.5 rounded-full font-bold transition-all ${
+            lang === "vi"
+              ? "bg-[#0d9fa5] text-white shadow-xs"
+              : "text-[#475569] hover:bg-[#F4EFE6]"
+          }`}
+        >
+          Tiếng Việt (VSL)
+        </button>
+        <button
+          onClick={() => setLang("en")}
+          className={`px-3 py-1.5 rounded-full font-bold transition-all ${
+            lang === "en"
+              ? "bg-[#0d9fa5] text-white shadow-xs"
+              : "text-[#475569] hover:bg-[#F4EFE6]"
+          }`}
+        >
+          English (VSL)
+        </button>
+      </div>
 
-      <section className="grid gap-6 sm:grid-cols-3">
-        <FeatureCard
-          title="Lộ trình có thứ tự"
-          body="Unit → Chương → Bài học, mở khoá dần theo tiến độ. Bài đã học không bao giờ bị khoá lại."
-        />
-        <FeatureCard
-          title="AI chấm ký hiệu động"
-          body="Thực hiện trọn một ký hiệu trước camera, hệ thống nhận diện và nói rõ nhận được ký hiệu nào."
-        />
-        <FeatureCard
-          title="Hình ảnh không rời máy bạn"
-          body="Trình duyệt tự trích đặc trưng chuyển động. Thứ duy nhất gửi lên máy chủ là dãy số — không có khung hình nào."
-        />
-      </section>
+      {/* 1. Hero Section */}
+      <HeroSection lang={lang} />
 
-      <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)] p-6">
-        <h2 className="text-xl font-semibold">Nội dung hiện tại là bộ dữ liệu mẫu</h2>
-        <p className="mt-2 text-[var(--color-ink-600)]">
-          Bản đang chạy dùng bộ 30 ký hiệu của mô hình MVP-30 làm dữ liệu dựng và nghiệm thu chức năng.
-          Giáo trình chính thức sẽ được biên soạn ở bước riêng.
-        </p>
-      </section>
+      {/* 2. Stats & Numbers Bar */}
+      <StatsBar lang={lang} />
+
+      {/* 3. Core Values (Empathy, Kindness, Passion, Dedication) */}
+      <CoreValues lang={lang} />
+
+      {/* 4. Core Features (Teachers, Instant Verification, Diverse Lessons) */}
+      <CoreFeatures lang={lang} />
+
+      {/* 4. Interactive App Showcase (5-Tab Accordion + Synchronized Desktop Browser) */}
+      <AppShowcase lang={lang} />
+
+      {/* 5. User Reviews & Testimonials Carousel */}
+      <Testimonials lang={lang} />
+
+      {/* 6. Live Practice Sessions with Deaf Tutors */}
+      <LivePractice lang={lang} />
+
+      {/* 7. Enterprise & Organizations Solutions */}
+      <BusinessSection lang={lang} />
+
+      {/* 8. Mission Statement & App Download CTA */}
+      <DownloadCta lang={lang} />
     </div>
-  );
-}
-
-function FeatureCard({ title, body }: { title: string; body: string }) {
-  return (
-    <article className="rounded-xl border border-[var(--color-border-default)] p-5">
-      <h2 className="font-semibold">{title}</h2>
-      <p className="mt-2 text-sm text-[var(--color-ink-600)]">{body}</p>
-    </article>
   );
 }

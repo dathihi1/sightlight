@@ -35,16 +35,11 @@ SLICES: dict[str, tuple[int, int]] = {
 # MediaPipe Pose: mũi, hai vai, hai khuỷu, hai cổ tay, hai hông.
 POSE_LANDMARK_INDICES: list[int] = [0, 11, 12, 13, 14, 15, 16, 23, 24]
 
-# 41 điểm của Face Mesh: viền mặt, hai mắt, hai chân mày, mũi, miệng.
-# Ký hiệu VSL dùng nét mặt làm ngữ pháp nên không thể bỏ hẳn lát `face`.
+# 41 điểm của Face Mesh: khớp đúng config.json và E:/EXE101/src/vsl_mvp/landmarks_v2.py
 FACE_LANDMARK_INDICES: list[int] = [
-    10, 152, 234, 454, 162, 389,                     # viền mặt (6)
-    33, 133, 159, 145, 157, 154,                     # mắt trái (6)
-    362, 263, 386, 374, 384, 381,                    # mắt phải (6)
-    70, 63, 105, 107,                                # chân mày trái (4)
-    300, 293, 334, 336,                              # chân mày phải (4)
-    1, 4, 5, 195, 197,                               # sống mũi (5)
-    61, 291, 13, 14, 78, 308, 0, 17, 37, 267,        # miệng (10)
+    10, 33, 61, 78, 81, 82, 87, 88, 91, 95, 133, 146, 159, 160, 161, 173,
+    178, 181, 185, 191, 199, 263, 291, 308, 311, 312, 317, 318, 321, 324,
+    362, 374, 386, 387, 388, 398, 402, 405, 409, 415, 454,
 ]
 
 # Điểm neo tính vận tốc (lát `motion`): cổ tay trái/phải, ngón trỏ trái/phải, mũi, giữa hai vai.
@@ -60,16 +55,16 @@ assert len(FACE_LANDMARK_INDICES) * 3 == 123
 assert len(MOTION_ANCHORS) * 3 == 18
 assert SLICES["quality"][1] == FEATURE_DIM
 
-# Bố cục 8 chiều của lát `quality` — thứ tự cố định, dùng cả ở frontend lẫn ở đây.
+# Bố cục 8 chiều của lát `quality` — thứ tự cố định, khớp config.json của mô hình.
 QUALITY_FIELDS: list[str] = [
-    "leftHandPresent",   # 0/1
-    "rightHandPresent",  # 0/1
-    "poseDetected",      # 0/1
-    "faceDetected",      # 0/1
-    "handFrameRatio",    # [0,1] — tỉ lệ khung thấy ít nhất một tay, tính luỹ kế tới khung này
-    "bothHandsRatio",    # [0,1] — tỉ lệ khung thấy cả hai tay
-    "frameIndexNorm",    # [0,1] — vị trí khung trong chuỗi, giúp mô hình biết nhịp
-    "normScale",         # hệ số chuẩn hoá theo khoảng cách hai vai
+    "left_hand_detected",   # 0/1
+    "right_hand_detected",  # 0/1
+    "pose_detected",        # 0/1
+    "face_detected",        # 0/1
+    "any_hand_detected",    # 0/1
+    "both_hands_detected",   # 0/1
+    "hand_missing_rate",    # [0,1]
+    "face_missing_rate",    # [0,1]
 ]
 
 QUALITY_INDEX: dict[str, int] = {

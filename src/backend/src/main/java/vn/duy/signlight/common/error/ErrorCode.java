@@ -26,9 +26,16 @@ public enum ErrorCode {
     REGISTRATION_INVALID("01101"),
     PASSWORD_TOO_COMMON("01102"),
     TERMS_NOT_ACCEPTED("01103"),
+    EMAIL_ALREADY_VERIFIED("01104"),
+    OTP_INVALID("01105"),
+    OTP_EXPIRED("01106"),
+    RESET_TOKEN_INVALID("01107"),
+    RESET_TOKEN_EXPIRED("01108"),
+    OTP_RATE_LIMITED("01109"),
     LOGIN_FAILED("01201"),
     ACCOUNT_LOCKED("01202"),
     ACCOUNT_SUSPENDED("01203"),
+    TOKEN_REUSE_DETECTED("01204"),
 
     // -------------------------------------------------------------- content (02)
     CONTENT_NOT_PUBLISHED("02201"),
@@ -42,6 +49,7 @@ public enum ErrorCode {
     DICTIONARY_QUOTA_EXCEEDED("04201"),
 
     // --------------------------------------------------------------- billing (06)
+    PAYMENT_NOT_COMPLETED("06101"),
     PREMIUM_REQUIRED("06203"),
     AI_QUOTA_EXCEEDED("06204"),
 

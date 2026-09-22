@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
+import { LanguageProvider } from "@/context/LanguageContext";
 
 /** TanStack Query lo cache và đồng bộ dữ liệu server (techstack §Quản lý trạng thái). */
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -18,5 +19,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }),
   );
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <LanguageProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </LanguageProvider>
+  );
 }

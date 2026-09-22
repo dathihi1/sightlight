@@ -2,9 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { ErrorNotice } from "@/components/ErrorNotice";
-import { PlaceholderVideo } from "@/components/PlaceholderVideo";
+import { SignVideoPlayer } from "@/components/SignVideoPlayer";
 import { ApiError, apiCall } from "@/lib/api";
 import {
   MAX_RECORDING_MS,
@@ -12,6 +13,7 @@ import {
   TARGET_SAMPLE_FPS,
 } from "@/lib/holistic/featureSchema";
 import { SignSequenceRecorder, loadHolisticLandmarker } from "@/lib/holistic/extractor";
+import { localRecognizer, type LocalInferenceResult } from "@/lib/ai/localRecognizer";
 
 interface Capabilities {
   modelVersion: string;
@@ -56,8 +58,25 @@ interface AttemptResult {
 
 type Phase = "idle" | "loading-model" | "ready" | "recording" | "scoring";
 
-/** SCR-31 — luyện ký hiệu động với AI (FR-41 → FR-43). */
 export default function AiPracticePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-5xl px-4 py-8">
+          <p className="text-[var(--color-ink-600)]">Đang tải không gian luyện AI…</p>
+        </div>
+      }
+    >
+      <AiPracticeContent />
+    </Suspense>
+  );
+}
+
+/** SCR-31 — luyện ký hiệu động với AI (FR-41 → FR-43). */
+function AiPracticeContent() {
+  const searchParams = useSearchParams();
+  const requestedSignId = searchParams.get("signId");
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const recorderRef = useRef(new SignSequenceRecorder());
   const rafRef = useRef<number | null>(null);
@@ -67,6 +86,7 @@ export default function AiPracticePage() {
   const [itemIndex, setItemIndex] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [result, setResult] = useState<AttemptResult | null>(null);
+  const [localInference, setLocalInference] = useState<LocalInferenceResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const capabilities = useQuery({
@@ -75,8 +95,13 @@ export default function AiPracticePage() {
   });
 
   const session = useQuery({
-    queryKey: ["ai-practice-session"],
-    queryFn: () => apiCall<PracticeSession>("/api/v1/ai/practice/session?size=10"),
+    queryKey: ["ai-practice-session", requestedSignId],
+    queryFn: () => {
+      const url = requestedSignId
+        ? `/api/v1/ai/practice/session?size=10&signId=${encodeURIComponent(requestedSignId)}`
+        : "/api/v1/ai/practice/session?size=10";
+      return apiCall<PracticeSession>(url);
+    },
   });
 
   const item = session.data?.items[itemIndex] ?? null;
@@ -104,7 +129,14 @@ export default function AiPracticePage() {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
-      await loadHolisticLandmarker();
+      const modelToLoad = capabilities.data?.modelVersion?.includes("30")
+        ? "vsl_mvp30_v2_lite_transformer"
+        : "vsl_mvp400_v2_lite_transformer";
+
+      await Promise.allSettled([
+        loadHolisticLandmarker(),
+        localRecognizer.load(modelToLoad),
+      ]);
       setPhase("ready");
     } catch (caught) {
       stopCamera();
@@ -120,6 +152,7 @@ export default function AiPracticePage() {
   async function startRecording() {
     if (!videoRef.current || !item || !capabilities.data) return;
     setResult(null);
+    setLocalInference(null);
     setError(null);
     setPhase("recording");
 
@@ -130,6 +163,7 @@ export default function AiPracticePage() {
     const beganAt = performance.now();
     const frameIntervalMs = 1000 / TARGET_SAMPLE_FPS;
     let lastSampleAt = 0;
+    let lastTimestamp = 0;
 
     const tick = () => {
       const video = videoRef.current;
@@ -140,12 +174,20 @@ export default function AiPracticePage() {
       setElapsedMs(Math.round(elapsed));
 
       // Lấy mẫu đều tay ~16 khung/giây: đủ dày để bắt chuyển động, đủ thưa để không quá 32 khung.
-      if (now - lastSampleAt >= frameIntervalMs) {
+      // Chỉ lấy mẫu khi khung hình đã thực sự decode (readyState >= 2) và có kích thước hợp lệ.
+      if (
+        now - lastSampleAt >= frameIntervalMs &&
+        video.readyState >= 2 &&
+        video.videoWidth > 0
+      ) {
         lastSampleAt = now;
+        // MediaPipe detectForVideo yêu cầu timestamp tăng đơn điệu — ép tăng ít nhất 1ms mỗi khung.
+        const frameTime = Math.max(now, lastTimestamp + 1);
+        lastTimestamp = frameTime;
         try {
-          recorder.addFrame(landmarker.detectForVideo(video, now));
-        } catch {
-          // Một khung hỏng không làm hỏng cả lượt — bỏ qua và đi tiếp.
+          recorder.addFrame(landmarker.detectForVideo(video, frameTime));
+        } catch (frameErr) {
+          console.warn("Lỗi MediaPipe detectForVideo:", frameErr);
         }
       }
 
@@ -187,6 +229,20 @@ export default function AiPracticePage() {
       return;
     }
 
+    // 1. Chạy suy luận cục bộ tức thì với ONNX Runtime Web (WASM)
+    let localInf: LocalInferenceResult | null = null;
+    if (localRecognizer.isReady) {
+      try {
+        localInf = await localRecognizer.inferAsync(extraction.features);
+        if (localInf) {
+          setLocalInference(localInf);
+        }
+      } catch (err) {
+        console.warn("Client inference error:", err);
+      }
+    }
+
+    // 2. Gửi tensor lên backend API để ghi nhận lịch sử và hạn mức
     try {
       const scored = await apiCall<AttemptResult>("/api/v1/ai/attempts", {
         method: "POST",
@@ -200,9 +256,42 @@ export default function AiPracticePage() {
           sessionId: session.data?.sessionId,
         },
       });
-      setResult(scored);
+      // Backend đang ở chế độ mô phỏng (chưa nạp trọng số mô hình): ưu tiên kết quả suy luận
+      // cục bộ WASM thật thay vì hiện kết quả giả lập cho người dùng.
+      if (scored.stubMode && localInf && item) {
+        const isMatched = localInf.predictedLabel.toLowerCase().trim() === item.label.toLowerCase().trim();
+        setResult({
+          ...scored,
+          verified: isMatched,
+          status: isMatched ? "ok" : "wrong_target",
+          confidence: localInf.confidence,
+          predictedLabel: localInf.predictedLabel,
+          top3: localInf.top3.map((t) => ({ signId: null, label: t.label, confidence: t.confidence })),
+          qualityHints: [`Nhận diện trực tiếp qua WebAssembly (${Math.round(localInf.latencyMs)}ms).`],
+        });
+      } else {
+        setResult(scored);
+      }
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.errorMessage : "Không chấm được lượt này.");
+      if (localInf && item) {
+        const isMatched = localInf.predictedLabel.toLowerCase().trim() === item.label.toLowerCase().trim();
+        setResult({
+          attemptId: "client-wasm-" + Date.now(),
+          verified: isMatched,
+          status: isMatched ? "ok" : "wrong_target",
+          confidence: localInf.confidence,
+          predictedSignId: null,
+          predictedLabel: localInf.predictedLabel,
+          top3: localInf.top3.map((t) => ({ signId: null, label: t.label, confidence: t.confidence })),
+          qualityHints: [`Nhận diện trực tiếp qua WebAssembly (${Math.round(localInf.latencyMs)}ms).`],
+          countedAgainstQuota: false,
+          quotaRemaining: null,
+          consecutiveFailures: 0,
+          stubMode: false,
+        });
+      } else {
+        setError(caught instanceof ApiError ? caught.errorMessage : "Không chấm được lượt này.");
+      }
     } finally {
       setPhase("ready");
     }
@@ -214,7 +303,7 @@ export default function AiPracticePage() {
         ? "Bạn cần đăng nhập để dùng phần luyện với AI."
         : "Hệ thống chấm tự động chưa sẵn sàng.";
     return (
-      <div className="space-y-4">
+      <div className="mx-auto max-w-5xl px-4 py-8 space-y-4">
         <ErrorNotice message={message} />
         <Link href="/dang-nhap" className="text-[var(--color-brand-600)] underline">
           Tới trang đăng nhập
@@ -224,17 +313,23 @@ export default function AiPracticePage() {
   }
 
   if (capabilities.isLoading || session.isLoading) {
-    return <p className="text-[var(--color-ink-600)]">Đang chuẩn bị phiên luyện…</p>;
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-8">
+        <p className="text-[var(--color-ink-600)]">Đang chuẩn bị phiên luyện…</p>
+      </div>
+    );
   }
 
   if (!item) {
     return (
-      <ErrorNotice message="Chưa có ký hiệu nào được hỗ trợ chấm tự động trong phiên này." />
+      <div className="mx-auto max-w-5xl px-4 py-8">
+        <ErrorNotice message="Chưa có ký hiệu nào được hỗ trợ chấm tự động trong phiên này." />
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-5xl px-4 py-8 space-y-6">
       <header className="space-y-2">
         <h1 className="text-2xl font-bold">Luyện ký hiệu với AI</h1>
         <p className="text-sm text-[var(--color-ink-600)]">{capabilities.data?.disclaimerText}</p>
@@ -250,16 +345,12 @@ export default function AiPracticePage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="space-y-3">
           <h2 className="font-semibold">Ký hiệu cần thực hiện: {item.label}</h2>
-          {item.placeholderVideo || !item.videoUrl ? (
-            <PlaceholderVideo label={`Video mẫu — ${item.label}`} />
-          ) : (
-            <video
-              src={item.videoUrl}
-              controls
-              playsInline
-              className="aspect-video w-full rounded-xl bg-[var(--color-bg-video)]"
-            />
-          )}
+          <SignVideoPlayer
+            key={item.signId}
+            videoUrl={item.videoUrl}
+            placeholderVideo={item.placeholderVideo}
+            title={`Video mẫu — ${item.label}`}
+          />
           <div className="flex gap-2">
             <button
               type="button"

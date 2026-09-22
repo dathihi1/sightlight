@@ -39,9 +39,15 @@ public class SecurityConfig {
             "/actuator/health",
             "/api/v1/auth/register",
             "/api/v1/auth/login",
+            "/api/v1/auth/google",
+            "/api/v1/auth/email/verify",
+            "/api/v1/auth/email/resend",
             "/api/v1/auth/password/forgot",
             "/api/v1/auth/password/reset",
-            "/api/v1/auth/email/verify",
+            "/api/v1/auth/refresh",
+            "/api/v1/auth/logout",
+            "/api/v1/auth/demo-login",
+            "/api/v1/media/**",
             "/api/v1/onboarding/answers",
             "/api/v1/onboarding/answers/**",
             "/api/v1/courses",
@@ -49,6 +55,9 @@ public class SecurityConfig {
             "/api/v1/dictionary/signs/**",
             "/api/v1/dictionary/topics",
             "/api/v1/billing/plans",
+            "/api/v1/billing/checkout",
+            "/api/v1/billing/status/**",
+            "/api/v1/billing/confirm/**",
             "/api/v1/billing/ipn/**",
             "/api/v1/billing/return/**",
             "/api/v1/certificates/verify/**",
@@ -84,6 +93,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers("/api/v1/cms/content/*/approve").hasAnyRole("CONTENT_APPROVER", "ADMIN")
+                        .requestMatchers("/api/v1/cms/**").hasAnyRole("CONTENT_CREATOR", "CONTENT_APPROVER", "ADMIN")
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(handling -> handling
                         .authenticationEntryPoint((request, response, ex) ->
@@ -106,8 +118,9 @@ public class SecurityConfig {
         config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of(HttpHeaders.AUTHORIZATION, HttpHeaders.CONTENT_TYPE,
-                RequestIdFilter.HEADER, HttpHeaders.ACCEPT_LANGUAGE));
-        config.setExposedHeaders(List.of(RequestIdFilter.HEADER, HttpHeaders.RETRY_AFTER));
+                RequestIdFilter.HEADER, HttpHeaders.ACCEPT_LANGUAGE, HttpHeaders.RANGE));
+        config.setExposedHeaders(List.of(RequestIdFilter.HEADER, HttpHeaders.RETRY_AFTER,
+                HttpHeaders.CONTENT_RANGE, HttpHeaders.ACCEPT_RANGES, HttpHeaders.CONTENT_LENGTH));
         config.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", config);
