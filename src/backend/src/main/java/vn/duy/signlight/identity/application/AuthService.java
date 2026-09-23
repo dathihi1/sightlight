@@ -370,7 +370,7 @@ public class AuthService {
 
     // --------------------------------------------------------------------- hồ sơ
 
-    @Transactional(readOnly = true)
+    @Transactional
     public MeResult me(UUID userId) {
         AppUser user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHENTICATED));
@@ -378,6 +378,15 @@ public class AuthService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         UserPreference preference = preferenceRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+
+        // Tài khoản tạo lúc CSDL chưa có khoá học nào sẽ mang activeCourseId = null mãi mãi;
+        // gán khoá mặc định ngay khi đã có để lộ trình học không bị kẹt.
+        if (preference.getActiveCourseId() == null) {
+            contentCatalog.defaultCourseId().ifPresent(courseId -> {
+                preference.setActiveCourseId(courseId);
+                preferenceRepository.save(preference);
+            });
+        }
 
         return new MeResult(
                 userId,

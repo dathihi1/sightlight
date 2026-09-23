@@ -78,6 +78,14 @@ export default function LearningPathPage() {
     );
   }
 
+  if (!courseId) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-8">
+        <ErrorNotice message="Hiện chưa có khoá học nào được xuất bản. Vui lòng quay lại sau." />
+      </div>
+    );
+  }
+
   if (path.isError || !path.data) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-8">
