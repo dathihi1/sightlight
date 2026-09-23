@@ -45,7 +45,7 @@ services:
       - key: SERVER_PORT
         value: 8080
       - key: SIGNLIGHT_SEED_ENABLED
-        value: "false"
+        value: "true"
       - key: SPRING_DATASOURCE_URL
         sync: false
       - key: SPRING_DATASOURCE_USERNAME
