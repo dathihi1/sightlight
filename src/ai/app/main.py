@@ -125,7 +125,7 @@ def health() -> dict[str, Any]:
     }
 
 
-@app.get("/api/labels")
+@app.get("/api/labels", response_model=None)
 def labels(authorization: str | None = Header(default=None)) -> dict[str, Any] | JSONResponse:
     unauthorized = _authorize(authorization)
     if unauthorized is not None:

@@ -12,6 +12,14 @@ import pytest
 from app.labels import MVP30_LABELS, stable_sign_id
 
 
+def test_api_module_registers_labels_route_without_response_model_error() -> None:
+    from app.main import app
+
+    labels_route = next(route for route in app.routes if route.path == "/api/labels")
+
+    assert labels_route.response_model is None
+
+
 @pytest.mark.parametrize(
     ("raw_label", "expected"),
     [
