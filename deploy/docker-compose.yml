@@ -24,11 +24,12 @@ services:
     env_file: .env
     environment:
       SPRING_PROFILES_ACTIVE: uat
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME}
-      SPRING_DATASOURCE_USERNAME: ${DB_USER}
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
       SPRING_DATA_REDIS_HOST: cache
       SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
       # Dịch vụ AI — gọi qua mạng nội bộ, KHÔNG qua Internet
       SIGNLIGHT_AI_BASE_URL: http://ai:7860
       SIGNLIGHT_AI_TIMEOUT_MS: 5000
@@ -37,7 +38,15 @@ services:
       MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: never
       SERVER_ERROR_INCLUDE_STACKTRACE: never
       SERVER_ERROR_INCLUDE_MESSAGE: never
-      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75"
+      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:MaxRAMPercentage=60.0 -Xss256k -XX:+ExitOnOutOfMemoryError"
+      DB_POOL_MAX_SIZE: ${DB_POOL_MAX_SIZE:-4}
+      DB_POOL_MIN_IDLE: ${DB_POOL_MIN_IDLE:-1}
+      DB_CONNECTION_TIMEOUT_MS: ${DB_CONNECTION_TIMEOUT_MS:-3000}
+      DB_VALIDATION_TIMEOUT_MS: ${DB_VALIDATION_TIMEOUT_MS:-1000}
+      DB_IDLE_TIMEOUT_MS: ${DB_IDLE_TIMEOUT_MS:-600000}
+      DB_MAX_LIFETIME_MS: ${DB_MAX_LIFETIME_MS:-1800000}
+      DB_LEAK_DETECTION_MS: ${DB_LEAK_DETECTION_MS:-0}
+      INTERNAL_API_BASE_URL: http://api:8080
     ports:
       - "18080:8080"
     healthcheck:
@@ -65,7 +74,10 @@ services:
     image: signlight/ai:uat
     environment:
       MODEL_DIR: /app/runs/vsl_mvp30_v2_lite_transformer
-      INFERENCE_WORKERS: "2"
+      ONNX_INTRA_OP_THREADS: "2"
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
       # ⚠️ BẮT BUỘC để rỗng — tắt mọi đường ghi/tải dữ liệu người dùng của repo gốc
       # (endpoint POST /api/attempt và Google Drive uploader — xem api-spec.md §4.5)
       LOG_WEBHOOK_URL: ""
@@ -95,6 +107,7 @@ services:
     env_file: .env
     environment:
       NODE_ENV: production
+      INTERNAL_API_BASE_URL: http://api:8080
     ports:
       - "18081:3000"
     healthcheck:
@@ -173,7 +186,7 @@ services:
     restart: unless-stopped
     command:
       - "http"
-      - "host.docker.internal:8080"
+      - "api:8080"
     environment:
       NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
     ports:

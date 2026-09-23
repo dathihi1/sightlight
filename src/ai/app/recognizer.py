@@ -75,7 +75,9 @@ class Recognizer:
                 import onnxruntime as ort  # nạp trễ: chế độ stub không cần
 
                 options = ort.SessionOptions()
-                options.intra_op_num_threads = int(os.getenv("INFERENCE_WORKERS", "2"))
+                options.intra_op_num_threads = int(os.getenv("ONNX_INTRA_OP_THREADS", "2"))
+                options.inter_op_num_threads = 1
+                options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
                 self._session = ort.InferenceSession(
                     str(path), options, providers=["CPUExecutionProvider"]
                 )

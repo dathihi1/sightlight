@@ -8,12 +8,24 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/v1/:path*",
-        destination: "http://localhost:18080/api/v1/:path*",
+        destination: `${process.env.INTERNAL_API_BASE_URL ?? "http://api:8080"}/api/v1/:path*`,
       },
     ];
   },
   async headers() {
     return [
+      {
+        source: "/_next/static/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+      {
+        source: "/wasm/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+      {
+        source: "/models/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=3600, must-revalidate" }],
+      },
       {
         source: "/(.*)",
         headers: [

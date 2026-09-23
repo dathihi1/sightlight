@@ -18,4 +18,5 @@ COPY --from=build /build/target/signlight-api-*.jar app.jar
 USER signlight
 
 EXPOSE 8080
+ENV JAVA_TOOL_OPTIONS="-XX:+UseSerialGC -XX:MaxRAMPercentage=60.0 -Xss256k -XX:+ExitOnOutOfMemoryError"
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

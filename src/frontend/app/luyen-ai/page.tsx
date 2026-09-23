@@ -12,8 +12,7 @@ import {
   MIN_USEFUL_FRAMES,
   TARGET_SAMPLE_FPS,
 } from "@/lib/holistic/featureSchema";
-import { SignSequenceRecorder, loadHolisticLandmarker } from "@/lib/holistic/extractor";
-import { localRecognizer, type LocalInferenceResult } from "@/lib/ai/localRecognizer";
+import type { LocalInferenceResult } from "@/lib/ai/localRecognizer";
 
 interface Capabilities {
   modelVersion: string;
@@ -78,7 +77,7 @@ function AiPracticeContent() {
   const requestedSignId = searchParams.get("signId");
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const recorderRef = useRef(new SignSequenceRecorder());
+  const recorderRef = useRef<import("@/lib/holistic/extractor").SignSequenceRecorder | null>(null);
   const rafRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -129,14 +128,22 @@ function AiPracticeContent() {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
+      const [{ loadHolisticLandmarker, SignSequenceRecorder }, { localRecognizer }] = await Promise.all([
+        import("@/lib/holistic/extractor"),
+        import("@/lib/ai/localRecognizer"),
+      ]);
+      recorderRef.current ??= new SignSequenceRecorder();
       const modelToLoad = capabilities.data?.modelVersion?.includes("30")
         ? "vsl_mvp30_v2_lite_transformer"
         : "vsl_mvp400_v2_lite_transformer";
 
-      await Promise.allSettled([
+      const [landmarkerResult, recognizerResult] = await Promise.all([
         loadHolisticLandmarker(),
         localRecognizer.load(modelToLoad),
       ]);
+      if (!landmarkerResult || !recognizerResult) {
+        throw new Error("Không tải được mô hình nhận dạng.");
+      }
       setPhase("ready");
     } catch (caught) {
       stopCamera();
@@ -154,11 +161,21 @@ function AiPracticeContent() {
     setResult(null);
     setLocalInference(null);
     setError(null);
+    if (!recorderRef.current) {
+      setError("Mô hình luyện tập chưa sẵn sàng. Hãy khởi động camera trước.");
+      return;
+    }
     setPhase("recording");
 
-    const landmarker = await loadHolisticLandmarker();
-    const recorder = recorderRef.current;
-    recorder.start();
+    try {
+      const [{ loadHolisticLandmarker }, { localRecognizer }] = await Promise.all([
+        import("@/lib/holistic/extractor"),
+        import("@/lib/ai/localRecognizer"),
+      ]);
+      const landmarker = await loadHolisticLandmarker();
+      const recorder = recorderRef.current;
+      if (!recorder) return;
+      recorder.start();
 
     const beganAt = performance.now();
     const frameIntervalMs = 1000 / TARGET_SAMPLE_FPS;
@@ -199,14 +216,20 @@ function AiPracticeContent() {
       rafRef.current = requestAnimationFrame(tick);
     };
 
-    rafRef.current = requestAnimationFrame(tick);
+      rafRef.current = requestAnimationFrame(tick);
+    } catch (caught) {
+      setPhase("ready");
+      setError(caught instanceof Error ? caught.message : "Không tải được mô hình luyện tập.");
+    }
   }
 
   async function finishRecording() {
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
 
-    const extraction = recorderRef.current.finish();
+    const recorder = recorderRef.current;
+    if (!recorder) return;
+    const extraction = recorder.finish();
     setPhase("scoring");
 
     // Cổng chất lượng tại chỗ (BR-A118): thiếu khung hữu ích thì không gửi đi, không tốn hạn mức.
@@ -230,6 +253,14 @@ function AiPracticeContent() {
     }
 
     // 1. Chạy suy luận cục bộ tức thì với ONNX Runtime Web (WASM)
+    let localRecognizer: typeof import("@/lib/ai/localRecognizer").localRecognizer;
+    try {
+      ({ localRecognizer } = await import("@/lib/ai/localRecognizer"));
+    } catch {
+      setPhase("ready");
+      setError("Không tải được mô hình nhận dạng cục bộ.");
+      return;
+    }
     let localInf: LocalInferenceResult | null = null;
     if (localRecognizer.isReady) {
       try {
