@@ -3,8 +3,9 @@
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
-import { apiCall } from "@/lib/api";
+import { Suspense, useEffect } from "react";
+import { apiCall, tokenStore } from "@/lib/api";
+import { dispatchAuthChange } from "@/lib/useAuthSession";
 import { useLanguage } from "@/context/LanguageContext";
 
 interface CheckoutResult {
@@ -28,13 +29,18 @@ function SuccessContent() {
     enabled: orderCode !== null && !isNaN(orderCode),
     refetchInterval: (query) => {
       const data = query.state.data;
-      return data?.status === "PAID" ? false : 2000;
+      return ["PAID", "CANCELLED", "EXPIRED", "FAILED"].includes(data?.status ?? "") ? false : 2000;
     },
     refetchIntervalInBackground: true,
     staleTime: 0,
   });
 
   const isPaid = statusQuery.data?.status === "PAID";
+
+  useEffect(() => {
+    if (!isPaid || !tokenStore.get()) return;
+    dispatchAuthChange();
+  }, [isPaid]);
 
   return (
     <div className="mx-auto max-w-lg px-4 py-16 text-center space-y-6">

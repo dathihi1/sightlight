@@ -34,9 +34,9 @@ public class PayOsClient {
     private final ObjectMapper objectMapper;
 
     public PayOsClient(
-            @Value("${signlight.payos.client-id:mock-client-id}") String clientId,
-            @Value("${signlight.payos.api-key:mock-api-key}") String apiKey,
-            @Value("${signlight.payos.checksum-key:mock-checksum-key-32-chars-long-at-least}") String checksumKey,
+            @Value("${signlight.payos.client-id:}") String clientId,
+            @Value("${signlight.payos.api-key:}") String apiKey,
+            @Value("${signlight.payos.checksum-key:}") String checksumKey,
             @Value("${signlight.payos.endpoint:https://api-merchant.payos.vn}") String endpoint,
             @Value("${signlight.payos.return-url:http://localhost:3000/thanh-toan/thanh-cong}") String returnUrl,
             @Value("${signlight.payos.cancel-url:http://localhost:3000/nang-cap}") String cancelUrl,
@@ -55,17 +55,7 @@ public class PayOsClient {
         String safeDescription = description.length() > 25 ? description.substring(0, 25) : description;
 
         if (isMockConfig()) {
-            log.info("payos_mock_payment_created orderCode={} amount={}", orderCode, amount);
-            return new PayOsPaymentResult(
-                    "mock-link-" + orderCode,
-                    "https://pay.payos.vn/web/mock-" + orderCode,
-                    "00020101021238590010A000000727012900069704180115V3CAS51111469290208QRIBFTTA530370454064990005802VN62300826CSKGYX8TZ29 SignLight Test63047B71",
-                    "PENDING",
-                    "V3CAS5111146929",
-                    "PHAN BUI BA DAT",
-                    "970418",
-                    safeDescription
-            );
+            throw new IllegalStateException("payOS credentials are not configured");
         }
 
         try {
@@ -107,31 +97,19 @@ public class PayOsClient {
                         response.data().description() != null ? response.data().description() : safeDescription
                 );
             }
-            log.warn("payos_create_error code={} desc={}", response != null ? response.code() : "null",
-                    response != null ? response.desc() : "empty");
+            throw new IllegalStateException("payOS rejected payment link creation");
         } catch (Exception ex) {
-            log.warn("payos_api_call_failed message={}", ex.getMessage());
+            log.warn("payos_payment_link_creation_failed");
+            throw new IllegalStateException("payOS payment service is unavailable", ex);
         }
-
-        // Fallback nếu sandbox/mạng tạm thời không sẵn sàng
-        return new PayOsPaymentResult(
-                "simulated-" + orderCode,
-                "https://pay.payos.vn/web/simulated-" + orderCode,
-                "00020101021238590010A000000727012900069704180115V3CAS51111469290208QRIBFTTA530370454064990005802VN62300826CSKGYX8TZ29 SignLight Test63047B71",
-                "PENDING",
-                "V3CAS5111146929",
-                "PHAN BUI BA DAT",
-                "970418",
-                safeDescription
-        );
     }
 
     public boolean verifyWebhookSignature(Map<String, Object> data, String signature) {
         if (signature == null || signature.isBlank()) {
             return false;
         }
-        if (isMockConfig() || "mock-signature".equals(signature)) {
-            return true;
+        if (data == null || data.isEmpty()) {
+            return false;
         }
 
         try {
@@ -161,7 +139,7 @@ public class PayOsClient {
 
     public boolean isMockConfig() {
         return clientId == null || clientId.isBlank() || clientId.startsWith("mock")
-                || apiKey == null || apiKey.startsWith("mock")
+                || apiKey == null || apiKey.isBlank() || apiKey.startsWith("mock")
                 || checksumKey == null || checksumKey.isBlank() || checksumKey.startsWith("mock");
     }
 

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -37,10 +38,16 @@ public class PayOsWebhookController {
         try {
             PayOsWebhookPayload payload = objectMapper.readValue(rawPayload, PayOsWebhookPayload.class);
             boolean processed = billingService.handlePayOsWebhook(payload, rawPayload);
-            return ResponseEntity.ok(Map.of("code", "00", "desc", "success", "success", processed));
+            return ResponseEntity.status(processed ? HttpStatus.OK : HttpStatus.BAD_REQUEST)
+                    .body(Map.of("code", processed ? "00" : "01", "desc", processed ? "success" : "rejected", "success", processed));
+        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+            log.warn("payos_webhook_payload_invalid");
+            return ResponseEntity.badRequest()
+                    .body(Map.of("code", "01", "desc", "invalid payload", "success", false));
         } catch (Exception ex) {
-            log.error("payos_webhook_parsing_failed", ex);
-            return ResponseEntity.ok(Map.of("code", "00", "desc", "received", "success", false));
+            log.error("payos_webhook_processing_failed");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("code", "01", "desc", "processing failed", "success", false));
         }
     }
 }

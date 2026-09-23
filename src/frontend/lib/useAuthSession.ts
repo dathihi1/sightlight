@@ -15,8 +15,11 @@ export interface UserPreferences {
 }
 
 export interface MeResult {
+  userId: string;
   preferences: UserPreferences;
-  profile: UserProfile;
+  profile: UserProfile & { email: string; timezone: string };
+  roles: string[];
+  emailVerified: boolean;
 }
 
 const AUTH_CHANGE_EVENT = "signlight:auth-change";
@@ -40,6 +43,7 @@ export function useAuthSession() {
 
     const handleAuthChange = () => {
       setToken(tokenStore.get());
+      queryClient.invalidateQueries({ queryKey: ["me"] });
     };
 
     const handleStorage = (e: StorageEvent) => {
@@ -61,7 +65,7 @@ export function useAuthSession() {
     queryKey: ["me"],
     queryFn: () => apiCall<MeResult>("/api/v1/me"),
     enabled: Boolean(token),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
     retry: false,
   });
 

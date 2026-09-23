@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ApiError, apiCall, tokenStore } from "@/lib/api";
-import { dispatchAuthChange } from "@/lib/useAuthSession";
 import { useLanguage } from "@/context/LanguageContext";
 import { ErrorNotice } from "@/components/ErrorNotice";
 
@@ -67,18 +66,8 @@ export default function UpgradePage() {
     setSubmitting(true);
     try {
       if (!tokenStore.get()) {
-        try {
-          const loginRes = await apiCall<{ accessToken: string }>("/api/v1/auth/demo-login", {
-            method: "POST",
-            auth: false,
-          });
-          if (loginRes?.accessToken) {
-            tokenStore.set(loginRes.accessToken);
-            dispatchAuthChange();
-          }
-        } catch {
-          // Bỏ qua lỗi demo login nếu có
-        }
+        router.push(`/dang-nhap?next=${encodeURIComponent("/nang-cap")}`);
+        return;
       }
 
       const result = await apiCall<CheckoutResult>("/api/v1/billing/checkout", {

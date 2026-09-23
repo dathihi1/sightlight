@@ -316,58 +316,6 @@ public class AuthService {
         });
     }
 
-    @Transactional
-    public LoginResult demoLogin() {
-        String demoEmail = "demo.learner@signlight.vn";
-        AppUser user = userRepository.findByEmailIgnoreCase(demoEmail).orElseGet(() -> {
-            Instant now = Instant.now();
-            AppUser newUser = AppUser.builder()
-                    .id(UUID.randomUUID())
-                    .email(demoEmail)
-                    .emailVerifiedAt(now)
-                    .status(UserStatus.ACTIVE.value())
-                    .failedLoginCount((short) 0)
-                    .birthYear((short) 2000)
-                    .roles(new java.util.HashSet<>(List.of(ROLE_LEARNER_FREE)))
-                    .createdAt(now)
-                    .updatedAt(now)
-                    .build();
-            userRepository.save(newUser);
-
-            profileRepository.save(UserProfile.builder()
-                    .userId(newUser.getId())
-                    .displayName("Học viên Demo")
-                    .timezone(DEFAULT_TIMEZONE)
-                    .build());
-
-            UUID activeCourseId = contentCatalog.defaultCourseId().orElse(null);
-            preferenceRepository.save(UserPreference.builder()
-                    .userId(newUser.getId())
-                    .activeCourseId(activeCourseId)
-                    .dailyGoalMinutes((short) 10)
-                    .uiLocale("vi")
-                    .videoSpeed(new BigDecimal("1.00"))
-                    .marketingEmailOptIn(false)
-                    .build());
-            return newUser;
-        });
-
-        UUID activeCourseId = preferenceRepository.findById(user.getId())
-                .map(UserPreference::getActiveCourseId)
-                .orElse(null);
-        List<String> roles = List.copyOf(user.getRoles());
-        TokenService.TokenPair tokenPair = tokenService.issueTokenPair(user.getId(), roles);
-        return new LoginResult(
-                tokenPair.accessToken(),
-                tokenPair.refreshToken(),
-                user.getId(),
-                roles,
-                activeCourseId,
-                false,
-                false
-        );
-    }
-
     // --------------------------------------------------------------------- hồ sơ
 
     @Transactional(readOnly = true)

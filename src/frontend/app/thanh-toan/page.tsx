@@ -39,7 +39,7 @@ function PaymentContent() {
     enabled: orderCode !== null && !isNaN(orderCode),
     refetchInterval: (query) => {
       const data = query.state.data;
-      return data?.status === "PAID" ? false : 2000;
+      return ["PAID", "CANCELLED", "EXPIRED", "FAILED"].includes(data?.status ?? "") ? false : 2000;
     },
     refetchIntervalInBackground: true,
     staleTime: 0,

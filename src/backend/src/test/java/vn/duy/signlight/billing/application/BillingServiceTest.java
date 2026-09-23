@@ -145,7 +145,6 @@ class BillingServiceTest {
         when(transactionRepository.findByOrderCode(orderCode)).thenReturn(Optional.of(tx));
         when(payOsClient.getPaymentLinkInformation(orderCode)).thenReturn(Optional.of(
                 new PayOsClient.PayOsPaymentResult("payos-id-1", "https://pay.payos.vn/...", "qr-data", "PENDING")));
-        when(payOsClient.isMockConfig()).thenReturn(false);
 
         vn.duy.signlight.common.error.BusinessException ex = assertThrows(
                 vn.duy.signlight.common.error.BusinessException.class,

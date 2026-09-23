@@ -178,6 +178,11 @@ export function LearningNavbar() {
                 <span className="max-w-[120px] truncate group-hover:text-[#0d9fa5] transition-colors">
                   {user?.profile?.displayName ?? t("Học viên", "Learner")}
                 </span>
+                {user?.roles?.includes("LEARNER_PREMIUM") && (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-amber-700">
+                    Premium
+                  </span>
+                )}
               </Link>
               <button
                 type="button"
@@ -277,6 +282,11 @@ export function LearningNavbar() {
                 <span className="text-sm font-bold text-[#0F172A] group-hover:text-[#0d9fa5] transition-colors">
                   {user?.profile?.displayName ?? t("Học viên", "Learner")}
                 </span>
+                {user?.roles?.includes("LEARNER_PREMIUM") && (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-amber-700">
+                    Premium
+                  </span>
+                )}
               </Link>
               <button
                 type="button"

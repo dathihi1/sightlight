@@ -12,13 +12,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import vn.duy.signlight.common.error.ApiResponses;
 import vn.duy.signlight.common.error.BusinessException;
 import vn.duy.signlight.common.error.ErrorCode;
-import vn.duy.signlight.common.web.RequestIdFilter;
 import vn.duy.signlight.common.web.TransactionResponse;
 import vn.duy.signlight.identity.application.AuthService;
 import vn.duy.signlight.identity.application.EmailVerificationService;
@@ -86,19 +84,6 @@ public class AuthController {
                     buildRefreshTokenCookie(result.refreshToken(), REFRESH_TOKEN_COOKIE_MAX_AGE).toString());
         }
         return responseBuilder.body(ApiResponses.ok(request.getRequestId(), result));
-    }
-
-    @PostMapping("/demo-login")
-    @Operation(summary = "Đăng nhập nhanh tài khoản thử nghiệm / bypass cho môi trường test")
-    public ResponseEntity<TransactionResponse<LoginResult>> demoLogin(
-            @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId) {
-        LoginResult result = authService.demoLogin();
-        var responseBuilder = ResponseEntity.ok();
-        if (result.refreshToken() != null && !result.refreshToken().isBlank()) {
-            responseBuilder.header(HttpHeaders.SET_COOKIE,
-                    buildRefreshTokenCookie(result.refreshToken(), REFRESH_TOKEN_COOKIE_MAX_AGE).toString());
-        }
-        return responseBuilder.body(ApiResponses.ok(requestId, result));
     }
 
     @PostMapping("/google")

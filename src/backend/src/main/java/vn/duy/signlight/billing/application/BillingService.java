@@ -168,22 +168,15 @@ public class BillingService {
             }
         }
 
-        // Trường hợp chạy môi trường giả lập (mock config)
-        if (payOsClient.isMockConfig()) {
-            log.info("payos_mock_confirm_fallback orderCode={}", orderCode);
-            activateSubscriptionForTransaction(tx, null);
-            return toCheckoutResult(tx);
-        }
-
         // Nếu payOS chưa xác nhận PAID
         throw new BusinessException(ErrorCode.PAYMENT_NOT_COMPLETED);
     }
 
     public CheckoutResult toCheckoutResult(PaymentTransaction tx) {
-        String bin = tx.getBin() != null ? tx.getBin() : "970418";
-        String accNum = tx.getAccountNumber() != null ? tx.getAccountNumber() : "V3CAS5111146929";
-        String accName = tx.getAccountName() != null ? tx.getAccountName() : "PHAN BUI BA DAT";
-        String bankName = tx.getBankName() != null ? tx.getBankName() : VietQrBankHelper.getBankName(bin);
+        String bin = tx.getBin();
+        String accNum = tx.getAccountNumber();
+        String accName = tx.getAccountName();
+        String bankName = tx.getBankName();
         String desc = tx.getDescription() != null ? tx.getDescription() : tx.getOrderRef();
 
         return new CheckoutResult(
@@ -244,6 +237,12 @@ public class BillingService {
         }
 
         PaymentTransaction tx = optTx.get();
+        if (!"00".equals(payload.code())) {
+            webhookLog.setErrorMessage("Webhook không xác nhận thanh toán thành công");
+            webhookLog.setProcessed(true);
+            webhookLogRepository.save(webhookLog);
+            return false;
+        }
         if ("PAID".equals(tx.getStatus())) {
             webhookLog.setProcessed(true);
             webhookLogRepository.save(webhookLog);

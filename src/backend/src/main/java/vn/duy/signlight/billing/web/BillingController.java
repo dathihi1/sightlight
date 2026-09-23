@@ -22,7 +22,6 @@ import vn.duy.signlight.common.error.ApiResponses;
 import vn.duy.signlight.common.web.CurrentUser;
 import vn.duy.signlight.common.web.RequestIdFilter;
 import vn.duy.signlight.common.web.TransactionResponse;
-import vn.duy.signlight.identity.application.AuthService;
 
 @RestController
 @RequestMapping("/api/v1/billing")
@@ -30,11 +29,9 @@ import vn.duy.signlight.identity.application.AuthService;
 public class BillingController {
 
     private final BillingService billingService;
-    private final AuthService authService;
 
-    public BillingController(BillingService billingService, AuthService authService) {
+    public BillingController(BillingService billingService) {
         this.billingService = billingService;
-        this.authService = authService;
     }
 
     @GetMapping("/plans")
@@ -49,12 +46,7 @@ public class BillingController {
     @Operation(summary = "Tạo liên kết thanh toán payOS cho gói dịch vụ")
     public ResponseEntity<TransactionResponse<CheckoutResult>> checkout(
             @Valid @RequestBody CheckoutRequest request) {
-        UUID userId;
-        try {
-            userId = CurrentUser.id();
-        } catch (Exception ex) {
-            userId = authService.demoLogin().userId();
-        }
+        UUID userId = CurrentUser.id();
         CheckoutResult result = billingService.createCheckout(userId, request.getPlanId());
         return ResponseEntity.ok(ApiResponses.ok(request.getRequestId(), result));
     }
@@ -64,11 +56,7 @@ public class BillingController {
     public ResponseEntity<TransactionResponse<CheckoutResult>> status(
             @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId,
             @PathVariable long orderCode) {
-        UUID userId = null;
-        try {
-            userId = CurrentUser.id();
-        } catch (Exception ignored) {
-        }
+        UUID userId = CurrentUser.id();
         PaymentTransaction tx = billingService.syncAndGetTransactionStatus(orderCode, userId);
         CheckoutResult result = billingService.toCheckoutResult(tx);
         return ResponseEntity.ok(ApiResponses.ok(requestId, result));
@@ -79,11 +67,7 @@ public class BillingController {
     public ResponseEntity<TransactionResponse<CheckoutResult>> confirm(
             @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId,
             @PathVariable long orderCode) {
-        UUID userId = null;
-        try {
-            userId = CurrentUser.id();
-        } catch (Exception ignored) {
-        }
+        UUID userId = CurrentUser.id();
         CheckoutResult result = billingService.confirmPayment(orderCode, userId);
         return ResponseEntity.ok(ApiResponses.ok(requestId, result));
     }

@@ -39,7 +39,9 @@ export default function LoginPage() {
     if (result.requiresEmailVerification) {
       router.push("/xac-nhan-email?email=" + encodeURIComponent(email || ""));
     } else {
-      router.push("/hoc");
+      const next = new URLSearchParams(window.location.search).get("next");
+      const destination = next?.startsWith("/") && !next.startsWith("//") ? next : "/hoc";
+      router.push(destination);
     }
   };
 
@@ -77,22 +79,6 @@ export default function LoginPage() {
     renderGoogleButton("google-signin-btn");
   }, [router]);
 
-  async function handleDemoLogin() {
-    setError(null);
-    setSubmitting(true);
-    try {
-      const result = await apiCall<LoginResult>("/api/v1/auth/demo-login", {
-        method: "POST",
-        auth: false,
-      });
-      handleLoginResult(result);
-    } catch (caught) {
-      setError(caught instanceof ApiError ? caught.errorMessage : "Không đăng nhập thử nghiệm được.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
@@ -121,16 +107,6 @@ export default function LoginPage() {
             {t("Tiếp tục hành trình thấu hiểu và sẻ chia yêu thương cùng người thân", "Continue your journey of understanding and connecting with loved ones")}
           </p>
         </div>
-
-        {/* Demo / Bypass Login Button */}
-        <button
-          type="button"
-          disabled={submitting}
-          onClick={handleDemoLogin}
-          className="w-full py-2.5 px-4 rounded-xl border-2 border-dashed border-[#0d9fa5] bg-[#e6f7f8]/60 hover:bg-[#e6f7f8] text-[#0d9fa5] font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
-        >
-          <span>Đăng nhập thử nghiệm (Bypass để test)</span>
-        </button>
 
         {/* Google Sign-in Button — duoc GIS render */}
         {GOOGLE_CLIENT_ID ? (
