@@ -23,8 +23,12 @@ export class ApiError extends Error {
   }
 }
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "http://localhost:18080";
+const configuredApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+const API_BASE_URL = configuredApiBaseUrl ?? (process.env.NODE_ENV === "development" ? "http://localhost:18080" : "");
+
+if (process.env.NODE_ENV === "production" && !configuredApiBaseUrl) {
+  throw new Error("NEXT_PUBLIC_API_BASE_URL is required in production");
+}
 
 const TOKEN_STORAGE_KEY = "signlight.accessToken";
 const REFRESH_TOKEN_STORAGE_KEY = "signlight.refreshToken";

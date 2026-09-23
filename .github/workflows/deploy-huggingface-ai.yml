@@ -1,0 +1,45 @@
+name: Deploy AI Space
+
+on:
+  push:
+    branches: [develope]
+    paths:
+      - 'src/ai/**'
+      - '.github/workflows/deploy-huggingface-ai.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate AI source
+        working-directory: src/ai
+        run: |
+          python -m pip install -r requirements.txt
+          python -m compileall -q app
+      - name: Install Hugging Face CLI
+        run: python -m pip install huggingface_hub==0.27.1
+      - name: Require model artifact
+        run: test -f src/ai/runs/vsl_mvp30_v2_lite_transformer/model.int8.onnx
+      - name: Push Space contents
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE_REPO: ${{ vars.HF_SPACE_REPO }}
+        run: |
+          test -n "$HF_TOKEN"
+          test -n "$HF_SPACE_REPO"
+          hf upload "$HF_SPACE_REPO" src/ai . \
+            --repo-type=space \
+            --revision=main \
+            --commit-message="Deploy ${GITHUB_SHA}" \
+            --exclude='__pycache__/**' \
+            --exclude='*.pyc' \
+            --exclude='.pytest_cache/**' \
+            --exclude='runs/vsl_mvp400_v2_lite_transformer/**'

@@ -1,0 +1,108 @@
+services:
+  - type: web
+    name: signlight-ai
+    runtime: docker
+    rootDir: src/ai
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: MODEL_DIR
+        value: /app/runs/vsl_mvp30_v2_lite_transformer
+      - key: SIGNLIGHT_AI_SERVICE_TOKEN
+        sync: false
+      - key: SIGNLIGHT_AI_REQUIRE_TOKEN
+        value: "true"
+      - key: ONNX_INTRA_OP_THREADS
+        value: "2"
+      - key: OMP_NUM_THREADS
+        value: "2"
+      - key: OPENBLAS_NUM_THREADS
+        value: "2"
+      - key: MKL_NUM_THREADS
+        value: "2"
+      - key: LOG_WEBHOOK_URL
+        value: ""
+      - key: LOG_WEBHOOK_SECRET
+        value: ""
+      - key: GDRIVE_FOLDER_ID
+        value: ""
+
+  - type: web
+    name: signlight-api
+    runtime: docker
+    rootDir: src/backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: SERVER_PORT
+        value: 8080
+      - key: SIGNLIGHT_SEED_ENABLED
+        value: "false"
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: PUBLIC_API_BASE_URL
+        sync: false
+      - key: PUBLIC_WEB_BASE_URL
+        sync: false
+      - key: SIGNLIGHT_AI_BASE_URL
+        sync: false
+      - key: SIGNLIGHT_AI_SERVICE_TOKEN
+        sync: false
+      - key: SIGNLIGHT_AI_REQUIRE_TOKEN
+        value: "true"
+      - key: SIGNLIGHT_AI_TIMEOUT_MS
+        value: "60000"
+      - key: JWT_SECRET
+        sync: false
+      - key: MEDIA_SIGNING_KEY
+        sync: false
+      - key: R2_PUBLIC_BASE_URL
+        sync: false
+      - key: JWT_ACCESS_TTL_MINUTES
+        value: "15"
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: PAYOS_CLIENT_ID
+        sync: false
+      - key: PAYOS_API_KEY
+        sync: false
+      - key: PAYOS_CHECKSUM_KEY
+        sync: false
+      - key: PAYOS_ENDPOINT
+        value: https://api-merchant.payos.vn
+      - key: PAYOS_RETURN_URL
+        sync: false
+      - key: PAYOS_CANCEL_URL
+        sync: false
+      - key: MAIL_ENABLED
+        value: "false"
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: IP_HASH_SALT
+        sync: false
+      - key: JWT_REFRESH_TTL_DAYS
+        value: "30"
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false

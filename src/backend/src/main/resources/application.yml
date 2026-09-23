@@ -106,6 +106,7 @@ signlight:
   ai:
     base-url: ${SIGNLIGHT_AI_BASE_URL:http://localhost:7860}
     timeout-ms: ${SIGNLIGHT_AI_TIMEOUT_MS:5000}
+    service-token: ${SIGNLIGHT_AI_SERVICE_TOKEN:}
   payos:
     client-id: ${PAYOS_CLIENT_ID:}
     api-key: ${PAYOS_API_KEY:}

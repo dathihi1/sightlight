@@ -33,6 +33,7 @@ services:
       # Dịch vụ AI — gọi qua mạng nội bộ, KHÔNG qua Internet
       SIGNLIGHT_AI_BASE_URL: http://ai:7860
       SIGNLIGHT_AI_TIMEOUT_MS: 5000
+      SIGNLIGHT_AI_SERVICE_TOKEN: ${SIGNLIGHT_AI_SERVICE_TOKEN:-}
       # Chỉ mở /health ra ngoài — các endpoint Actuator khác giữ nội bộ (rủi ro DR-03)
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus
       MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: never
@@ -75,6 +76,8 @@ services:
     environment:
       MODEL_DIR: /app/runs/vsl_mvp30_v2_lite_transformer
       ONNX_INTRA_OP_THREADS: "2"
+      SIGNLIGHT_AI_SERVICE_TOKEN: ${SIGNLIGHT_AI_SERVICE_TOKEN:-}
+      SIGNLIGHT_AI_REQUIRE_TOKEN: "false"
       OMP_NUM_THREADS: "2"
       OPENBLAS_NUM_THREADS: "2"
       MKL_NUM_THREADS: "2"

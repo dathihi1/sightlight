@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -41,12 +41,27 @@ else:
         MODEL_DIR = local_runs / "vsl_mvp30_v2_lite_transformer"
 
 recognizer: Recognizer | None = None
+SERVICE_TOKEN = os.getenv("SIGNLIGHT_AI_SERVICE_TOKEN", "")
+REQUIRE_SERVICE_TOKEN = os.getenv("SIGNLIGHT_AI_REQUIRE_TOKEN", "false").lower() == "true"
+
+
+def _authorize(authorization: str | None) -> JSONResponse | None:
+    if not SERVICE_TOKEN:
+        if REQUIRE_SERVICE_TOKEN:
+            return JSONResponse(status_code=503, content={"error": "service_not_configured"})
+        return None
+    expected = f"Bearer {SERVICE_TOKEN}"
+    if authorization != expected:
+        return JSONResponse(status_code=401, content={"error": "unauthorized"})
+    return None
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     global recognizer
     _assert_disabled_integrations()
+    if REQUIRE_SERVICE_TOKEN and not SERVICE_TOKEN:
+        raise RuntimeError("SIGNLIGHT_AI_SERVICE_TOKEN is required when SIGNLIGHT_AI_REQUIRE_TOKEN=true")
     recognizer = Recognizer(MODEL_DIR)
     if recognizer.stub_mode:
         log.warning("Dịch vụ AI khởi động ở CHẾ ĐỘ STUB — kết quả nhận dạng là giả lập")
@@ -111,7 +126,10 @@ def health() -> dict[str, Any]:
 
 
 @app.get("/api/labels")
-def labels() -> dict[str, Any]:
+def labels(authorization: str | None = Header(default=None)) -> dict[str, Any] | JSONResponse:
+    unauthorized = _authorize(authorization)
+    if unauthorized is not None:
+        return unauthorized
     if recognizer is None:
         return JSONResponse(status_code=503, content={"error": "model_loading"})
     return {
@@ -127,8 +145,14 @@ def labels() -> dict[str, Any]:
 
 
 @app.post("/api/infer/features")
-def infer_features(payload: InferFeaturesRequest) -> Any:
+def infer_features(
+    payload: InferFeaturesRequest,
+    authorization: str | None = Header(default=None),
+) -> Any:
     """Phân lớp một tensor đặc trưng đã trích sẵn ở trình duyệt (Q8 — phương án B)."""
+    unauthorized = _authorize(authorization)
+    if unauthorized is not None:
+        return unauthorized
     if recognizer is None:
         return JSONResponse(status_code=503, content={"error": "model_loading"})
 

@@ -5,12 +5,15 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   eslint: { ignoreDuringBuilds: true },
   async rewrites() {
-    return [
-      {
-        source: "/api/v1/:path*",
-        destination: `${process.env.INTERNAL_API_BASE_URL ?? "http://api:8080"}/api/v1/:path*`,
-      },
-    ];
+    const internalApiBaseUrl = process.env.INTERNAL_API_BASE_URL?.replace(/\/$/, "");
+    return internalApiBaseUrl
+      ? [
+          {
+            source: "/api/v1/:path*",
+            destination: `${internalApiBaseUrl}/api/v1/:path*`,
+          },
+        ]
+      : [];
   },
   async headers() {
     return [

@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import vn.duy.signlight.common.error.BusinessException;
@@ -26,16 +27,25 @@ public class AiInferenceClient {
     private static final Logger log = LoggerFactory.getLogger(AiInferenceClient.class);
 
     private final RestClient restClient;
+    private final String serviceToken;
 
     public AiInferenceClient(
             @Value("${signlight.ai.base-url}") String baseUrl,
-            @Value("${signlight.ai.timeout-ms}") long timeoutMs) {
+            @Value("${signlight.ai.timeout-ms}") long timeoutMs,
+            @Value("${signlight.ai.service-token:}") String serviceToken) {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofMillis(Math.min(timeoutMs, 2000)));
         factory.setReadTimeout(Duration.ofMillis(timeoutMs));
+        this.serviceToken = serviceToken;
         this.restClient = RestClient.builder()
                 .baseUrl(baseUrl)
                 .requestFactory(factory)
+                .requestInterceptor((request, body, execution) -> {
+                    if (StringUtils.hasText(this.serviceToken)) {
+                        request.getHeaders().setBearerAuth(this.serviceToken);
+                    }
+                    return execution.execute(request, body);
+                })
                 .build();
     }
 
