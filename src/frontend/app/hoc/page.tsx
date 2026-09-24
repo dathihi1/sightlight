@@ -3,12 +3,8 @@
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { ErrorNotice } from "@/components/ErrorNotice";
-import { ApiError, apiCall } from "@/lib/api";
-
-interface MeResult {
-  preferences: { activeCourseId: string | null };
-  profile: { displayName: string };
-}
+import { useAuthSession } from "@/lib/useAuthSession";
+import { apiCall } from "@/lib/api";
 
 interface LearningPath {
   courseId: string;
@@ -42,12 +38,8 @@ interface LessonNode {
 
 /** SCR-08 — lộ trình học (FR-09). */
 export default function LearningPathPage() {
-  const me = useQuery({
-    queryKey: ["me"],
-    queryFn: () => apiCall<MeResult>("/api/v1/me"),
-  });
-
-  const courseId = me.data?.preferences.activeCourseId ?? null;
+  const { isClient, isLoggedIn, isLoading, user } = useAuthSession();
+  const courseId = user?.preferences.activeCourseId ?? null;
 
   const path = useQuery({
     queryKey: ["path", courseId],
@@ -55,14 +47,10 @@ export default function LearningPathPage() {
     queryFn: () => apiCall<LearningPath>(`/api/v1/courses/${courseId}/path`),
   });
 
-  if (me.isError) {
-    const message =
-      me.error instanceof ApiError && me.error.httpStatus === 401
-        ? "Bạn cần đăng nhập để xem lộ trình học."
-        : "Không tải được thông tin tài khoản.";
+  if (!isClient) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-8 space-y-4">
-        <ErrorNotice message={message} />
+        <ErrorNotice message="Bạn cần đăng nhập để xem lộ trình học." />
         <Link href="/dang-nhap" className="text-[var(--color-brand-600)] underline">
           Tới trang đăng nhập
         </Link>
@@ -70,7 +58,26 @@ export default function LearningPathPage() {
     );
   }
 
-  if (me.isLoading || path.isLoading) {
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-8">
+        <p className="text-[var(--color-ink-600)]">Đang tải tài khoản…</p>
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-8 space-y-4">
+        <ErrorNotice message="Bạn cần đăng nhập để xem lộ trình học." />
+        <Link href="/dang-nhap" className="text-[var(--color-brand-600)] underline">
+          Tới trang đăng nhập
+        </Link>
+      </div>
+    );
+  }
+
+  if (path.isLoading) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-8">
         <p className="text-[var(--color-ink-600)]">Đang tải lộ trình…</p>

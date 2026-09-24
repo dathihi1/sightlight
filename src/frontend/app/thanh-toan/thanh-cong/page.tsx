@@ -1,11 +1,10 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
 import { apiCall, tokenStore } from "@/lib/api";
-import { dispatchAuthChange } from "@/lib/useAuthSession";
 import { useLanguage } from "@/context/LanguageContext";
 
 interface CheckoutResult {
@@ -19,6 +18,7 @@ interface CheckoutResult {
 
 function SuccessContent() {
   const { t } = useLanguage();
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const orderCodeStr = searchParams.get("orderCode");
   const orderCode = orderCodeStr ? parseInt(orderCodeStr, 10) : null;
@@ -39,8 +39,9 @@ function SuccessContent() {
 
   useEffect(() => {
     if (!isPaid || !tokenStore.get()) return;
-    dispatchAuthChange();
-  }, [isPaid]);
+    void queryClient.invalidateQueries({ queryKey: ["me"] });
+    void queryClient.invalidateQueries({ queryKey: ["path"] });
+  }, [isPaid, queryClient]);
 
   return (
     <div className="mx-auto max-w-lg px-4 py-16 text-center space-y-6">
