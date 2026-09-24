@@ -44,6 +44,7 @@ export function useAuthSession() {
     const handleAuthChange = () => {
       setToken(tokenStore.get());
       queryClient.invalidateQueries({ queryKey: ["me"] });
+      queryClient.invalidateQueries({ queryKey: ["path"] });
     };
 
     const handleStorage = (e: StorageEvent) => {
