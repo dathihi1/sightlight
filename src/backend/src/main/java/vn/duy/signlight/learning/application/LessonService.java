@@ -69,6 +69,7 @@ public class LessonService {
     private final StreakService streakService;
     private final AuthService authService;
     private final ObjectMapper objectMapper;
+    private final vn.duy.signlight.content.application.LessonContentService lessonContentService;
 
     public LessonService(ContentTreeService contentTree,
             MediaUrlService mediaUrlService,
@@ -79,7 +80,8 @@ public class LessonService {
             UserPreferenceRepository preferenceRepository,
             StreakService streakService,
             AuthService authService,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            vn.duy.signlight.content.application.LessonContentService lessonContentService) {
         this.contentTree = contentTree;
         this.mediaUrlService = mediaUrlService;
         this.learningPathService = learningPathService;
@@ -90,6 +92,7 @@ public class LessonService {
         this.streakService = streakService;
         this.authService = authService;
         this.objectMapper = objectMapper;
+        this.lessonContentService = lessonContentService;
     }
 
     // ----------------------------------------------------------- đọc bài học
@@ -116,7 +119,11 @@ public class LessonService {
                     .toList();
             nodes.add(new LessonResult.ExerciseNode(
                     exercise.getId(),
+                    exercise.getStableKey(),
                     exercise.getType(),
+                    exercise.getSkill(),
+                    exercise.getDifficulty(),
+                    exercise.getInstructionText(),
                     exercise.getPromptText(),
                     video == null ? null : mediaUrlService.resolveVideoUrl(video),
                     video != null && video.getObjectKey() != null && video.getObjectKey().startsWith("seed/"),
@@ -124,9 +131,47 @@ public class LessonService {
                     shuffledTokens(exercise)));
         }
 
+        // Load content blocks
+        List<vn.duy.signlight.learning.web.dto.ContentBlockNode> blocks = lessonContentService.getPublishedBlocks(lessonId).stream()
+                .map(block -> new vn.duy.signlight.learning.web.dto.ContentBlockNode(
+                        block.getId(),
+                        block.getStableKey(),
+                        block.getBlockType(),
+                        block.getTitle(),
+                        block.getBodyText(),
+                        parseJsonPayload(block.getPayload()),
+                        block.getSignId(),
+                        block.getMediaRef(),
+                        block.isRequired()))
+                .toList();
+
         UserLessonState state = touchState(userId, lessonId);
-        return new LessonResult(lesson.getId(), lesson.getTitle(), lesson.getType(),
-                state.getCurrentExerciseIndex(), nodes);
+        return new LessonResult(
+                lesson.getId(),
+                lesson.getStableKey(),
+                lesson.getTitle(),
+                lesson.getSummary(),
+                lesson.getType(),
+                lesson.getTopic(),
+                lesson.getTargetLevel(),
+                lesson.getEstimatedMinutes(),
+                lesson.getContentVersion(),
+                List.of(), // learningObjectives - will be populated from blocks or lesson metadata later
+                blocks,
+                state.getCurrentExerciseIndex(),
+                nodes);
+    }
+
+    private Object parseJsonPayload(String json) {
+        if (json == null || json.isBlank()) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(json, Object.class);
+        } catch (Exception e) {
+            log.warn("Failed to parse content block payload", e);
+            return null;
+        }
     }
 
     /**
