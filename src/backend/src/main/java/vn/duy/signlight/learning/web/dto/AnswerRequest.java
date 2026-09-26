@@ -24,18 +24,31 @@ public class AnswerRequest extends BaseRequest {
     @Schema(example = "SIGN_TO_MEANING")
     private String answerType;
 
-    @Schema(description = "Bắt buộc với các loại chọn đáp án")
+    @Schema(description = "Bắt buộc với các loại chọn đáp án (SIGN_TO_MEANING, MEANING_TO_SIGN)")
     private UUID selectedOptionId;
 
     @Size(max = 200, message = "00101")
-    @Schema(description = "Bắt buộc với TYPE_WHAT_YOU_SEE")
+    @Schema(description = "Bắt buộc với TYPE_WHAT_YOU_SEE, SIGN_VIDEO_RECALL")
     private String typedAnswer;
 
     @Schema(description = "Bắt buộc với SENTENCE_ORDER")
     private List<String> orderedTokens;
 
+    @Schema(description = "Bắt buộc với MATCH_SIGN_MEANING - danh sách cặp ghép")
+    private List<MatchPair> matches;
+
     @Min(value = 0, message = "00101")
     @Max(value = 600000, message = "00101")
     @Schema(example = "4200", description = "Chỉ dùng cho thống kê")
     private Integer clientElapsedMs;
+
+    /**
+     * Cặp ghép cho MATCH_SIGN_MEANING.
+     * promptId là ID của sign/video, optionId là ID của nghĩa tương ứng.
+     */
+    @Data
+    public static class MatchPair {
+        private UUID promptId;
+        private UUID optionId;
+    }
 }
