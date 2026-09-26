@@ -7,7 +7,7 @@ spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/signlight}
     username: ${SPRING_DATASOURCE_USERNAME:signlight}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    password: ${SPRING_DATASOURCE_PASSWORD:signlight}
     hikari:
       maximum-pool-size: ${DB_POOL_MAX_SIZE:4}
       minimum-idle: ${DB_POOL_MIN_IDLE:1}
@@ -67,6 +67,9 @@ management:
   endpoint:
     health:
       show-details: never
+  health:
+    mail:
+      enabled: false
 
 springdoc:
   swagger-ui:
@@ -89,7 +92,7 @@ signlight:
   security:
     jwt:
       # Bắt buộc đặt lại ở mọi môi trường thật. Ứng dụng từ chối khởi động nếu khoá ngắn hơn 32 byte.
-      secret: ${JWT_SECRET}
+      secret: ${JWT_SECRET:vCEPEfv6syrGzMhFqWFYAHsNpq15V5zobjAovyjwy9l}
       access-token-ttl: PT${JWT_ACCESS_TTL_MINUTES:15}M
       issuer: signlight
     google:
@@ -99,7 +102,7 @@ signlight:
     base-url: ${PUBLIC_API_BASE_URL:http://localhost:18080}
     web-videos-dir: ${SIGNLIGHT_WEB_VIDEOS_DIR:src/backend/src/main/resources/static/videos/web}
     raw-videos-dir: ${SIGNLIGHT_RAW_VIDEOS_DIR:E:/EXE101/data/raw/VSL400/front_view}
-    signing-key: ${MEDIA_SIGNING_KEY}
+    signing-key: ${MEDIA_SIGNING_KEY:doi-khoa-ky-url-media-o-moi-truong-that}
     # Base URL công khai của bucket Cloudflare R2 (r2.dev hoặc custom domain), không có dấu / ở cuối.
     # Bỏ trống để quay về phát luồng qua backend (/api/v1/media/stream).
     r2-public-base-url: ${R2_PUBLIC_BASE_URL:https://pub-8c6d1cfd8dcf4247a3c8b412746b506f.r2.dev}

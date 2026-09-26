@@ -59,4 +59,25 @@ public class Exercise {
 
     @Column(name = "is_seed", nullable = false)
     private boolean seed;
+
+    @Column(name = "stable_key", length = 200)
+    private String stableKey;
+
+    @Column(name = "instruction_text", columnDefinition = "TEXT")
+    private String instructionText;
+
+    @Column(length = 32)
+    private String skill;
+
+    @Column(length = 20)
+    private String difficulty;
+
+    @Column(name = "content_version", nullable = false)
+    private int contentVersion = 1;
+
+    @Column(name = "evaluation_version", nullable = false)
+    private int evaluationVersion = 1;
+
+    @Column(nullable = false)
+    private boolean active = true;
 }

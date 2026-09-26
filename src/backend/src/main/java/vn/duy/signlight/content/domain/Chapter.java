@@ -38,4 +38,7 @@ public class Chapter {
 
     @Column(name = "is_seed", nullable = false)
     private boolean seed;
+
+    @Column(name = "stable_key", length = 150)
+    private String stableKey;
 }

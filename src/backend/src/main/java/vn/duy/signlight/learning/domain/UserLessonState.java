@@ -50,6 +50,14 @@ public class UserLessonState {
     @Column(name = "current_exercise_index", nullable = false)
     private short currentExerciseIndex;
 
+    /** Stable key của exercise hiện tại (preferred over index for resume). */
+    @Column(name = "current_exercise_key", length = 200)
+    private String currentExerciseKey;
+
+    /** Content version mà user đang học. */
+    @Column(name = "content_version_seen")
+    private Integer contentVersionSeen;
+
     @Column(name = "completed_at")
     private Instant completedAt;
 

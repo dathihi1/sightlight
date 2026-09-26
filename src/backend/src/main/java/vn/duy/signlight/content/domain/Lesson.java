@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,4 +48,25 @@ public class Lesson {
 
     @Column(name = "is_seed", nullable = false)
     private boolean seed;
+
+    @Column(name = "stable_key", length = 200)
+    private String stableKey;
+
+    @Column(columnDefinition = "TEXT")
+    private String summary;
+
+    @Column(length = 64)
+    private String topic;
+
+    @Column(name = "target_level", length = 20)
+    private String targetLevel;
+
+    @Column(name = "content_version", nullable = false)
+    private int contentVersion = 1;
+
+    @Column(name = "content_hash", length = 64)
+    private String contentHash;
+
+    @Column(name = "published_at")
+    private Instant publishedAt;
 }

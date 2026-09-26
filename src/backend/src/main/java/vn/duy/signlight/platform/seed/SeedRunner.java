@@ -206,15 +206,29 @@ public class SeedRunner implements ApplicationRunner {
         for (int unitIndex = 0; unitIndex < seeds.size(); unitIndex++) {
             SeedUnit seedUnit = seeds.get(unitIndex);
             final int currentUnitIndex = unitIndex;
-            Unit unit = existingUnits.stream()
-                    .filter(candidate -> candidate.getOrderIndex() == currentUnitIndex)
-                    .findFirst()
-                    .orElseGet(() -> Unit.builder()
-                            .id(UUID.randomUUID())
-                            .courseId(course.getId())
-                            .orderIndex(currentUnitIndex)
-                            .build());
+
+            // Prefer stable key lookup if available
+            Unit unit = null;
+            if (seedUnit.stableKey() != null && !seedUnit.stableKey().isBlank()) {
+                unit = unitRepository.findByCourseIdAndStableKey(course.getId(), seedUnit.stableKey())
+                        .orElse(null);
+            }
+
+            // Fallback to orderIndex lookup
+            if (unit == null) {
+                unit = existingUnits.stream()
+                        .filter(candidate -> candidate.getOrderIndex() == currentUnitIndex)
+                        .findFirst()
+                        .orElseGet(() -> Unit.builder()
+                                .id(UUID.randomUUID())
+                                .courseId(course.getId())
+                                .orderIndex(currentUnitIndex)
+                                .build());
+            }
+
             unit.setTitle(seedUnit.title());
+            unit.setOrderIndex(currentUnitIndex);
+            unit.setStableKey(seedUnit.stableKey());
             unit.setFree(seedUnit.free());
             unit.setSeed(true);
             unitRepository.save(unit);
@@ -230,16 +244,30 @@ public class SeedRunner implements ApplicationRunner {
         for (int chapterIndex = 0; chapterIndex < seeds.size(); chapterIndex++) {
             SeedChapter seedChapter = seeds.get(chapterIndex);
             final int currentChapterIndex = chapterIndex;
-            Chapter chapter = existing.stream()
-                    .filter(candidate -> candidate.getOrderIndex() == currentChapterIndex)
-                    .findFirst()
-                    .orElseGet(() -> Chapter.builder()
-                            .id(UUID.randomUUID())
-                            .unitId(unit.getId())
-                            .orderIndex(currentChapterIndex)
-                            .quizPassPercent((short) 80)
-                            .build());
+
+            // Prefer stable key lookup if available
+            Chapter chapter = null;
+            if (seedChapter.stableKey() != null && !seedChapter.stableKey().isBlank()) {
+                chapter = chapterRepository.findByUnitIdAndStableKey(unit.getId(), seedChapter.stableKey())
+                        .orElse(null);
+            }
+
+            // Fallback to orderIndex lookup
+            if (chapter == null) {
+                chapter = existing.stream()
+                        .filter(candidate -> candidate.getOrderIndex() == currentChapterIndex)
+                        .findFirst()
+                        .orElseGet(() -> Chapter.builder()
+                                .id(UUID.randomUUID())
+                                .unitId(unit.getId())
+                                .orderIndex(currentChapterIndex)
+                                .quizPassPercent((short) 80)
+                                .build());
+            }
+
             chapter.setTitle(seedChapter.title());
+            chapter.setOrderIndex(currentChapterIndex);
+            chapter.setStableKey(seedChapter.stableKey());
             chapter.setSeed(true);
             chapterRepository.save(chapter);
 
@@ -254,16 +282,34 @@ public class SeedRunner implements ApplicationRunner {
         for (int lessonIndex = 0; lessonIndex < seeds.size(); lessonIndex++) {
             SeedLesson seedLesson = seeds.get(lessonIndex);
             final int currentLessonIndex = lessonIndex;
-            Lesson lesson = existing.stream()
-                    .filter(candidate -> candidate.getOrderIndex() == currentLessonIndex)
-                    .findFirst()
-                    .orElseGet(() -> Lesson.builder()
-                            .id(UUID.randomUUID())
-                            .chapterId(chapter.getId())
-                            .orderIndex(currentLessonIndex)
-                            .type("STANDARD")
-                            .build());
+
+            // Prefer stable key lookup if available
+            Lesson lesson = null;
+            if (seedLesson.stableKey() != null && !seedLesson.stableKey().isBlank()) {
+                lesson = lessonRepository.findByChapterIdAndStableKey(chapter.getId(), seedLesson.stableKey())
+                        .orElse(null);
+            }
+
+            // Fallback to orderIndex lookup
+            if (lesson == null) {
+                lesson = existing.stream()
+                        .filter(candidate -> candidate.getOrderIndex() == currentLessonIndex)
+                        .findFirst()
+                        .orElseGet(() -> Lesson.builder()
+                                .id(UUID.randomUUID())
+                                .chapterId(chapter.getId())
+                                .orderIndex(currentLessonIndex)
+                                .type("STANDARD")
+                                .contentVersion(1)
+                                .build());
+            }
+
             lesson.setTitle(seedLesson.title());
+            lesson.setOrderIndex(currentLessonIndex);
+            lesson.setStableKey(seedLesson.stableKey());
+            lesson.setSummary(seedLesson.summary());
+            lesson.setTopic(seedLesson.topic());
+            lesson.setTargetLevel(seedLesson.targetLevel());
             lesson.setEstimatedMinutes((short) seedLesson.estimatedMinutes());
             lesson.setStatus(STATUS_PUBLISHED);
             lesson.setSeed(true);
@@ -280,16 +326,35 @@ public class SeedRunner implements ApplicationRunner {
         for (int exerciseIndex = 0; exerciseIndex < seeds.size(); exerciseIndex++) {
             SeedExercise seedExercise = seeds.get(exerciseIndex);
             final int currentExerciseIndex = exerciseIndex;
-            Exercise exercise = existing.stream()
-                    .filter(candidate -> candidate.getOrderIndex() == currentExerciseIndex)
-                    .findFirst()
-                    .orElseGet(() -> Exercise.builder()
-                            .id(UUID.randomUUID())
-                            .lessonId(lesson.getId())
-                            .orderIndex(currentExerciseIndex)
-                            .build());
+
+            // Prefer stable key lookup if available
+            Exercise exercise = null;
+            if (seedExercise.stableKey() != null && !seedExercise.stableKey().isBlank()) {
+                exercise = exerciseRepository.findByLessonIdAndStableKey(lesson.getId(), seedExercise.stableKey())
+                        .orElse(null);
+            }
+
+            // Fallback to orderIndex lookup
+            if (exercise == null) {
+                exercise = existing.stream()
+                        .filter(candidate -> candidate.getOrderIndex() == currentExerciseIndex)
+                        .findFirst()
+                        .orElseGet(() -> Exercise.builder()
+                                .id(UUID.randomUUID())
+                                .lessonId(lesson.getId())
+                                .orderIndex(currentExerciseIndex)
+                                .contentVersion(1)
+                                .evaluationVersion(1)
+                                .active(true)
+                                .build());
+            }
+
             Sign sign = signsByWord.get(seedExercise.sign());
             exercise.setType(seedExercise.type());
+            exercise.setOrderIndex(currentExerciseIndex);
+            exercise.setStableKey(seedExercise.stableKey());
+            exercise.setSkill(seedExercise.skill());
+            exercise.setDifficulty(seedExercise.difficulty());
             exercise.setSignId(sign == null ? null : sign.getId());
             exercise.setPromptText(seedExercise.prompt());
             exercise.setCorrectAnswerText(seedExercise.answer());
@@ -352,19 +417,21 @@ public class SeedRunner implements ApplicationRunner {
     }
 
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
-    record SeedUnit(String title, boolean free, List<SeedChapter> chapters) {
+    record SeedUnit(String stableKey, String title, boolean free, List<SeedChapter> chapters) {
     }
 
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
-    record SeedChapter(String title, List<SeedLesson> lessons) {
+    record SeedChapter(String stableKey, String title, List<SeedLesson> lessons) {
     }
 
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
-    record SeedLesson(String title, int estimatedMinutes, List<SeedExercise> exercises) {
+    record SeedLesson(String stableKey, String title, String summary, String topic,
+                      String targetLevel, int estimatedMinutes, List<SeedExercise> exercises) {
     }
 
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
-    record SeedExercise(String type, String sign, String prompt, List<String> options,
+    record SeedExercise(String stableKey, String type, String skill, String difficulty,
+                        String sign, String prompt, List<String> options,
                         String answer, List<String> acceptedAnswers) {
     }
 }

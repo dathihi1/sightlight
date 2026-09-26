@@ -38,4 +38,7 @@ public class Unit {
 
     @Column(name = "is_seed", nullable = false)
     private boolean seed;
+
+    @Column(name = "stable_key", length = 100)
+    private String stableKey;
 }
