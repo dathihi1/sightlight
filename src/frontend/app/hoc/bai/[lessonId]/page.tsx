@@ -17,7 +17,7 @@ export default function LessonRedirectPage() {
 
   return (
     <div className="flex items-center justify-center min-h-[50vh]">
-      <p className="text-[var(--color-ink-600)]">Đang chuyển đến giao diện bài học mới…</p>
+      <p className="text-ink-600">Đang chuyển đến giao diện bài học mới…</p>
     </div>
   );
 }

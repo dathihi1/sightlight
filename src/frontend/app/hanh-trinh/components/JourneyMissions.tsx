@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { MissionItem, MissionPeriod } from "../types";
+import { IconCheck } from "@/components/ui/Icons";
 
 interface JourneyMissionsProps {
   missions: MissionItem[];
@@ -94,169 +95,87 @@ export function JourneyMissions({ missions, onClaimReward }: JourneyMissionsProp
     }
   };
 
+  // Nhận được thưởng lên đầu, đang làm ở giữa, đã nhận xuống cuối.
+  const order = { COMPLETED: 0, IN_PROGRESS: 1, CLAIMED: 2 } as const;
+  const sorted = [...filteredMissions].sort((a, b) => order[a.status] - order[b.status]);
+  const periods: ("ALL" | MissionPeriod)[] = ["ALL", "DAILY", "WEEKLY", "MILESTONE"];
+  const tone: Record<MissionPeriod, string> = {
+    DAILY: "bg-brand-400 text-white",
+    WEEKLY: "bg-sun-400 text-ink-900",
+    MILESTONE: "bg-grape-500 text-white",
+  };
+
   return (
-    <section className="bg-white rounded-3xl p-6 sm:p-8 border border-[#E2DBD0] shadow-sm space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2DBD0] pb-4">
+    <section className="card p-6 sm:p-8">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-xl font-extrabold text-[#0F172A]">
-              {t("Nhiệm vụ & Thử thách học tập", "Learning Missions & Quests")}
-            </h3>
-            <span className="rounded-full bg-[#e6f7f8] border border-[#b2e7e9] px-2.5 py-0.5 text-xs font-bold text-[#08757a]">
-              {completedCount}/{missions.length} {t("Hoàn thành", "Completed")}
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-[#64748B] mt-1">
-            {t(
-              "Rèn luyện kỹ năng mỗi ngày, tích luỹ điểm thưởng và chinh phục các mốc thành tích VSL.",
-              "Practice daily skills, earn reward points, and conquer VSL achievement milestones."
-            )}
+          <h3 className="text-2xl font-bold text-ink-900">{t("Nhiệm vụ", "Quests")}</h3>
+          <p className="mt-1 text-base text-ink-600">
+            {t(`Đã xong ${completedCount}/${missions.length}`, `${completedCount}/${missions.length} done`)}
           </p>
         </div>
-
-        {/* Filter Tabs */}
-        <div className="flex items-center p-1 rounded-full bg-[#F4EFE6]/70 border border-[#E2DBD0] text-xs font-bold self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setSelectedPeriod("ALL")}
-            className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
-              selectedPeriod === "ALL" ? "bg-white text-[#0F172A] shadow-xs" : "text-[#64748B] hover:text-[#0F172A]"
-            }`}
-          >
-            {t("Tất cả", "All")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedPeriod("DAILY")}
-            className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
-              selectedPeriod === "DAILY" ? "bg-white text-[#08757a] shadow-xs" : "text-[#64748B] hover:text-[#0F172A]"
-            }`}
-          >
-            {t("Hàng ngày", "Daily")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedPeriod("WEEKLY")}
-            className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
-              selectedPeriod === "WEEKLY" ? "bg-white text-[#B45309] shadow-xs" : "text-[#64748B] hover:text-[#0F172A]"
-            }`}
-          >
-            {t("Hàng tuần", "Weekly")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedPeriod("MILESTONE")}
-            className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
-              selectedPeriod === "MILESTONE" ? "bg-white text-[#8B5CF6] shadow-xs" : "text-[#64748B] hover:text-[#0F172A]"
-            }`}
-          >
-            {t("Cột mốc", "Milestone")}
-          </button>
+        <div className="flex gap-1 self-start rounded-2xl border border-ink-200 p-1 sm:self-auto" role="group" aria-label={t("Lọc nhiệm vụ", "Filter quests")}>
+          {periods.map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setSelectedPeriod(p)}
+              aria-pressed={selectedPeriod === p}
+              className={`min-h-0 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                selectedPeriod === p ? "bg-brand-50 text-brand-700" : "text-ink-600 hover:bg-ink-50"
+              }`}
+            >
+              {p === "ALL" ? t("Tất cả", "All") : getPeriodLabel(p)}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Missions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredMissions.map((mission) => {
-          const progressPercent = Math.min(100, Math.round((mission.current / Math.max(mission.target, 1)) * 100));
-          const isClaimReady = mission.status === "COMPLETED";
-          const isClaimed = mission.status === "CLAIMED";
+      <ul className="mt-6 divide-y divide-ink-100">
+        {sorted.map((mission) => {
+          const pct = Math.min(100, Math.round((mission.current / Math.max(mission.target, 1)) * 100));
+          const ready = mission.status === "COMPLETED";
+          const claimed = mission.status === "CLAIMED";
 
           return (
-            <div
-              key={mission.id}
-              className={`p-4.5 rounded-2xl border transition-all space-y-3.5 ${
-                isClaimReady
-                  ? "bg-[#e6f7f8]/50 border-[#0d9fa5] ring-2 ring-[#0d9fa5]/20 shadow-xs"
-                  : isClaimed
-                  ? "bg-[#F4EFE6]/50 border-[#E2DBD0] opacity-80"
-                  : "bg-white border-[#E2DBD0] hover:border-[#CBD5E1]"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
-                      mission.period === "DAILY"
-                        ? "bg-[#e6f7f8] text-[#08757a]"
-                        : mission.period === "WEEKLY"
-                        ? "bg-[#FEF3C7] text-[#B45309]"
-                        : "bg-[#F3E8FF] text-[#7E22CE]"
-                    }`}
-                  >
-                    {renderIcon(mission.iconType)}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-bold text-[#0F172A]">
-                        {lang === "vi" ? mission.titleVi : mission.titleEn}
-                      </h4>
-                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-white/80 border border-[#E2DBD0] text-[#64748B]">
-                        {getPeriodLabel(mission.period)}
-                      </span>
-                    </div>
-                    <p className="text-xs text-[#64748B] mt-0.5">
-                      {lang === "vi" ? mission.descriptionVi : mission.descriptionEn}
-                    </p>
-                  </div>
-                </div>
+            <li key={mission.id} className={`flex items-center gap-4 py-4 ${claimed ? "opacity-60" : ""}`}>
+              <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${tone[mission.period]}`}>
+                {renderIcon(mission.iconType)}
+              </span>
 
-                <span className="inline-flex items-center text-xs font-black text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
-                  +{mission.rewardExp} EXP
-                </span>
-              </div>
-
-              {/* Progress Bar & Actions */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-[#64748B]">
-                    {t("Tiến độ", "Progress")}: {mission.current}/{mission.target}{" "}
-                    {lang === "vi" ? mission.unitVi : mission.unitEn}
-                  </span>
-                  <span className={progressPercent === 100 ? "text-[#08757a]" : "text-[#0F172A]"}>
-                    {progressPercent}%
-                  </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <h4 className="text-base font-bold text-ink-900">{lang === "vi" ? mission.titleVi : mission.titleEn}</h4>
+                  <span className="text-xs font-bold text-ink-500">{getPeriodLabel(mission.period)}</span>
                 </div>
-                <div className="w-full bg-[#F4EFE6] rounded-full h-2 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      progressPercent === 100 ? "bg-[#0d9fa5]" : "bg-[#08757a]/70"
-                    }`}
-                    style={{ width: `${progressPercent}%` }}
-                  />
+                <p className="text-sm text-ink-600">{lang === "vi" ? mission.descriptionVi : mission.descriptionEn}</p>
+                <div className="mt-2 flex items-center gap-3">
+                  <div className="progress h-3 flex-1">
+                    <span style={{ width: `${pct}%` }} />
+                  </div>
+                  <span className="shrink-0 text-sm font-semibold text-ink-600">
+                    {mission.current}/{mission.target}
+                  </span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end pt-1">
-                {isClaimReady ? (
-                  <button
-                    type="button"
-                    onClick={() => onClaimReward(mission)}
-                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#0d9fa5] hover:bg-[#0a8287] text-white font-bold text-xs shadow-xs transition-all animate-pulse cursor-pointer"
-                  >
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    <span>{t("Nhận thưởng", "Claim Reward")}</span>
+              <div className="w-32 shrink-0 text-right">
+                {ready ? (
+                  <button type="button" onClick={() => onClaimReward(mission)} className="btn btn-sun btn-sm w-full">
+                    +{mission.rewardExp} XP
                   </button>
-                ) : isClaimed ? (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-[#08757a]">
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    <span>{t("Đã nhận thưởng", "Claimed")}</span>
+                ) : claimed ? (
+                  <span className="inline-flex items-center gap-1 text-sm font-bold text-brand-600">
+                    <IconCheck className="h-4 w-4" /> {t("Đã nhận", "Claimed")}
                   </span>
                 ) : (
-                  <span className="text-xs font-medium text-[#94A3B8]">
-                    {t("Đang thực hiện...", "In Progress...")}
-                  </span>
+                  <span className="chip bg-sun-50 text-sun-700">+{mission.rewardExp} XP</span>
                 )}
               </div>
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </section>
   );
 }

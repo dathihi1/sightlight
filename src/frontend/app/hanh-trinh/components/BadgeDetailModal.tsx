@@ -18,13 +18,13 @@ export function BadgeDetailModal({ badge, onClose, onShareBadge }: BadgeDetailMo
   const getRarityBadge = (rarity: BadgeRarity) => {
     switch (rarity) {
       case "COMMON":
-        return { label: t("Phổ thông", "Common"), color: "bg-slate-100 text-slate-700 border-slate-300" };
+        return { label: t("Phổ thông", "Common"), color: "bg-ink-100 text-ink-700 border-ink-300" };
       case "RARE":
-        return { label: t("Hiếm", "Rare"), color: "bg-[#e6f7f8] text-[#08757a] border-[#b2e7e9]" };
+        return { label: t("Hiếm", "Rare"), color: "bg-brand-50 text-brand-600 border-brand-200" };
       case "EPIC":
-        return { label: t("Sử thi", "Epic"), color: "bg-purple-50 text-purple-700 border-purple-200" };
+        return { label: t("Sử thi", "Epic"), color: "bg-grape-50 text-grape-700 border-grape-200" };
       case "LEGENDARY":
-        return { label: t("Huyền thoại", "Legendary"), color: "bg-amber-50 text-amber-700 border-amber-300" };
+        return { label: t("Huyền thoại", "Legendary"), color: "bg-sun-50 text-sun-700 border-sun-300" };
     }
   };
 
@@ -39,7 +39,7 @@ export function BadgeDetailModal({ badge, onClose, onShareBadge }: BadgeDetailMo
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-[#E2DBD0] space-y-6 animate-in zoom-in-95 duration-150"
+        className="card relative w-full max-w-lg p-6 sm:p-8 shadow-2xl space-y-6 animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -47,7 +47,7 @@ export function BadgeDetailModal({ badge, onClose, onShareBadge }: BadgeDetailMo
           type="button"
           onClick={onClose}
           aria-label={t("Đóng", "Close")}
-          className="absolute right-5 top-5 w-8 h-8 rounded-full bg-[#F4EFE6] text-[#64748B] hover:text-[#0F172A] hover:bg-[#E2DBD0] flex items-center justify-center transition-colors cursor-pointer"
+          className="absolute right-5 top-5 w-8 h-8 rounded-full bg-ink-50 text-ink-600 hover:text-ink-900 hover:bg-ink-200 flex items-center justify-center transition-colors cursor-pointer"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <line x1="18" y1="6" x2="6" y2="18" />
@@ -58,13 +58,11 @@ export function BadgeDetailModal({ badge, onClose, onShareBadge }: BadgeDetailMo
         {/* Badge Hero Display */}
         <div className="flex flex-col items-center text-center space-y-3 pt-2">
           <div
-            className={`w-20 h-20 rounded-3xl p-1 flex items-center justify-center shadow-lg transition-transform hover:scale-105 ${
-              badge.unlocked
-                ? "bg-gradient-to-tr from-[#08757a] via-[#0d9fa5] to-[#38bdf8]"
-                : "bg-gradient-to-tr from-slate-200 to-slate-400"
+            className={`w-20 h-20 rounded-full p-1 flex items-center justify-center ${
+              badge.unlocked ? "bg-brand-400" : "bg-ink-300"
             }`}
           >
-            <div className="w-full h-full rounded-2xl bg-white flex items-center justify-center text-[#08757a]">
+            <div className="w-full h-full rounded-2xl bg-white flex items-center justify-center text-brand-600">
               <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>
@@ -73,53 +71,53 @@ export function BadgeDetailModal({ badge, onClose, onShareBadge }: BadgeDetailMo
 
           <div className="space-y-1">
             <div className="flex items-center justify-center gap-2">
-              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase border ${rarityMeta.color}`}>
+              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase border ${rarityMeta.color}`}>
                 {rarityMeta.label}
               </span>
               {badge.unlocked ? (
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold text-[#08757a] bg-[#e6f7f8] border border-[#b2e7e9]">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold text-brand-600 bg-brand-50 border border-brand-200">
                   ✓ {t("Đã đạt được", "Earned")}
                 </span>
               ) : (
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold text-[#64748B] bg-slate-100 border border-slate-200">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold text-ink-600 bg-ink-100 border border-ink-200">
                   {t("Chưa mở khoá", "Locked")}
                 </span>
               )}
             </div>
-            <h3 className="text-xl font-extrabold text-[#0F172A]">
+            <h3 className="text-xl font-semibold text-ink-900">
               {lang === "vi" ? badge.nameVi : badge.nameEn}
             </h3>
-            <p className="text-xs sm:text-sm text-[#64748B] max-w-sm">
+            <p className="text-xs sm:text-sm text-ink-600 max-w-sm">
               {lang === "vi" ? badge.descriptionVi : badge.descriptionEn}
             </p>
           </div>
         </div>
 
         {/* Criteria & Progress Box */}
-        <div className="rounded-2xl bg-[#F4EFE6]/60 p-4 border border-[#E2DBD0] space-y-3">
+        <div className="rounded-2xl bg-ink-50/60 p-4 border border-ink-200 space-y-3">
           <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
+            <span className="text-xs font-bold text-ink-600">
               {t("Điều kiện mở khoá", "Unlock Criteria")}
             </span>
-            <p className="text-xs font-semibold text-[#0F172A]">
+            <p className="text-xs font-semibold text-ink-900">
               {lang === "vi" ? badge.criteriaVi : badge.criteriaEn}
             </p>
           </div>
 
-          <div className="space-y-1.5 pt-2 border-t border-[#E2DBD0]">
+          <div className="space-y-1.5 pt-2 border-t border-ink-200">
             <div className="flex items-center justify-between text-xs font-bold">
-              <span className="text-[#64748B]">
+              <span className="text-ink-600">
                 {t("Tiến độ hiện tại", "Current Progress")}: {badge.progressCurrent}/{badge.progressTarget}{" "}
                 {lang === "vi" ? badge.unitLabelVi : badge.unitLabelEn}
               </span>
-              <span className={badge.unlocked ? "text-[#08757a]" : "text-[#0F172A]"}>
+              <span className={badge.unlocked ? "text-brand-600" : "text-ink-900"}>
                 {progressPercent}%
               </span>
             </div>
-            <div className="w-full bg-white rounded-full h-2 overflow-hidden border border-[#E2DBD0]">
+            <div className="w-full bg-white rounded-full h-2 overflow-hidden border border-ink-200">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
-                  badge.unlocked ? "bg-[#0d9fa5]" : "bg-[#64748B]"
+                  badge.unlocked ? "bg-brand-500" : "bg-ink-600"
                 }`}
                 style={{ width: `${progressPercent}%` }}
               />
@@ -127,7 +125,7 @@ export function BadgeDetailModal({ badge, onClose, onShareBadge }: BadgeDetailMo
           </div>
 
           {badge.unlockedAt && (
-            <p className="text-[11px] text-[#08757a] font-medium pt-1">
+            <p className="text-xs text-brand-600 font-semibold pt-1">
               ✓ {t("Hoàn thành vào ngày", "Achieved on")}: {badge.unlockedAt}
             </p>
           )}
@@ -138,7 +136,7 @@ export function BadgeDetailModal({ badge, onClose, onShareBadge }: BadgeDetailMo
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 rounded-full border border-[#E2DBD0] text-xs font-bold text-[#64748B] hover:text-[#0F172A] hover:bg-[#F4EFE6] transition-colors cursor-pointer"
+            className="btn btn-secondary btn-sm cursor-pointer"
           >
             {t("Đóng", "Close")}
           </button>
@@ -147,7 +145,7 @@ export function BadgeDetailModal({ badge, onClose, onShareBadge }: BadgeDetailMo
             <button
               type="button"
               onClick={() => onShareBadge(badge)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0d9fa5] hover:bg-[#0a8287] text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+              className="btn btn-primary btn-sm cursor-pointer"
             >
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="18" cy="5" r="3" />
@@ -161,7 +159,7 @@ export function BadgeDetailModal({ badge, onClose, onShareBadge }: BadgeDetailMo
           ) : (
             <Link
               href="/hoc"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0F172A] hover:bg-[#1E293B] text-white font-bold text-xs shadow-xs transition-all"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-ink-900 hover:bg-ink-900 text-white font-bold text-xs transition-all"
             >
               <span>{t("Chinh phục ngay", "Conquer Now")}</span>
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

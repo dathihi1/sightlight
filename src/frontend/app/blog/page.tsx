@@ -138,18 +138,18 @@ export default function BlogPage() {
   }, [selectedPostId]);
 
   return (
-    <div className="w-full bg-[#F4EFE6] min-h-screen py-12 sm:py-20">
+    <div className="w-full bg-ink-50 min-h-screen py-12 sm:py-20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         {/* Header */}
         <ScrollReveal direction="up">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="inline-block px-4 py-1.5 rounded-full bg-[#e6f7f8] text-[#08757a] text-xs font-bold uppercase tracking-wider mb-4 border border-[#b2e7e9]">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-brand-50 text-brand-600 text-xs font-bold mb-4 border border-brand-200">
               {t("Cẩm nang SignLight • Blog", "SignLight Blog • Insights")}
             </span>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-[#0F172A]">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-ink-900">
               {t("Kiến thức & Câu chuyện Ký hiệu VSL", "Insights & Stories on VSL & Deaf Culture")}
             </h1>
-            <p className="mt-3 text-base sm:text-lg text-[#475569]">
+            <p className="mt-3 text-base sm:text-lg text-ink-700">
               {t(
                 "Khám phá cẩm nang học tập, văn hoá Người Điếc Việt Nam và các tiến bộ công nghệ AI hỗ trợ giao tiếp.",
                 "Explore learning guides, Vietnamese Deaf culture, and AI accessibility breakthroughs."
@@ -167,8 +167,8 @@ export default function BlogPage() {
               onClick={() => setActiveCategory(cat.id)}
               className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all ${
                 activeCategory === cat.id
-                  ? "bg-[#0d9fa5] text-white shadow-xs scale-105"
-                  : "bg-white text-[#475569] border border-[#E2DBD0] hover:bg-[#EDE6DA] hover:text-[#0F172A]"
+                  ? "bg-brand-500 text-white"
+                  : "bg-white text-ink-700 border border-ink-200 hover:bg-ink-100 hover:text-ink-900"
               }`}
             >
               {lang === "vi" ? cat.labelVi : cat.labelEn}
@@ -182,30 +182,30 @@ export default function BlogPage() {
             <ScrollReveal key={post.id} direction="up" delay={idx * 80}>
               <article
                 onClick={() => setSelectedPostId(post.id)}
-                className="cursor-pointer bg-white rounded-3xl p-6 border border-[#E2DBD0] shadow-2xs hover:border-[#0d9fa5] hover:shadow-md transition-all flex flex-col justify-between h-full group"
+                className="card cursor-pointer p-6 hover:border-brand-500 transition-all flex flex-col justify-between h-full group"
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <span className="px-2.5 py-1 rounded-full bg-[#e6f7f8] text-[#08757a] text-[11px] font-bold">
+                    <span className="px-2.5 py-1 rounded-full bg-brand-50 text-brand-600 text-xs font-bold">
                       {lang === "vi" ? post.categoryLabelVi : post.categoryLabelEn}
                     </span>
-                    <span className="text-xs text-[#64748B]">
+                    <span className="text-xs text-ink-600">
                       {lang === "vi" ? post.readTimeVi : post.readTimeEn}
                     </span>
                   </div>
 
-                  <h2 className="text-lg font-bold text-[#0F172A] group-hover:text-[#0d9fa5] transition-colors line-clamp-2 mb-2">
+                  <h2 className="text-lg font-bold text-ink-900 group-hover:text-brand-500 transition-colors line-clamp-2 mb-2">
                     {lang === "vi" ? post.titleVi : post.titleEn}
                   </h2>
 
-                  <p className="text-sm text-[#475569] leading-relaxed line-clamp-3 mb-4">
+                  <p className="text-sm text-ink-700 leading-relaxed line-clamp-3 mb-4">
                     {lang === "vi" ? post.excerptVi : post.excerptEn}
                   </p>
                 </div>
 
-                <div className="pt-4 border-t border-[#E2DBD0] flex items-center justify-between text-xs text-[#64748B]">
+                <div className="pt-4 border-t border-ink-200 flex items-center justify-between text-xs text-ink-600">
                   <span className="font-semibold">{post.author}</span>
-                  <span className="font-bold text-[#0d9fa5] group-hover:underline">
+                  <span className="font-bold text-brand-500 group-hover:underline">
                     {t("Đọc tiếp →", "Read →")}
                   </span>
                 </div>
@@ -217,11 +217,11 @@ export default function BlogPage() {
         {/* Selected Article Detail Modal */}
         {selectedPost && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
-            <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8 border border-[#E2DBD0] shadow-2xl relative">
+            <div className="card max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8 shadow-2xl relative">
               <button
                 type="button"
                 onClick={() => setSelectedPostId(null)}
-                className="absolute top-4 right-4 p-2 rounded-full text-[#64748B] hover:text-[#0F172A] hover:bg-[#F4EFE6] transition-colors"
+                className="absolute top-4 right-4 p-2 rounded-full text-ink-600 hover:text-ink-900 hover:bg-ink-50 transition-colors"
                 aria-label={t("Đóng", "Close")}
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -230,24 +230,24 @@ export default function BlogPage() {
               </button>
 
               <div className="flex items-center gap-2 mb-4">
-                <span className="px-3 py-1 rounded-full bg-[#e6f7f8] text-[#08757a] text-xs font-bold">
+                <span className="px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-xs font-bold">
                   {lang === "vi" ? selectedPost.categoryLabelVi : selectedPost.categoryLabelEn}
                 </span>
-                <span className="text-xs text-[#64748B]">
+                <span className="text-xs text-ink-600">
                   {lang === "vi" ? selectedPost.readTimeVi : selectedPost.readTimeEn}
                 </span>
               </div>
 
-              <h2 className="text-2xl font-extrabold text-[#0F172A] mb-4">
+              <h2 className="text-2xl font-semibold text-ink-900 mb-4">
                 {lang === "vi" ? selectedPost.titleVi : selectedPost.titleEn}
               </h2>
 
-              <div className="text-xs text-[#64748B] mb-6 pb-4 border-b border-[#E2DBD0] flex items-center justify-between">
+              <div className="text-xs text-ink-600 mb-6 pb-4 border-b border-ink-200 flex items-center justify-between">
                 <span>{selectedPost.author}</span>
                 <span>{selectedPost.date}</span>
               </div>
 
-              <div className="prose text-[#475569] text-sm sm:text-base leading-relaxed space-y-4 mb-8">
+              <div className="prose text-ink-700 text-sm sm:text-base leading-relaxed space-y-4 mb-8">
                 <p>{lang === "vi" ? selectedPost.excerptVi : selectedPost.excerptEn}</p>
                 <p>
                   {t(
@@ -263,17 +263,17 @@ export default function BlogPage() {
                 </p>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E2DBD0]">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-ink-200">
                 <button
                   type="button"
                   onClick={() => setSelectedPostId(null)}
-                  className="px-5 py-2 rounded-full border border-[#E2DBD0] text-sm font-bold text-[#475569] hover:bg-[#F4EFE6] transition-colors"
+                  className="btn btn-secondary btn-sm"
                 >
                   {t("Đóng", "Close")}
                 </button>
                 <Link
                   href="/hoc"
-                  className="px-6 py-2 rounded-full bg-[#0d9fa5] hover:bg-[#0a8287] text-white text-sm font-bold shadow-xs transition-colors"
+                  className="btn btn-primary btn-sm"
                 >
                   {t("Vào học thử ngay", "Start Practicing Now")}
                 </Link>
@@ -284,17 +284,17 @@ export default function BlogPage() {
 
         {/* Newsletter Box */}
         <ScrollReveal direction="up">
-          <div className="bg-white rounded-3xl p-8 sm:p-12 border border-[#E2DBD0] shadow-sm text-center max-w-3xl mx-auto">
-            <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-[#e6f7f8] flex items-center justify-center text-[#0d9fa5]">
+          <div className="card p-8 sm:p-12 text-center max-w-3xl mx-auto">
+            <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-brand-50 flex items-center justify-center text-brand-500">
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                 <polyline points="22,6 12,13 2,6" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-[#0F172A] mb-2">
+            <h2 className="text-2xl font-bold text-ink-900 mb-2">
               {t("Đăng ký nhận bài viết mới & mẹo học VSL", "Subscribe to VSL Guides & Tips")}
             </h2>
-            <p className="text-sm text-[#64748B] mb-6 max-w-md mx-auto">
+            <p className="text-sm text-ink-600 mb-6 max-w-md mx-auto">
               {t(
                 "Cập nhật những ký hiệu mới, phương pháp ghi nhớ phản xạ và hoạt động cộng đồng mỗi tuần.",
                 "Receive new vocabulary breakdowns, recall techniques, and community stories every week."
@@ -302,7 +302,7 @@ export default function BlogPage() {
             </p>
 
             {subscribed ? (
-              <div className="p-4 rounded-2xl bg-[#e6f7f8] border border-[#b2e7e9] text-[#08757a] text-sm font-bold max-w-md mx-auto">
+              <div className="p-4 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 text-sm font-bold max-w-md mx-auto">
                 {t(
                   "Cảm ơn bạn! Chúng tôi đã ghi nhận email đăng ký nhận tin.",
                   "Thank you! You are now subscribed to SignLight updates."
@@ -316,11 +316,11 @@ export default function BlogPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={t("Nhập địa chỉ email của bạn...", "Enter your email...")}
-                  className="w-full px-4 py-3 rounded-full border border-[#E2DBD0] text-sm focus:outline-none focus:border-[#0d9fa5]"
+                  className="w-full px-4 py-3 rounded-full border border-ink-200 text-sm focus:outline-none focus:border-brand-500"
                 />
                 <button
                   type="submit"
-                  className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#0d9fa5] hover:bg-[#0a8287] text-white font-bold text-sm shrink-0 transition-colors"
+                  className="btn btn-primary w-full sm:w-auto shrink-0"
                 >
                   {t("Đăng ký", "Subscribe")}
                 </button>

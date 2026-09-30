@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useLanguage } from "@/context/LanguageContext";
+import { IconCheck } from "@/components/ui/Icons";
 import { BadgeItem, BadgeCategory } from "../types";
 
 interface JourneyBadgesProps {
@@ -83,19 +84,19 @@ export function JourneyBadges({ badges, onSelectBadge }: JourneyBadgesProps) {
   };
 
   return (
-    <section className="bg-white rounded-3xl p-6 sm:p-8 border border-[#E2DBD0] shadow-sm space-y-6">
+    <section className="card p-6 sm:p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2DBD0] pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-ink-200 pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-xl font-extrabold text-[#0F172A]">
+            <h3 className="text-xl font-semibold text-ink-900">
               {t("Huy hiệu vinh danh", "Badges & Achievements")}
             </h3>
-            <span className="text-xs font-bold text-[#08757a] bg-[#e6f7f8] px-3 py-1 rounded-full border border-[#b2e7e9]">
+            <span className="text-xs font-bold text-brand-600 bg-brand-50 px-3 py-1 rounded-full border border-brand-200">
               {unlockedCount}/{badges.length} {t("Huy hiệu", "Badges")}
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-[#64748B] mt-1">
+          <p className="text-xs sm:text-sm text-ink-600 mt-1">
             {t(
               "Ghi nhận nỗ lực rèn luyện, tôn vinh từng bước tiến trong hành trình học ngôn ngữ ký hiệu.",
               "Honoring your dedication and progress in mastering Vietnamese Sign Language."
@@ -108,7 +109,7 @@ export function JourneyBadges({ badges, onSelectBadge }: JourneyBadgesProps) {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="rounded-full bg-[#F4EFE6] border border-[#E2DBD0] px-3.5 py-1.5 text-xs font-bold text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0d9fa5]/30 cursor-pointer"
+            className="rounded-full bg-ink-50 border border-ink-200 px-3.5 py-1.5 text-xs font-bold text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30 cursor-pointer"
           >
             <option value="ALL">{t("Tất cả trạng thái", "All Status")}</option>
             <option value="UNLOCKED">{t("Đã đạt được", "Earned")}</option>
@@ -123,10 +124,10 @@ export function JourneyBadges({ badges, onSelectBadge }: JourneyBadgesProps) {
         <button
           type="button"
           onClick={() => setSelectedCategory("ALL")}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+          className={`rounded-xl border px-3.5 py-2 text-sm font-semibold transition-colors cursor-pointer ${
             selectedCategory === "ALL"
-              ? "bg-[#0d9fa5] text-white shadow-xs"
-              : "bg-[#F4EFE6]/70 text-[#64748B] hover:text-[#0F172A] hover:bg-[#E2DBD0]"
+              ? "border-transparent bg-brand-50 text-brand-700"
+              : "border-transparent text-ink-600 hover:bg-ink-50"
           }`}
         >
           {t("Tất cả danh mục", "All Categories")}
@@ -134,10 +135,10 @@ export function JourneyBadges({ badges, onSelectBadge }: JourneyBadgesProps) {
         <button
           type="button"
           onClick={() => setSelectedCategory("FOUNDATION")}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+          className={`rounded-xl border px-3.5 py-2 text-sm font-semibold transition-colors cursor-pointer ${
             selectedCategory === "FOUNDATION"
-              ? "bg-[#0d9fa5] text-white shadow-xs"
-              : "bg-[#F4EFE6]/70 text-[#64748B] hover:text-[#0F172A] hover:bg-[#E2DBD0]"
+              ? "border-transparent bg-brand-50 text-brand-700"
+              : "border-transparent text-ink-600 hover:bg-ink-50"
           }`}
         >
           {t("Nền tảng & Cột mốc", "Foundation")}
@@ -145,10 +146,10 @@ export function JourneyBadges({ badges, onSelectBadge }: JourneyBadgesProps) {
         <button
           type="button"
           onClick={() => setSelectedCategory("STREAK")}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+          className={`rounded-xl border px-3.5 py-2 text-sm font-semibold transition-colors cursor-pointer ${
             selectedCategory === "STREAK"
-              ? "bg-[#0d9fa5] text-white shadow-xs"
-              : "bg-[#F4EFE6]/70 text-[#64748B] hover:text-[#0F172A] hover:bg-[#E2DBD0]"
+              ? "border-transparent bg-brand-50 text-brand-700"
+              : "border-transparent text-ink-600 hover:bg-ink-50"
           }`}
         >
           {t("Kiên trì & Chuỗi ngày", "Streak & Discipline")}
@@ -156,10 +157,10 @@ export function JourneyBadges({ badges, onSelectBadge }: JourneyBadgesProps) {
         <button
           type="button"
           onClick={() => setSelectedCategory("PRECISION")}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+          className={`rounded-xl border px-3.5 py-2 text-sm font-semibold transition-colors cursor-pointer ${
             selectedCategory === "PRECISION"
-              ? "bg-[#0d9fa5] text-white shadow-xs"
-              : "bg-[#F4EFE6]/70 text-[#64748B] hover:text-[#0F172A] hover:bg-[#E2DBD0]"
+              ? "border-transparent bg-brand-50 text-brand-700"
+              : "border-transparent text-ink-600 hover:bg-ink-50"
           }`}
         >
           {t("Chuẩn xác & AI Camera", "Precision & AI")}
@@ -167,81 +168,60 @@ export function JourneyBadges({ badges, onSelectBadge }: JourneyBadgesProps) {
         <button
           type="button"
           onClick={() => setSelectedCategory("COMMUNITY")}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+          className={`rounded-xl border px-3.5 py-2 text-sm font-semibold transition-colors cursor-pointer ${
             selectedCategory === "COMMUNITY"
-              ? "bg-[#0d9fa5] text-white shadow-xs"
-              : "bg-[#F4EFE6]/70 text-[#64748B] hover:text-[#0F172A] hover:bg-[#E2DBD0]"
+              ? "border-transparent bg-brand-50 text-brand-700"
+              : "border-transparent text-ink-600 hover:bg-ink-50"
           }`}
         >
           {t("Cộng đồng & Lan toả", "Community & Inclusion")}
         </button>
       </div>
 
-      {/* Badges Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {/* Badges Grid — huy chương tròn, màu theo độ hiếm */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {filteredBadges.map((badge) => {
+          const medal = !badge.unlocked
+            ? { face: "bg-ink-200 text-ink-500", ring: "var(--color-ink-300)" }
+            : badge.rarity === "LEGENDARY"
+              ? { face: "bg-sun-400 text-ink-900", ring: "var(--color-sun-600)" }
+              : badge.rarity === "EPIC"
+                ? { face: "bg-grape-500 text-white", ring: "var(--color-grape-700)" }
+                : badge.rarity === "RARE"
+                  ? { face: "bg-sky-400 text-white", ring: "var(--color-sky-600)" }
+                  : { face: "bg-brand-400 text-white", ring: "var(--color-brand-600)" };
+          const pct = Math.min(100, Math.round((badge.progressCurrent / Math.max(badge.progressTarget, 1)) * 100));
+
           return (
             <button
               key={badge.id}
               type="button"
               onClick={() => onSelectBadge(badge)}
-              className={`text-left p-4.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between group ${
-                badge.unlocked
-                  ? "bg-white border-[#b2e7e9] hover:border-[#0d9fa5] hover:shadow-md hover:-translate-y-0.5"
-                  : badge.progressCurrent > 0
-                  ? "bg-[#FAF7F2] border-[#E2DBD0] hover:border-[#CBD5E1]"
-                  : "bg-[#F4EFE6]/40 border-[#E2DBD0]/60 opacity-60 hover:opacity-80"
-              }`}
+              className="card-flat card-interactive flex flex-col items-center p-5 text-center hover:border-ink-300"
             >
-              <div className="space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-xs transition-transform group-hover:scale-105 ${
-                      badge.unlocked
-                        ? "bg-gradient-to-tr from-[#08757a] to-[#0d9fa5] text-white"
-                        : "bg-[#CBD5E1] text-[#64748B]"
-                    }`}
-                  >
-                    {renderIcon(badge.iconType)}
+              <span
+                className={`grid h-16 w-16 place-items-center rounded-full [&_svg]:h-7 [&_svg]:w-7 ${medal.face}`}
+              >
+                {renderIcon(badge.iconType)}
+              </span>
+              <h5 className={`mt-4 text-base font-bold ${badge.unlocked ? "text-ink-900" : "text-ink-600"}`}>
+                {lang === "vi" ? badge.nameVi : badge.nameEn}
+              </h5>
+              <p className="mt-0.5 text-xs font-bold text-ink-500">{badge.rarity}</p>
+              {badge.unlocked ? (
+                <p className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-brand-600">
+                  <IconCheck className="h-4 w-4" /> {t("Đã đạt", "Earned")}
+                </p>
+              ) : (
+                <div className="mt-3 w-full">
+                  <div className="progress h-2.5">
+                    <span style={{ width: `${pct}%` }} />
                   </div>
-
-                  <span
-                    className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
-                      badge.rarity === "LEGENDARY"
-                        ? "bg-amber-50 text-amber-700 border-amber-300"
-                        : badge.rarity === "EPIC"
-                        ? "bg-purple-50 text-purple-700 border-purple-200"
-                        : badge.rarity === "RARE"
-                        ? "bg-[#e6f7f8] text-[#08757a] border-[#b2e7e9]"
-                        : "bg-slate-100 text-slate-700 border-slate-200"
-                    }`}
-                  >
-                    {badge.rarity}
-                  </span>
-                </div>
-
-                <div>
-                  <h5 className="text-sm font-bold text-[#0F172A] group-hover:text-[#0d9fa5] transition-colors">
-                    {lang === "vi" ? badge.nameVi : badge.nameEn}
-                  </h5>
-                  <p className="text-xs text-[#64748B] mt-0.5 line-clamp-2">
-                    {lang === "vi" ? badge.descriptionVi : badge.descriptionEn}
+                  <p className="mt-1 text-xs font-bold text-ink-600">
+                    {badge.progressCurrent}/{badge.progressTarget} {lang === "vi" ? badge.unitLabelVi : badge.unitLabelEn}
                   </p>
                 </div>
-              </div>
-
-              <div className="pt-3 border-t border-[#E2DBD0]/60 mt-3 flex items-center justify-between text-xs">
-                {badge.unlocked ? (
-                  <span className="font-bold text-[#08757a]">✓ {t("Đã đạt được", "Earned")}</span>
-                ) : (
-                  <span className="font-semibold text-[#64748B]">
-                    {badge.progressCurrent}/{badge.progressTarget} {lang === "vi" ? badge.unitLabelVi : badge.unitLabelEn}
-                  </span>
-                )}
-                <span className="text-[11px] font-bold text-[#0d9fa5] opacity-0 group-hover:opacity-100 transition-opacity">
-                  {t("Chi tiết", "Details")} →
-                </span>
-              </div>
+              )}
             </button>
           );
         })}

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { ApiError, apiCall, tokenStore } from "@/lib/api";
 import { useLanguage } from "@/context/LanguageContext";
 import { ErrorNotice } from "@/components/ErrorNotice";
+import { IconCheck, IconCrown, IconShield } from "@/components/ui/Icons";
 
 interface Plan {
   id: string;
@@ -54,7 +55,7 @@ export default function UpgradePage() {
     },
     {
       id: "PREMIUM_LIFETIME",
-      name: "SignLight Premium Vĩnh Viễn",
+      name: "SignLight Premium Trọn đời",
       description: "Trọn đời không lo hết hạn: toàn bộ tính năng Premium, luyện AI không giới hạn, 100% Ad-Free, huy hiệu đặc biệt.",
       durationDays: 36500,
       priceVnd: 350000,
@@ -91,153 +92,137 @@ export default function UpgradePage() {
     }
   }
 
+  const period = (days: number) =>
+    days >= 36500 ? t("trọn đời", "lifetime") : days >= 365 ? t("năm", "year") : days >= 180 ? t("6 tháng", "6 months") : t("tháng", "month");
+
+  const perks = [
+    t("Mở khoá cả 17 chủ đề, 400 ký hiệu", "All 17 units, 400 signs"),
+    t("Luyện AI qua camera không giới hạn", "Unlimited AI camera practice"),
+    t("Phát video chậm 0.5x & 0.75x", "Slow-motion video 0.5x & 0.75x"),
+    t("Huy hiệu Đại sứ", "Ambassador badge"),
+    t("Chứng chỉ hoàn thành PDF", "PDF completion certificate"),
+  ];
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12 space-y-12">
-      {/* Header Banner */}
-      <div className="text-center space-y-4 max-w-2xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#e6f7f8] text-[#0d9fa5] text-xs font-bold border border-[#b2e7e9]">
-          <span className="w-2 h-2 rounded-full bg-[#0d9fa5] animate-pulse" />
-          <span>{t("Nâng cấp trải nghiệm học VSL", "Upgrade your VSL Learning")}</span>
+    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+      <div className="mx-auto max-w-2xl text-center">
+        <div className="mx-auto grid h-20 w-20 place-items-center rounded-3xl bg-sun-100">
+          <IconCrown className="h-12 w-12" />
         </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-[#0F172A] tracking-tight">
-          {t("Mở khoá toàn bộ 17 Units & 400 Ký hiệu VSL", "Unlock all 17 Units & 400 VSL Signs")}
+        <h1 className="mt-5 text-4xl font-bold tracking-tight text-ink-900 sm:text-5xl">
+          {t("SignLight ", "SignLight ")}
+          <span className="text-grape-600">Premium</span>
         </h1>
-        <p className="text-[#64748B] text-sm sm:text-base leading-relaxed">
+        <p className="mt-4 text-lg text-ink-600">
           {t(
-            "Luyện nhận diện cử chỉ động bằng AI thời gian thực không giới hạn lượt. Học chuyên sâu cùng video bài giảng chuẩn hóa.",
-            "Unlimited real-time AI gesture practice with no daily quota limits. Comprehensive curriculum with standard VSL videos.",
+            "Mở khoá toàn bộ lộ trình và luyện với AI không giới hạn lượt.",
+            "Unlock the full path and practice with AI, no daily limits.",
           )}
         </p>
       </div>
 
-      {error && <ErrorNotice message={error} />}
+      {error && (
+        <div className="mx-auto mt-8 max-w-xl">
+          <ErrorNotice message={error} />
+        </div>
+      )}
 
-      {/* Pricing Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-        {plans.map((p) => {
-          const isSelected = selectedPlanId === p.id;
-          const isPopular = p.id === "PREMIUM_6M";
-          const isPremiumDefault = p.id === "PREMIUM_6M";
+      <fieldset className="mt-12">
+        <legend className="sr-only">{t("Chọn gói", "Choose a plan")}</legend>
+        <div className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-3">
+          {plans.map((p) => {
+            const isSelected = selectedPlanId === p.id;
+            const isPopular = p.id === "PREMIUM_6M";
 
-          return (
-            <div
-              key={p.id}
-              onClick={() => setSelectedPlanId(p.id)}
-              className={`relative flex flex-col justify-between rounded-3xl p-6 transition-all cursor-pointer border ${
-                isSelected
-                  ? "border-[#0d9fa5] bg-white shadow-xl scale-[1.02] ring-2 ring-[#0d9fa5]/20"
-                  : "border-[#E2DBD0] bg-white/70 hover:bg-white hover:border-[#cbd5e1] shadow-xs"
-              }`}
-            >
-              {isPopular && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full bg-[#0d9fa5] text-white text-xs font-bold shadow-md tracking-wider uppercase">
-                  {t("Phổ biến nhất", "Most Popular")}
-                </div>
-              )}
+            return (
+              <label
+                key={p.id}
+                className={`relative flex cursor-pointer flex-col rounded-3xl border bg-white p-6 transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-sky-400 ${
+                  isSelected ? "border-grape-400" : "border-ink-200 hover:border-ink-300"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="plan"
+                  value={p.id}
+                  checked={isSelected}
+                  onChange={() => setSelectedPlanId(p.id)}
+                  className="sr-only"
+                />
+                {isPopular && (
+                  <span className="chip absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-sun-400 text-ink-900">
+                    {t("Phổ biến nhất", "Most popular")}
+                  </span>
+                )}
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-[#0F172A]">{p.name}</h3>
-                  <div
-                    className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                      isSelected ? "border-[#0d9fa5] bg-[#0d9fa5]" : "border-[#cbd5e1]"
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="text-lg font-bold text-ink-900">{p.name.replace("SignLight Premium ", "")}</h2>
+                  <span
+                    className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border ${
+                      isSelected ? "border-grape-500 bg-grape-500 text-white" : "border-ink-300"
                     }`}
+                    aria-hidden="true"
                   >
-                    {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
-                  </div>
-                </div>
-
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold text-[#0F172A]">
-                    {p.priceVnd.toLocaleString("vi-VN")}
-                  </span>
-                  <span className="text-sm font-semibold text-[#64748B]">đ</span>
-                  <span className="text-xs text-[#94A3B8]">
-                    / {p.durationDays >= 365 ? "năm" : p.durationDays >= 180 ? "6 tháng" : "tháng"}
+                    {isSelected && <IconCheck className="h-4 w-4" />}
                   </span>
                 </div>
 
-                <p className="text-xs text-[#64748B] leading-relaxed">{p.description}</p>
+                <p className="mt-4 flex items-baseline gap-1">
+                  <span className="text-4xl font-bold tracking-tight text-ink-900">{p.priceVnd.toLocaleString("vi-VN")}</span>
+                  <span className="text-lg font-bold text-ink-700">đ</span>
+                  <span className="text-base font-bold text-ink-500">/ {period(p.durationDays)}</span>
+                </p>
 
-                <hr className="border-[#F1ECE4]" />
+                <p className="mt-3 text-base leading-relaxed text-ink-600">{p.description}</p>
 
-                <ul className="space-y-2.5 text-xs text-[#334155]">
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#0d9fa5] font-bold">✓</span>
-                    <span>Luyện AI qua camera không giới hạn</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#0d9fa5] font-bold">✓</span>
-                    <span>100% không quảng cáo & tài trợ</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#0d9fa5] font-bold">✓</span>
-                    <span>Phát lại chậm 0.5x &amp; 0.75x</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#0d9fa5] font-bold">✓</span>
-                    <span>Góc quay đa chiều &amp; huy hiệu Đại sứ</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#0d9fa5] font-bold">✓</span>
-                    <span>Chứng chỉ hoàn thành PDF</span>
-                  </li>
+                <ul className="mt-5 flex-1 space-y-3 border-t border-ink-100 pt-5">
+                  {perks.map((perk) => (
+                    <li key={perk} className="flex items-start gap-2.5 text-base font-bold text-ink-700">
+                      <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-400 text-white">
+                        <IconCheck className="h-3 w-3" />
+                      </span>
+                      {perk}
+                    </li>
+                  ))}
                 </ul>
-              </div>
 
-              <div className="pt-6">
                 <button
                   type="button"
                   id={`checkout-btn-${p.id}`}
                   disabled={submitting}
                   onClick={(e) => {
-                    e.stopPropagation();
+                    e.preventDefault();
+                    setSelectedPlanId(p.id);
                     handleCheckout(p.id);
                   }}
-                  className={`w-full py-3 rounded-full text-sm font-bold transition-all ${
-                    isSelected
-                      ? "bg-[#0d9fa5] text-white hover:bg-[#0a8287] shadow-md hover:scale-[1.01]"
-                      : "bg-[#F4EFE6] text-[#0F172A] hover:bg-[#EDE6DA]"
-                  } disabled:opacity-60 cursor-pointer`}
+                  className={`btn mt-6 w-full ${isSelected ? "btn-grape" : "btn-secondary"}`}
                 >
-                  {submitting && isSelected
-                    ? t("Đang khởi tạo thanh toán…", "Creating payment…")
-                    : t("Chọn gói này", "Select Plan")}
+                  {submitting && isSelected ? t("Đang tạo thanh toán…", "Creating payment…") : t("Chọn gói này", "Choose plan")}
                 </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
 
-      {/* PayOS Trust & Security Details */}
-      <div className="bg-[#FAF7F2] rounded-3xl p-6 sm:p-8 border border-[#E2DBD0] space-y-4">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-white border border-[#E2DBD0] flex items-center justify-center font-extrabold text-[#0d9fa5] text-xl shadow-xs">
-              ⚡
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-[#0F172A]">
-                {t("Cổng thanh toán tự động VietQR qua payOS", "Instant VietQR payment via payOS")}
-              </h4>
-              <p className="text-xs text-[#64748B]">
-                {t(
-                  "Kích hoạt tài khoản ngay tức thì qua quét mã QR chuyển khoản mọi ngân hàng tại Việt Nam.",
-                  "Instant activation via VietQR scanning compatible with all Vietnamese banking apps.",
-                )}
-              </p>
-            </div>
+      <div className="card-flat mt-12 flex flex-col items-center justify-between gap-4 bg-ink-50 p-6 sm:flex-row">
+        <div className="flex items-center gap-4">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-sky-100 text-sky-700">
+            <IconShield className="h-6 w-6" />
+          </span>
+          <div>
+            <h2 className="text-base font-bold text-ink-900">{t("Thanh toán VietQR qua payOS", "VietQR payment via payOS")}</h2>
+            <p className="text-sm text-ink-600">
+              {t(
+                "Quét mã bằng app ngân hàng bất kỳ, tài khoản được kích hoạt ngay.",
+                "Scan with any Vietnamese banking app — activated instantly.",
+              )}
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[#64748B]">Bảo mật bởi</span>
-            <span className="px-2.5 py-1 rounded-lg bg-white border border-[#E2DBD0] text-xs font-bold text-[#0F172A]">
-              payOS
-            </span>
-            <span className="px-2.5 py-1 rounded-lg bg-white border border-[#E2DBD0] text-xs font-bold text-[#0F172A]">
-              VietQR
-            </span>
-          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="chip bg-white text-ink-700">payOS</span>
+          <span className="chip bg-white text-ink-700">VietQR</span>
         </div>
       </div>
     </div>

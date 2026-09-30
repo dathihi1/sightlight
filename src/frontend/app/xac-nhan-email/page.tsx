@@ -91,7 +91,7 @@ function OtpVerificationContent() {
       dispatchAuthChange();
       router.push("/hoc");
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.errorMessage : "Không kết nối được máy chủ.");
+      setError(caught instanceof ApiError ? caught.errorMessage : "Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.");
     } finally {
       setSubmitting(false);
     }
@@ -117,30 +117,30 @@ function OtpVerificationContent() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-12">
-      <div className="bg-white rounded-3xl p-8 border border-[#E2DBD0] shadow-sm space-y-6">
+    <div className="mx-auto max-w-md px-4 py-10 sm:py-16">
+      <div className="card p-7 sm:p-9 space-y-6">
         <div className="text-center space-y-2">
-          <div className="text-5xl mb-2 text-[#0d9fa5]">
+          <div className="text-5xl mb-2 text-brand-500">
             <svg className="w-14 h-14 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                 d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-extrabold text-[#0F172A]">
+          <h1 className="text-3xl font-bold tracking-tight text-ink-900">
             {t("Xác nhận email", "Verify Your Email")}
           </h1>
-          <p className="text-sm text-[#64748B]">
+          <p className="text-sm text-ink-600">
             {t(
               "Chúng tôi đã gửi mã xác thực 6 số đến",
               "We sent a 6-digit verification code to",
             )}
           </p>
           {email && (
-            <p className="text-sm font-semibold text-[#0F172A] break-all">{email}</p>
+            <p className="text-sm text-ink-900 break-all">{email}</p>
           )}
           {!email && (
             <div className="space-y-1">
-              <label htmlFor="email-input" className="block text-sm font-medium text-[#0F172A] text-left">
+              <label htmlFor="email-input" className="block text-sm font-semibold text-ink-800 text-left">
                 Email
               </label>
               <input
@@ -148,7 +148,7 @@ function OtpVerificationContent() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-[#E2DBD0] bg-[#F4EFE6] px-3.5 py-2.5 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0d9fa5]"
+                className="input"
                 placeholder="email@example.com"
               />
             </div>
@@ -157,7 +157,7 @@ function OtpVerificationContent() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <p className="text-sm font-medium text-[#0F172A] mb-3 text-center">
+            <p className="text-sm font-medium text-ink-900 mb-3 text-center">
               {t("Nhập mã xác nhận 6 chữ số", "Enter 6-digit code")}
             </p>
             <div className="flex justify-center gap-2" onPaste={handleOtpPaste}>
@@ -171,7 +171,7 @@ function OtpVerificationContent() {
                   value={digit}
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                  className="w-11 h-13 text-center text-xl font-bold rounded-xl border-2 border-[#E2DBD0] bg-[#F4EFE6] focus:bg-white focus:outline-none focus:border-[#0d9fa5] focus:ring-1 focus:ring-[#0d9fa5] transition-colors"
+                  className="w-12 h-14 text-center text-2xl font-bold rounded-2xl border border-ink-200 bg-ink-50 focus:bg-white focus:outline-none focus:border-sky-400 transition-colors"
                   aria-label={`Digit ${index + 1}`}
                 />
               ))}
@@ -179,7 +179,7 @@ function OtpVerificationContent() {
           </div>
 
           {resendSuccess && (
-            <p className="text-sm text-green-600 text-center">
+            <p className="text-sm text-brand-600 text-center">
               {t("Đã gửi lại mã mới. Vui lòng kiểm tra hộp thư của bạn.", "A new code has been sent. Please check your email.")}
             </p>
           )}
@@ -189,7 +189,7 @@ function OtpVerificationContent() {
           <button
             type="submit"
             disabled={submitting || otpValue.length < OTP_LENGTH}
-            className="w-full rounded-full bg-[#0d9fa5] hover:bg-[#0a8287] px-4 py-3 font-bold text-white shadow-xs transition-all disabled:cursor-not-allowed disabled:bg-[#E2DBD0] disabled:text-[#94A3B8] cursor-pointer"
+            className="btn btn-primary w-full"
           >
             {submitting
               ? t("Đang xác nhận...", "Verifying...")
@@ -198,14 +198,14 @@ function OtpVerificationContent() {
         </form>
 
         <div className="text-center space-y-2">
-          <p className="text-sm text-[#64748B]">
+          <p className="text-sm text-ink-600">
             {t("Chưa nhận được mã xác thực?", "Did not receive the code?")}
           </p>
           <button
             type="button"
             onClick={handleResend}
             disabled={resendCountdown > 0}
-            className="text-sm font-semibold text-[#0d9fa5] hover:underline disabled:text-[#94A3B8] disabled:no-underline cursor-pointer disabled:cursor-not-allowed"
+            className="text-sm font-semibold text-brand-600 hover:underline disabled:text-ink-500 disabled:no-underline cursor-pointer disabled:cursor-not-allowed"
           >
             {resendCountdown > 0
               ? t(`Gửi lại sau ${resendCountdown}s`, `Resend in ${resendCountdown}s`)
@@ -213,8 +213,8 @@ function OtpVerificationContent() {
           </button>
         </div>
 
-        <p className="text-sm text-[#64748B] text-center">
-          <Link href="/dang-nhap" className="text-[#0d9fa5] font-bold hover:underline">
+        <p className="text-sm text-ink-600 text-center">
+          <Link href="/dang-nhap" className="font-semibold text-brand-600 hover:underline">
             {t("Quay lại đăng nhập", "Back to login")}
           </Link>
         </p>
@@ -226,7 +226,7 @@ function OtpVerificationContent() {
 /** SCR-07 — xac nhan email bang OTP (FR-01b). */
 export default function VerifyEmailPage() {
   return (
-    <Suspense fallback={<div className="mx-auto max-w-md px-4 py-12 text-center text-[#64748B]">Đang tải...</div>}>
+    <Suspense fallback={<div className="mx-auto max-w-md px-4 py-12 text-center text-ink-600">Đang tải...</div>}>
       <OtpVerificationContent />
     </Suspense>
   );

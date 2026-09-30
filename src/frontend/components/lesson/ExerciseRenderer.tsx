@@ -13,6 +13,8 @@ interface ExerciseRendererProps {
   onOrderTokens?: (tokens: string[]) => void;
   matches?: MatchPair[];
   onMatches?: (matches: MatchPair[]) => void;
+  /** Kết quả chấm của câu hiện tại — để tô đáp án đúng/sai ngay trên thẻ lựa chọn. */
+  feedback?: { isCorrect: boolean; correctOptionId: string | null } | null;
 }
 
 /**
@@ -29,6 +31,7 @@ export function ExerciseRenderer({
   onOrderTokens,
   matches,
   onMatches,
+  feedback,
 }: ExerciseRendererProps) {
   const renderByType = () => {
     switch (exercise.type) {
@@ -40,6 +43,7 @@ export function ExerciseRenderer({
             selectedOptionId={selectedOptionId}
             onSelectOption={onSelectOption}
             disabled={disabled}
+            feedback={feedback}
           />
         );
 
@@ -51,6 +55,7 @@ export function ExerciseRenderer({
             typedAnswer={typedAnswer}
             onTypeAnswer={onTypeAnswer}
             disabled={disabled}
+            feedback={feedback}
           />
         );
 
@@ -76,8 +81,8 @@ export function ExerciseRenderer({
 
       default:
         return (
-          <div className="p-4 bg-[var(--color-warning-50)] border border-[var(--color-warning-200)] rounded-lg">
-            <p className="text-[var(--color-warning-700)]">
+          <div className="rounded-2xl border border-sun-200 bg-sun-50 p-4">
+            <p className="font-bold text-sun-700">
               Loại bài tập <strong>{exercise.type}</strong> chưa được hỗ trợ.
             </p>
           </div>
@@ -97,11 +102,11 @@ function FormattedPrompt({ prompt }: { prompt: string }) {
     const [, prefix, meaningPart, suffix] = meaningMatch;
     return (
       <div className="space-y-2">
-        <p className="text-lg font-bold text-[var(--color-ink-900)]">
+        <p className="text-xl font-bold text-ink-900">
           {prefix.trim()} {suffix.replace(/^[—\s-]+/, "— ").trim()}
         </p>
-        <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-50 border border-amber-200/90 text-amber-900 text-sm font-semibold rounded-xl shadow-xs">
-          <span>💡</span>
+        <div className="inline-flex items-center gap-2 rounded-2xl border border-sun-200 bg-sun-50 px-4 py-2 text-base font-bold text-sun-800">
+          <span className="grid h-6 w-6 place-items-center rounded-full bg-sun-400 text-xs font-bold text-ink-900" aria-hidden="true">!</span>
           <span>{meaningPart}</span>
         </div>
       </div>
@@ -113,18 +118,18 @@ function FormattedPrompt({ prompt }: { prompt: string }) {
     const [, prefix, hintPart, suffix] = hintMatch;
     return (
       <div className="space-y-2">
-        <p className="text-lg font-bold text-[var(--color-ink-900)]">
+        <p className="text-xl font-bold text-ink-900">
           {prefix.trim()} {suffix.trim()}
         </p>
-        <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-50 border border-amber-200/90 text-amber-900 text-sm font-semibold rounded-xl shadow-xs">
-          <span>💡</span>
+        <div className="inline-flex items-center gap-2 rounded-2xl border border-sun-200 bg-sun-50 px-4 py-2 text-base font-bold text-sun-800">
+          <span className="grid h-6 w-6 place-items-center rounded-full bg-sun-400 text-xs font-bold text-ink-900" aria-hidden="true">!</span>
           <span>{hintPart}</span>
         </div>
       </div>
     );
   }
 
-  return <p className="text-lg font-medium text-[var(--color-ink-900)]">{prompt}</p>;
+  return <p className="text-xl font-bold text-ink-900">{prompt}</p>;
 }
 
 /**
@@ -135,11 +140,13 @@ function ChoiceExercise({
   selectedOptionId,
   onSelectOption,
   disabled,
+  feedback,
 }: {
   exercise: ExerciseNode;
   selectedOptionId: string | null;
   onSelectOption: (id: string) => void;
   disabled: boolean;
+  feedback?: ExerciseRendererProps["feedback"];
 }) {
   return (
     <div className="space-y-4">
@@ -148,31 +155,54 @@ function ChoiceExercise({
 
       {/* Video */}
       {exercise.videoUrl && (
-        <div className="max-w-md mx-auto">
+        <div className="mx-auto max-w-3xl">
           <SignVideoPlayer videoUrl={exercise.videoUrl} />
         </div>
       )}
 
       {/* Options */}
-      <div className="grid gap-3">
-        {exercise.options?.map((option) => (
-          <button
-            key={option.id}
-            onClick={() => onSelectOption(option.id)}
-            disabled={disabled}
-            className={`
-              p-4 rounded-lg border-2 text-left transition-all
-              ${
-                selectedOptionId === option.id
-                  ? "border-[var(--color-brand-600)] bg-[var(--color-brand-50)]"
-                  : "border-[var(--color-ink-200)] bg-white hover:border-[var(--color-brand-300)]"
-              }
-              ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
-            `}
-          >
-            <span className="text-[var(--color-ink-900)]">{option.labelText}</span>
-          </button>
-        ))}
+      <div className="grid gap-3 sm:grid-cols-2">
+        {exercise.options?.map((option, i) => {
+          const selected = selectedOptionId === option.id;
+          // Sau khi chấm: đáp án đúng luôn sáng xanh lá; lựa chọn sai rung + đỏ.
+          const right = !!feedback && (feedback.correctOptionId === option.id || (feedback.isCorrect && selected));
+          const wrong = !!feedback && selected && !feedback.isCorrect;
+          const tone = right
+            ? "border-success-500 bg-success-50 text-success-700 ring-2 ring-success-200 animate-pop-in"
+            : wrong
+              ? "border-danger-400 bg-danger-50 text-danger-700 ring-2 ring-danger-200 animate-shake"
+              : selected
+                ? "border-brand-500 bg-brand-50 text-brand-700 ring-2 ring-brand-100"
+                : feedback
+                  ? "border-ink-200 bg-white text-ink-500"
+                  : "border-ink-200 bg-white text-ink-800 hover:bg-ink-50";
+          return (
+            <button
+              key={option.id}
+              onClick={() => onSelectOption(option.id)}
+              disabled={disabled}
+              aria-pressed={selected}
+              className={`flex items-center gap-4 rounded-2xl border p-4 text-left text-lg font-bold transition-colors ${tone} ${disabled ? "cursor-not-allowed" : "cursor-pointer"}`}
+            >
+              <span
+                className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg border text-sm font-bold ${
+                  right
+                    ? "border-success-600 bg-success-600 text-white"
+                    : wrong
+                      ? "border-danger-600 bg-danger-600 text-white"
+                      : selected
+                        ? "border-brand-500 text-brand-600"
+                        : "border-ink-200 text-ink-500"
+                }`}
+              >
+                {right ? "✓" : wrong ? "✕" : i + 1}
+              </span>
+              <span className="flex-1">{option.labelText}</span>
+              {right && <span className="sr-only">(đáp án đúng)</span>}
+              {wrong && <span className="sr-only">(lựa chọn của bạn — chưa đúng)</span>}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -186,11 +216,13 @@ function TypedAnswerExercise({
   typedAnswer,
   onTypeAnswer,
   disabled,
+  feedback,
 }: {
   exercise: ExerciseNode;
   typedAnswer: string;
   onTypeAnswer: (answer: string) => void;
   disabled: boolean;
+  feedback?: ExerciseRendererProps["feedback"];
 }) {
   return (
     <div className="space-y-4">
@@ -199,7 +231,7 @@ function TypedAnswerExercise({
 
       {/* Video */}
       {exercise.videoUrl && (
-        <div className="max-w-md mx-auto">
+        <div className="mx-auto max-w-3xl">
           <SignVideoPlayer videoUrl={exercise.videoUrl} />
         </div>
       )}
@@ -212,7 +244,7 @@ function TypedAnswerExercise({
           onChange={(e) => onTypeAnswer(e.target.value)}
           disabled={disabled}
           placeholder="Nhập câu trả lời của bạn..."
-          className="w-full p-4 text-lg border-2 border-[var(--color-ink-200)] rounded-lg focus:border-[var(--color-brand-600)] focus:outline-none disabled:opacity-60"
+          className={`input h-auto min-h-14 py-4 text-lg ${feedback ? (feedback.isCorrect ? "border-success-500 bg-success-50 text-success-700 animate-pop-in" : "border-danger-400 bg-danger-50 text-danger-700 animate-shake") : "disabled:opacity-60"}`}
         />
       </div>
     </div>
@@ -246,30 +278,28 @@ function SentenceOrderExercise({
 
   return (
     <div className="space-y-4">
-      {exercise.instructionText && (
-        <p className="text-sm text-[var(--color-ink-600)]">{exercise.instructionText}</p>
-      )}
       {exercise.promptText && (
-        <p className="text-lg font-medium text-[var(--color-ink-900)]">{exercise.promptText}</p>
+        <p className="text-xl font-bold text-ink-900">{exercise.promptText}</p>
       )}
 
-      <div className="p-4 bg-[var(--color-ink-50)] rounded-lg">
-        <p className="text-sm text-[var(--color-ink-600)] mb-3">Sắp xếp các từ theo thứ tự đúng:</p>
+      <div className="rounded-3xl border border-dashed border-ink-200 bg-ink-50 p-5">
+        <p className="mb-4 text-base font-bold text-ink-600">Sắp xếp các từ theo thứ tự đúng:</p>
         <div className="flex flex-wrap gap-2">
           {localTokens.map((token, idx) => (
             <div key={idx} className="relative group">
               <button
                 disabled={disabled}
-                className="px-4 py-2 bg-white border-2 border-[var(--color-ink-200)] rounded-lg hover:border-[var(--color-brand-600)] transition-colors disabled:opacity-60"
+                className="rounded-2xl border border-ink-200 bg-white px-4 py-2 text-lg font-bold text-ink-800 disabled:opacity-60"
               >
                 {token}
               </button>
               {!disabled && (
-                <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                <div className="mt-1 flex justify-center gap-1">
                   {idx > 0 && (
                     <button
                       onClick={() => handleMove(idx, idx - 1)}
-                      className="w-6 h-6 bg-[var(--color-brand-600)] text-white rounded-full text-xs"
+                      aria-label={`Chuyển "${token}" sang trái`}
+                      className="min-h-0 h-8 w-8 rounded-lg bg-sky-100 text-sm font-bold text-sky-700 hover:bg-sky-200"
                     >
                       ←
                     </button>
@@ -277,7 +307,8 @@ function SentenceOrderExercise({
                   {idx < localTokens.length - 1 && (
                     <button
                       onClick={() => handleMove(idx, idx + 1)}
-                      className="w-6 h-6 bg-[var(--color-brand-600)] text-white rounded-full text-xs"
+                      aria-label={`Chuyển "${token}" sang phải`}
+                      className="min-h-0 h-8 w-8 rounded-lg bg-sky-100 text-sm font-bold text-sky-700 hover:bg-sky-200"
                     >
                       →
                     </button>
@@ -338,17 +369,14 @@ function MatchSignMeaningExercise({
 
   return (
     <div className="space-y-4">
-      {exercise.instructionText && (
-        <p className="text-sm text-[var(--color-ink-600)]">{exercise.instructionText}</p>
-      )}
       {exercise.promptText && (
-        <p className="text-lg font-medium text-[var(--color-ink-900)]">{exercise.promptText}</p>
+        <p className="text-xl font-bold text-ink-900">{exercise.promptText}</p>
       )}
 
       <div className="grid md:grid-cols-2 gap-4">
         {/* Prompts (left side) */}
         <div className="space-y-2">
-          <p className="text-sm font-semibold text-[var(--color-ink-700)]">Ký hiệu:</p>
+          <p className="text-sm font-bold text-ink-500">Ký hiệu:</p>
           {options.map((option, idx) => {
             const promptId = `prompt-${idx}`;
             const matched = getMatchedOption(promptId);
@@ -358,15 +386,15 @@ function MatchSignMeaningExercise({
                 onClick={() => handleSelectPrompt(promptId)}
                 disabled={disabled}
                 className={`
-                  w-full p-3 rounded-lg border-2 text-left transition-all
-                  ${selectedPrompt === promptId ? "border-[var(--color-brand-600)] bg-[var(--color-brand-50)]" : ""}
-                  ${isPromptMatched(promptId) && selectedPrompt !== promptId ? "border-[var(--color-success-600)] bg-[var(--color-success-50)]" : ""}
-                  ${!isPromptMatched(promptId) && selectedPrompt !== promptId ? "border-[var(--color-ink-200)] bg-white hover:border-[var(--color-brand-300)]" : ""}
-                  ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
+                  w-full rounded-2xl border p-4 text-left text-lg font-bold transition-colors
+                  ${selectedPrompt === promptId ? "border-brand-500 bg-brand-50" : ""}
+                  ${isPromptMatched(promptId) && selectedPrompt !== promptId ? "border-brand-500 bg-brand-50" : ""}
+                  ${!isPromptMatched(promptId) && selectedPrompt !== promptId ? "border-ink-200 bg-white hover:bg-ink-50" : ""}
+                  ${disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"}
                 `}
               >
-                <span className="font-semibold text-[var(--color-ink-900)]">{idx + 1}</span>
-                {matched && <span className="ml-2 text-[var(--color-ink-700)]">→ {matched.labelText}</span>}
+                <span className="font-semibold text-ink-900">{idx + 1}</span>
+                {matched && <span className="ml-2 text-ink-700">→ {matched.labelText}</span>}
               </button>
             );
           })}
@@ -374,26 +402,26 @@ function MatchSignMeaningExercise({
 
         {/* Options (right side) */}
         <div className="space-y-2">
-          <p className="text-sm font-semibold text-[var(--color-ink-700)]">Ý nghĩa:</p>
+          <p className="text-sm font-bold text-ink-500">Ý nghĩa:</p>
           {options.map((option) => (
             <button
               key={option.id}
               onClick={() => handleSelectOption(option.id)}
               disabled={disabled || !selectedPrompt}
               className={`
-                w-full p-3 rounded-lg border-2 text-left transition-all
-                ${isOptionMatched(option.id) ? "border-[var(--color-success-600)] bg-[var(--color-success-50)]" : ""}
-                ${!isOptionMatched(option.id) ? "border-[var(--color-ink-200)] bg-white hover:border-[var(--color-brand-300)]" : ""}
-                ${disabled || !selectedPrompt ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
+                w-full rounded-2xl border p-4 text-left text-lg font-bold transition-colors
+                ${isOptionMatched(option.id) ? "border-brand-500 bg-brand-50" : ""}
+                ${!isOptionMatched(option.id) ? "border-ink-200 bg-white hover:bg-ink-50" : ""}
+                ${disabled || !selectedPrompt ? "cursor-not-allowed opacity-70" : "cursor-pointer"}
               `}
             >
-              <span className="text-[var(--color-ink-900)]">{option.labelText}</span>
+              <span className="text-ink-900">{option.labelText}</span>
             </button>
           ))}
         </div>
       </div>
 
-      <p className="text-sm text-[var(--color-ink-600)]">
+      <p className="text-base text-ink-600">
         Chọn một ký hiệu bên trái, sau đó chọn ý nghĩa tương ứng bên phải.
       </p>
     </div>

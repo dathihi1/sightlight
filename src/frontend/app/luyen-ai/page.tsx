@@ -6,6 +6,10 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { ErrorNotice } from "@/components/ErrorNotice";
 import { SignVideoPlayer } from "@/components/SignVideoPlayer";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Confetti } from "@/components/ui/Celebrate";
+import { Mascot } from "@/components/ui/Mascot";
+import { IconCheck, IconShield } from "@/components/ui/Icons";
 import { ApiError, apiCall } from "@/lib/api";
 import {
   MAX_RECORDING_MS,
@@ -60,11 +64,7 @@ type Phase = "idle" | "loading-model" | "ready" | "recording" | "scoring";
 export default function AiPracticePage() {
   return (
     <Suspense
-      fallback={
-        <div className="mx-auto max-w-5xl px-4 py-8">
-          <p className="text-[var(--color-ink-600)]">Đang tải không gian luyện AI…</p>
-        </div>
-      }
+      fallback={<EmptyState title="Đang tải phòng luyện…" mood="wow" />}
     >
       <AiPracticeContent />
     </Suspense>
@@ -329,210 +329,247 @@ function AiPracticeContent() {
   }
 
   if (capabilities.isError) {
-    const message =
-      capabilities.error instanceof ApiError && capabilities.error.httpStatus === 401
-        ? "Bạn cần đăng nhập để dùng phần luyện với AI."
-        : "Hệ thống chấm tự động chưa sẵn sàng.";
-    return (
-      <div className="mx-auto max-w-5xl px-4 py-8 space-y-4">
-        <ErrorNotice message={message} />
-        <Link href="/dang-nhap" className="text-[var(--color-brand-600)] underline">
-          Tới trang đăng nhập
+    const needsLogin = capabilities.error instanceof ApiError && capabilities.error.httpStatus === 401;
+    return needsLogin ? (
+      <EmptyState title="Đăng nhập để luyện với AI" body="AI chấm từng cử chỉ của bạn qua camera — video không rời khỏi máy.">
+        <Link href="/dang-nhap?next=/luyen-ai" className="btn btn-primary">
+          Đăng nhập
         </Link>
-      </div>
+        <Link href="/dang-ky" className="btn btn-secondary">
+          Tạo tài khoản
+        </Link>
+      </EmptyState>
+    ) : (
+      <EmptyState title="AI đang nghỉ một chút" body="Hệ thống chấm tự động chưa sẵn sàng. Thử lại sau vài phút nhé." mood="sad" />
     );
   }
 
   if (capabilities.isLoading || session.isLoading) {
-    return (
-      <div className="mx-auto max-w-5xl px-4 py-8">
-        <p className="text-[var(--color-ink-600)]">Đang chuẩn bị phiên luyện…</p>
-      </div>
-    );
+    return <EmptyState title="Đang chuẩn bị phiên luyện…" mood="wow" />;
   }
 
   if (!item) {
-    return (
-      <div className="mx-auto max-w-5xl px-4 py-8">
-        <ErrorNotice message="Chưa có ký hiệu nào được hỗ trợ chấm tự động trong phiên này." />
-      </div>
-    );
+    return <EmptyState title="Chưa có ký hiệu để luyện" body="Phiên này chưa có ký hiệu nào được hỗ trợ chấm tự động." mood="sad" />;
   }
 
+  const total = session.data?.items.length ?? 1;
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-bold">Luyện ký hiệu với AI</h1>
-        <p className="text-sm text-[var(--color-ink-600)]">{capabilities.data?.disclaimerText}</p>
-        {capabilities.data?.stubMode && (
-          // Không để ai nhầm kết quả giả lập với độ chính xác thật của mô hình.
-          <p className="rounded-lg bg-[var(--color-brand-050)] px-3 py-2 text-xs text-[var(--color-brand-600)]">
-            Dịch vụ AI đang chạy ở chế độ mô phỏng (chưa nạp trọng số mô hình). Kết quả dưới đây chỉ để
-            minh hoạ luồng, không phản ánh độ chính xác thật.
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="eyebrow text-grape-600">
+            Luyện camera · {itemIndex + 1}/{total}
           </p>
-        )}
+          <h1 className="mt-1 text-3xl font-bold tracking-tight text-ink-900 sm:text-4xl">
+            Làm ký hiệu “<span className="text-brand-500">{item.label}</span>”
+          </h1>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setItemIndex((current) => Math.min(current + 1, total - 1));
+            setResult(null);
+          }}
+          disabled={itemIndex >= total - 1}
+          className="btn btn-secondary btn-sm self-start sm:self-auto"
+        >
+          Bỏ qua
+        </button>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="space-y-3">
-          <h2 className="font-semibold">Ký hiệu cần thực hiện: {item.label}</h2>
+      {capabilities.data?.stubMode && (
+        // Không để ai nhầm kết quả giả lập với độ chính xác thật của mô hình.
+        <p className="mt-4 rounded-2xl border border-sun-200 bg-sun-50 px-4 py-3 text-sm font-bold text-sun-800">
+          AI đang chạy ở chế độ mô phỏng (chưa nạp trọng số mô hình). Kết quả chỉ minh hoạ luồng, không phản ánh độ
+          chính xác thật.
+        </p>
+      )}
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <section className="card overflow-hidden p-3" aria-labelledby="demo-title">
+          <div className="flex items-center justify-between px-2 pb-3 pt-1">
+            <h2 id="demo-title" className="text-sm font-bold text-sky-700">
+              Video mẫu
+            </h2>
+          </div>
           <SignVideoPlayer
             key={item.signId}
             videoUrl={item.videoUrl}
             placeholderVideo={item.placeholderVideo}
             title={`Video mẫu — ${item.label}`}
           />
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setItemIndex((current) =>
-                  Math.min(current + 1, (session.data?.items.length ?? 1) - 1),
-                );
-                setResult(null);
-              }}
-              className="rounded-lg border border-[var(--color-border-strong)] px-4 py-2 text-sm"
-            >
-              Bỏ qua ký hiệu này
-            </button>
-          </div>
         </section>
 
-        <section className="space-y-3">
-          <h2 className="font-semibold">Camera của bạn</h2>
-          <div className="relative overflow-hidden rounded-xl bg-[var(--color-bg-video)]">
-            <video
-              ref={videoRef}
-              muted
-              playsInline
-              className="aspect-video w-full scale-x-[-1] object-cover"
-            />
+        <section className="card overflow-hidden p-3" aria-labelledby="cam-title">
+          <div className="flex items-center justify-between px-2 pb-3 pt-1">
+            <h2 id="cam-title" className="text-sm font-bold text-grape-600">
+              Camera của bạn
+            </h2>
             {phase === "recording" && (
-              <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-black/70 px-3 py-1 text-xs text-white">
-                <span aria-hidden="true">●</span>
+              <span className="chip bg-danger-50 text-danger-600">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-danger-500" aria-hidden="true" />
                 {/* Đồng hồ đếm để người học biết nhịp độ mong đợi (~2 giây) — BR-A120. */}
-                <span>{(elapsedMs / 1000).toFixed(1)}s</span>
+                Đang ghi {(elapsedMs / 1000).toFixed(1)}s
+              </span>
+            )}
+          </div>
+          <div
+            className={`relative overflow-hidden rounded-2xl bg-ink-950 ring-4 transition-colors ${
+              phase === "recording"
+                ? "ring-danger-400"
+                : result
+                  ? result.verified
+                    ? "ring-success-400"
+                    : "ring-danger-300"
+                  : "ring-transparent"
+            }`}
+          >
+            <video ref={videoRef} muted playsInline className="aspect-video w-full scale-x-[-1] object-cover" />
+            {phase === "idle" && (
+              <div className="absolute inset-0 grid place-items-center">
+                <Mascot className="w-24" mood="wow" />
               </div>
             )}
           </div>
 
-          {phase === "idle" && (
-            <button
-              type="button"
-              onClick={startCamera}
-              className="w-full rounded-lg bg-[var(--color-brand-600)] px-4 py-3 font-medium text-white hover:bg-[var(--color-brand-700)]"
-            >
-              Bật camera
-            </button>
-          )}
-          {phase === "loading-model" && (
-            <p className="text-sm text-[var(--color-ink-600)]">Đang nạp mô hình nhận dạng…</p>
-          )}
-          {phase === "ready" && (
-            <button
-              type="button"
-              onClick={startRecording}
-              className="w-full rounded-lg bg-[var(--color-brand-600)] px-4 py-3 font-medium text-white hover:bg-[var(--color-brand-700)]"
-            >
-              Bắt đầu thực hiện ký hiệu
-            </button>
-          )}
-          {phase === "recording" && (
-            <button
-              type="button"
-              onClick={finishRecording}
-              className="w-full rounded-lg border-2 border-[var(--color-brand-600)] px-4 py-3 font-medium"
-            >
-              Kết thúc
-            </button>
-          )}
-          {phase === "scoring" && (
-            <p className="text-sm text-[var(--color-ink-600)]">Đang chấm…</p>
-          )}
-
-          <p className="text-xs text-[var(--color-ink-600)]">
-            Hình ảnh từ camera <strong>không rời khỏi máy bạn</strong>. Trình duyệt chỉ gửi lên một dãy
-            số mô tả chuyển động.
-          </p>
+          <div className="px-2 pb-2 pt-4">
+            {phase === "idle" && (
+              <button type="button" onClick={startCamera} className="btn btn-grape w-full">
+                Bật camera
+              </button>
+            )}
+            {phase === "loading-model" && (
+              <p className="btn btn-secondary w-full cursor-wait" role="status">
+                Đang nạp mô hình…
+              </p>
+            )}
+            {phase === "ready" && (
+              <button type="button" onClick={startRecording} className="btn btn-primary w-full">
+                Bắt đầu ký hiệu
+              </button>
+            )}
+            {phase === "recording" && (
+              <button type="button" onClick={finishRecording} className="btn btn-danger w-full">
+                Xong
+              </button>
+            )}
+            {phase === "scoring" && (
+              <p className="btn btn-secondary w-full cursor-wait" role="status">
+                Đang chấm…
+              </p>
+            )}
+            <p className="mt-3 flex items-start gap-2 text-sm text-ink-600">
+              <IconShield className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
+              <span>
+                Hình ảnh <strong className="font-bold text-ink-800">không rời khỏi máy bạn</strong> — trình duyệt chỉ
+                gửi một dãy số mô tả chuyển động.
+              </span>
+            </p>
+          </div>
         </section>
       </div>
 
-      {error && <ErrorNotice message={error} />}
+      {error && (
+        <div className="mt-6">
+          <ErrorNotice message={error} />
+        </div>
+      )}
       {result && <AttemptFeedback result={result} targetLabel={item.label} />}
 
-      <p className="text-xs text-[var(--color-ink-600)]">{capabilities.data?.attributionText}</p>
+      <div className="mt-8 space-y-1 text-sm text-ink-600">
+        {capabilities.data?.disclaimerText && <p>{capabilities.data.disclaimerText}</p>}
+        {capabilities.data?.attributionText && <p>{capabilities.data.attributionText}</p>}
+      </div>
     </div>
   );
 }
 
 function AttemptFeedback({ result, targetLabel }: { result: AttemptResult; targetLabel: string }) {
   const confidencePercent = result.confidence ? Math.round(result.confidence * 100) : null;
+  const ok = result.verified;
 
   return (
     <section
       aria-live="polite"
-      className={`space-y-4 rounded-xl px-5 py-4 ${
-        result.verified
-          ? "bg-[var(--color-success-050)]"
-          : "bg-[var(--color-danger-050)]"
-      }`}
+      className={`relative mt-6 rounded-3xl border p-6 ${ok ? "animate-pop-in border-success-200 bg-success-50" : "animate-shake border-danger-200 bg-danger-50"}`}
     >
-      <h2
-        className={`text-lg font-semibold ${
-          result.verified ? "text-[var(--color-success-700)]" : "text-[var(--color-danger-700)]"
-        }`}
-      >
-        <span aria-hidden="true">{result.verified ? "✓ " : "✗ "}</span>
-        {result.verified ? "Chính xác!" : "Chưa đúng"}
-      </h2>
-
-      {confidencePercent !== null && (
-        <div className="space-y-1">
-          <p className="text-sm text-[var(--color-ink-600)]">Độ tin cậy: {confidencePercent}%</p>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-border-default)]">
-            <div
-              className="h-full bg-[var(--color-brand-600)]"
-              style={{ width: `${confidencePercent}%` }}
-            />
-          </div>
+      {ok && <Confetti />}
+      <div className="flex items-center gap-4">
+        <span
+          className={`grid h-14 w-14 shrink-0 place-items-center rounded-full text-white ${
+            ok ? "bg-success-600" : "bg-danger-600"
+          }`}
+        >
+          {ok ? (
+            <IconCheck className="h-7 w-7" />
+          ) : (
+            <span className="text-2xl font-bold" aria-hidden="true">
+              ✕
+            </span>
+          )}
+        </span>
+        <div className="flex-1">
+          <h2 className={`text-2xl font-bold ${ok ? "text-success-700" : "text-danger-700"}`}>
+            {ok ? "Chính xác!" : "Chưa đúng rồi"}
+          </h2>
+          {confidencePercent !== null && (
+            <div className="mt-2 flex items-center gap-3">
+              <div className="progress h-3 flex-1 bg-white">
+                <span className={ok ? "" : "!bg-danger-400"} style={{ width: `${confidencePercent}%` }} />
+              </div>
+              <span className="text-sm font-bold text-ink-700">Độ tin cậy {confidencePercent}%</span>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Top-3 chỉ hiện khi nó dạy được điều gì đó: nhận nhầm ký hiệu khác hoặc phân vân. */}
       {result.top3 && result.top3.length > 0 && (
-        <div className="space-y-1">
-          <p className="text-sm font-medium">Hệ thống thấy:</p>
-          <ul className="space-y-1 text-sm">
+        <div className="mt-5 rounded-2xl bg-white p-4">
+          <p className="text-sm font-bold text-ink-500">AI nhận ra</p>
+          <ul className="mt-2 space-y-1.5">
             {result.top3.map((prediction) => (
-              <li key={prediction.label} className="flex justify-between gap-4">
+              <li
+                key={prediction.label}
+                className={`flex justify-between gap-4 text-base font-bold ${
+                  prediction.label === targetLabel ? "text-brand-600" : "text-ink-700"
+                }`}
+              >
                 <span>{prediction.label}</span>
-                <span className="text-[var(--color-ink-600)]">
-                  {Math.round(prediction.confidence * 100)}%
-                </span>
+                <span>{Math.round(prediction.confidence * 100)}%</span>
               </li>
             ))}
           </ul>
-          <p className="text-xs text-[var(--color-ink-600)]">Bạn đang luyện: {targetLabel}</p>
+          <p className="mt-2 text-sm text-ink-600">Bạn đang luyện: {targetLabel}</p>
         </div>
       )}
 
       {result.qualityHints.length > 0 && (
-        <ul className="space-y-1 text-sm">
+        <ul className="mt-4 space-y-2">
           {result.qualityHints.map((hint) => (
-            <li key={hint}>💡 {hint}</li>
+            <li key={hint} className="flex items-start gap-2 text-base font-bold text-sun-800">
+              <span
+                className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-sun-400 text-xs font-bold text-ink-900"
+                aria-hidden="true"
+              >
+                !
+              </span>
+              {hint}
+            </li>
           ))}
         </ul>
       )}
 
       {/* Sau 3 lần liên tiếp chưa đạt, chủ động mở lối thoát thay vì để người học mắc kẹt (BR-A122). */}
       {result.consecutiveFailures >= 3 && (
-        <p className="rounded-lg bg-[var(--color-bg-subtle)] px-3 py-2 text-sm">
-          Ký hiệu này hơi khó. Bạn có thể xem lại video mẫu ở tốc độ chậm, hoặc bỏ qua và quay lại sau
-          — tiến độ của bạn không bị ảnh hưởng.
+        <p className="mt-4 rounded-2xl bg-white px-4 py-3 text-base text-ink-700">
+          Ký hiệu này hơi khó. Xem lại video mẫu ở tốc độ chậm, hoặc bỏ qua và quay lại sau — tiến độ của bạn không
+          bị ảnh hưởng.
         </p>
       )}
 
-      <p className="text-xs text-[var(--color-ink-600)]">
+      <p className="mt-4 text-sm font-bold text-ink-600">
         {result.countedAgainstQuota
           ? result.quotaRemaining != null
             ? `Còn ${result.quotaRemaining} lượt luyện AI hôm nay.`

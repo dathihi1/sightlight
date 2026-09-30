@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Mascot } from "@/components/ui/Mascot";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ErrorNotice } from "@/components/ErrorNotice";
@@ -66,7 +67,7 @@ export default function RegisterPage() {
         setError(
           caught instanceof ApiError
             ? caught.errorMessage
-            : "Không kết nối được dịch vụ Google.",
+            : "Không kết nối được Google. Thử lại hoặc đăng nhập bằng email.",
         );
       } finally {
         setSubmitting(false);
@@ -98,19 +99,20 @@ export default function RegisterPage() {
       // Sau dang ky: luon chuyen den trang xac nhan email (status = PENDING_VERIFICATION)
       router.push("/xac-nhan-email?email=" + encodeURIComponent(email));
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.errorMessage : "Không kết nối được máy chủ.");
+      setError(caught instanceof ApiError ? caught.errorMessage : "Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.");
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-12">
-      <div className="bg-white rounded-3xl p-8 border border-[#E2DBD0] shadow-sm space-y-6">
-        <div className="text-center space-y-1.5">
-          <h1 className="text-2xl font-extrabold text-[#0F172A]">{t("Bắt đầu hành trình kết nối", "Begin Your Journey to Connect")}</h1>
-          <p className="text-xs text-[#64748B] leading-relaxed">
-            {t("Mở rộng trái tim và cất lời bằng đôi bàn tay cùng SignLight — Hoàn toàn miễn phí", "Open your heart and speak with your hands with SignLight — 100% free")}
+    <div className="mx-auto max-w-md px-4 py-10 sm:py-16">
+      <div className="card p-7 sm:p-9 space-y-6">
+        <div className="text-center space-y-2">
+          <Mascot className="mx-auto mb-2 w-20" wave />
+          <h1 className="text-3xl font-bold tracking-tight text-ink-900">{t("Tạo tài khoản miễn phí", "Create your free account")}</h1>
+          <p className="text-base text-ink-600 leading-relaxed">
+            {t("Học ký hiệu đầu tiên chỉ trong 2 phút.", "Learn your first sign in 2 minutes.")}
           </p>
         </div>
 
@@ -119,19 +121,20 @@ export default function RegisterPage() {
           <div id="google-signup-btn" className="w-full min-h-[44px]" />
         ) : null}
 
-        {/* Divider */}
+        {GOOGLE_CLIENT_ID && (
         <div className="relative flex items-center justify-center">
-          <div className="grow border-t border-[#E2DBD0]" />
-          <span className="shrink-0 px-3 text-xs font-semibold text-[#64748B] bg-white uppercase">
+          <div className="grow border-t border-ink-100" />
+          <span className="shrink-0 px-3 text-xs font-bold tracking-widest text-ink-500 bg-white uppercase">
           {t("hoặc với email", "or with email")}
           </span>
-          <div className="grow border-t border-[#E2DBD0]" />
+          <div className="grow border-t border-ink-100" />
         </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="space-y-1">
-            <label htmlFor="displayName" className="block text-sm font-medium text-[#0F172A]">
-              {t("Tên hiển thị", "Full Name")}
+            <label htmlFor="displayName" className="block text-sm font-semibold text-ink-800">
+              {t("Tên hiển thị", "Display name")}
             </label>
             <input
               id="displayName"
@@ -140,12 +143,12 @@ export default function RegisterPage() {
               maxLength={50}
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
-              className="w-full rounded-xl border border-[#E2DBD0] bg-[#F4EFE6] px-3.5 py-2.5 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0d9fa5]"
+              className="input"
             />
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="email" className="block text-sm font-medium text-[#0F172A]">
+            <label htmlFor="email" className="block text-sm font-semibold text-ink-800">
               Email
             </label>
             <input
@@ -155,12 +158,12 @@ export default function RegisterPage() {
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-xl border border-[#E2DBD0] bg-[#F4EFE6] px-3.5 py-2.5 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0d9fa5]"
+              className="input"
             />
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="password" className="block text-sm font-medium text-[#0F172A]">
+            <label htmlFor="password" className="block text-sm font-semibold text-ink-800">
               {t("Mật khẩu", "Password")}
             </label>
             <input
@@ -173,19 +176,19 @@ export default function RegisterPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               aria-describedby="password-hint"
-              className="w-full rounded-xl border border-[#E2DBD0] bg-[#F4EFE6] px-3.5 py-2.5 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0d9fa5]"
+              className="input"
             />
-            <p id="password-hint" className="text-xs text-[#64748B]">
+            <p id="password-hint" className="text-sm text-ink-600">
               {t("Ít nhất 10 ký tự, gồm cả chữ và số.", "At least 10 characters, including letters and numbers.")}
             </p>
           </div>
 
-          <label className="flex items-start gap-2 text-sm text-[#475569]">
+          <label className="flex items-start gap-2 text-sm text-ink-700">
             <input
               type="checkbox"
               checked={acceptedTerms}
               onChange={(event) => setAcceptedTerms(event.target.checked)}
-              className="mt-1 rounded accent-[#0d9fa5] focus:ring-[#0d9fa5]"
+              className="mt-1 rounded accent-brand-500 focus:ring-brand-500"
             />
             <span>
               {t(
@@ -200,15 +203,15 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-full bg-[#0d9fa5] hover:bg-[#0a8287] px-4 py-3 font-bold text-white shadow-xs transition-all disabled:cursor-not-allowed disabled:bg-[#E2DBD0] disabled:text-[#94A3B8] cursor-pointer"
+            className="btn btn-primary w-full"
           >
             {submitting ? t("Đang tạo tài khoản...", "Creating account...") : t("Tạo tài khoản", "Create Account")}
           </button>
         </form>
 
-        <p className="text-sm text-[#64748B] text-center">
+        <p className="text-sm text-ink-600 text-center">
           {t("Đã có tài khoản?", "Already have an account?")}{" "}
-          <Link href="/dang-nhap" className="text-[#0d9fa5] font-bold hover:underline">
+          <Link href="/dang-nhap" className="font-semibold text-brand-600 hover:underline">
             {t("Đăng nhập", "Log In")}
           </Link>
         </p>

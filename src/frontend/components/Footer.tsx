@@ -5,174 +5,87 @@ import { SignLightLogo } from "./SignLightLogo";
 import { useLanguage } from "@/context/LanguageContext";
 
 export function Footer() {
-  const { lang, t } = useLanguage();
+  const { t } = useLanguage();
   const swaggerUrl =
     process.env.NEXT_PUBLIC_SWAGGER_URL ??
     (process.env.NEXT_PUBLIC_API_BASE_URL
       ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/swagger-ui.html`
       : "http://localhost:18080/swagger-ui.html");
 
+  const columns = [
+    {
+      title: t("Học", "Learn"),
+      links: [
+        { href: "/hoc", label: t("Lộ trình", "Learning path") },
+        { href: "/luyen-ai", label: t("Luyện camera", "Camera practice") },
+        { href: "/tu-dien", label: t("Từ điển VSL", "VSL dictionary") },
+        { href: "/hanh-trinh", label: t("Hành trình", "Journey") },
+      ],
+    },
+    {
+      title: "SignLight",
+      links: [
+        { href: "/about", label: t("Về chúng tôi", "About") },
+        { href: "/blog", label: t("Bài viết", "Blog") },
+        { href: "/nang-cap", label: "Premium" },
+        { href: "/#businesses", label: t("Cho tổ chức", "For organizations") },
+      ],
+    },
+    {
+      title: t("Nhà phát triển", "Developers"),
+      links: [
+        { href: swaggerUrl, label: "API (Swagger)", external: true },
+        { href: "https://github.com/duynt1309ichi/Signlight_Web", label: "GitHub", external: true },
+      ],
+    },
+  ];
+
   return (
-    <footer className="border-t border-[#E2DBD0] bg-[#F4EFE6] pt-16 pb-12 text-[#475569]">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        {/* Brand Header inside Footer */}
-        <div className="flex items-center gap-3 mb-10 pb-8 border-b border-[#E2DBD0]">
-          <SignLightLogo size={40} />
-          <div>
-            <span className="text-xl font-extrabold text-[#0F172A] tracking-tight">SignLight</span>
-            <p className="text-xs text-[#64748B]">
-              {t(
-                "Nền tảng học Ngôn ngữ Ký hiệu Việt Nam (VSL)",
-                "Vietnamese Sign Language (VSL) Learning Platform",
-              )}
+    <footer className="border-t border-ink-200 bg-white">
+      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+        <div className="grid gap-10 md:grid-cols-5">
+          <div className="md:col-span-2">
+            <Link href="/" className="inline-flex items-center gap-2.5">
+              <SignLightLogo size={40} />
+              <span className="text-xl font-bold tracking-tight text-ink-900">
+                Sign<span className="text-brand-500">Light</span>
+              </span>
+            </Link>
+            <p className="mt-3 max-w-xs text-base text-ink-600">
+              {t("Học Ngôn ngữ Ký hiệu Việt Nam, mỗi ngày một chút.", "Learn Vietnamese Sign Language, a little every day.")}
             </p>
           </div>
+
+          {columns.map((col) => (
+            <nav key={col.title} aria-label={col.title}>
+              <h2 className="text-sm font-bold text-ink-500">{col.title}</h2>
+              <ul className="mt-4 space-y-3">
+                {col.links.map((l) => (
+                  <li key={l.label}>
+                    {"external" in l ? (
+                      <a href={l.href} target="_blank" rel="noopener noreferrer" className="inline-block py-1 font-bold text-ink-700 hover:text-brand-600">
+                        {l.label}
+                      </a>
+                    ) : (
+                      <Link href={l.href} className="inline-block py-1 font-bold text-ink-700 hover:text-brand-600">
+                        {l.label}
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ))}
         </div>
 
-        {/* 4-Column Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-          {/* Column 1: Company */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-bold text-[#0F172A] tracking-tight">
-              {t("Về chúng tôi", "Company")}
-            </h4>
-            <ul className="space-y-2.5 text-xs sm:text-sm">
-              <li>
-                <Link href="/about" className="hover:text-[#0d9fa5] transition-colors">
-                  {t("Giới thiệu SignLight", "About SignLight")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/blog" className="hover:text-[#0d9fa5] transition-colors">
-                  {t("Bài viết & Cẩm nang", "Blog & Articles")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" className="hover:text-[#0d9fa5] transition-colors">
-                  {t("Cộng đồng người Điếc", "Deaf Community")}
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 2: Legal */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-bold text-[#0F172A] tracking-tight">
-              {t("Pháp lý & Bảo mật", "Legal & Privacy")}
-            </h4>
-            <ul className="space-y-2.5 text-xs sm:text-sm">
-              <li>
-                <Link href="/" className="hover:text-[#0d9fa5] transition-colors">
-                  {t("Chính sách Quyền riêng tư", "Privacy Policy")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/" className="hover:text-[#0d9fa5] transition-colors">
-                  {t("Bảo mật Camera", "Camera Privacy Guarantee")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/" className="hover:text-[#0d9fa5] transition-colors">
-                  {t("Điều khoản dịch vụ", "Terms & Conditions")}
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 3: Resources */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-bold text-[#0F172A] tracking-tight">
-              {t("Tài nguyên học VSL", "VSL Resources")}
-            </h4>
-            <ul className="space-y-2.5 text-xs sm:text-sm">
-              <li>
-                <Link href="/tu-dien" className="hover:text-[#0d9fa5] transition-colors">
-                  {t("Từ điển ký hiệu VSL", "VSL Dictionary")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/hoc" className="hover:text-[#0d9fa5] transition-colors">
-                  {t("Lộ trình bài học", "Learning Curriculum")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/hanh-trinh" className="hover:text-[#0d9fa5] transition-colors">
-                  {t("Hành trình & Lan toả", "Journey & Stories")}
-                </Link>
-              </li>
-              <li>
-                <a
-                  href={swaggerUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 hover:text-[#0d9fa5] transition-colors"
-                >
-                  <span>{t("Tài liệu API Swagger", "Swagger API Docs")}</span>
-                  <span className="text-xs px-1.5 py-0.5 rounded-sm bg-[#e6f7f8] text-[#08757a] font-bold">
-                    v0.1
-                  </span>
-                </a>
-              </li>
-              <li>
-                <Link href="/luyen-ai" className="hover:text-[#0d9fa5] transition-colors">
-                  {t("Luyện tập Camera", "Camera Practice")}
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 4: Solutions */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-bold text-[#0F172A] tracking-tight">
-              {t("Giải pháp tổ chức", "Enterprise")}
-            </h4>
-            <ul className="space-y-2.5 text-xs sm:text-sm">
-              <li>
-                <Link href="/#businesses" className="hover:text-[#0d9fa5] transition-colors">
-                  {t("Doanh nghiệp & Cơ quan", "Corporate & Workplace")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/#businesses" className="hover:text-[#0d9fa5] transition-colors">
-                  {t("Trường học & Bệnh viện", "Schools & Hospitals")}
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Bottom Bar */}
-        <div className="pt-8 border-t border-[#E2DBD0] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#64748B]">
-          <div className="flex items-center gap-4">
-            <span className="font-semibold text-[#0F172A]">
-              {t("Kênh liên kết:", "Follow us:")}
-            </span>
-            <div className="flex items-center gap-2.5 text-xs">
-              <a
-                href="https://github.com/duynt1309ichi/Signlight_Web"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-1 rounded-full bg-white border border-[#E2DBD0] text-[#0F172A] hover:text-[#0d9fa5] hover:bg-[#e6f7f8] transition-colors font-mono"
-              >
-                GitHub Repo
-              </a>
-            </div>
-          </div>
-
-          <div className="text-center sm:text-right space-y-1">
-            <p>
-              {t(
-                "© 2026 SignLight. Thiết kế chuẩn nhận diện SignLight. Bản quyền đã được bảo hộ.",
-                "© 2026 SignLight. Standard SignLight design guidelines. All rights reserved.",
-              )}
-            </p>
-            <p className="text-[11px] text-[#94A3B8]">
-              {t(
-                "Dữ liệu huấn luyện mô hình: VSL400 (Zenodo) — giấy phép CC BY 4.0. SignLight là công cụ hỗ trợ luyện tập, không thay thế thông dịch viên.",
-                "Model training data: VSL400 (Zenodo) — CC BY 4.0 license. SignLight is a practice tool and does not replace professional interpreters.",
-              )}
-            </p>
-          </div>
+        <div className="mt-12 border-t border-ink-100 pt-6 text-sm text-ink-600">
+          <p>© 2026 SignLight.</p>
+          <p className="mt-1">
+            {t(
+              "Dữ liệu huấn luyện mô hình: VSL400 (Zenodo) — giấy phép CC BY 4.0. SignLight là công cụ luyện tập, không thay thế thông dịch viên.",
+              "Model training data: VSL400 (Zenodo) — CC BY 4.0. SignLight is a practice tool and does not replace interpreters.",
+            )}
+          </p>
         </div>
       </div>
     </footer>

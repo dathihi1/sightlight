@@ -137,14 +137,14 @@ export default function AdminQuestsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Quản trị Nhiệm vụ Học tập</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-ink-900 tracking-tight">Quản trị Nhiệm vụ Học tập</h1>
+          <p className="text-sm text-ink-500 mt-0.5">
             Cấu hình nhiệm vụ Ngày / Tuần để kích thích học viên duy trì Streak và luyện tập
           </p>
         </div>
         <button
           onClick={openCreateModal}
-          className="self-start sm:self-auto px-4 py-2.5 rounded-xl bg-[#0d9fa5] hover:bg-[#08757a] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+          className="btn btn-primary btn-sm self-start sm:self-auto cursor-pointer"
         >
           <span>+</span> Tạo Nhiệm Vụ Mới
         </button>
@@ -152,7 +152,7 @@ export default function AdminQuestsPage() {
 
       {/* Error Alert */}
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-danger-50 border border-danger-200 text-danger-800 text-xs flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span>⚠️</span>
             <span>{errorMessage}</span>
@@ -160,7 +160,7 @@ export default function AdminQuestsPage() {
           <button
             type="button"
             onClick={fetchQuests}
-            className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-[11px] transition-colors cursor-pointer"
+            className="px-3 py-1 bg-danger-600 hover:bg-danger-700 text-white rounded-xl font-bold text-xs transition-colors cursor-pointer"
           >
             Thử lại
           </button>
@@ -168,12 +168,12 @@ export default function AdminQuestsPage() {
       )}
 
       {loading ? (
-        <div className="p-12 text-center text-sm text-slate-400 animate-pulse">Đang tải danh sách nhiệm vụ...</div>
+        <div className="p-12 text-center text-sm text-ink-500 animate-pulse">Đang tải danh sách nhiệm vụ...</div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
+              <thead className="bg-ink-50 text-ink-500 font-bold">
                 <tr>
                   <th className="px-6 py-3.5">Nhiệm vụ</th>
                   <th className="px-6 py-3.5">Loại</th>
@@ -184,26 +184,26 @@ export default function AdminQuestsPage() {
                   <th className="px-6 py-3.5 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-ink-100">
                 {quests.map((q) => (
-                  <tr key={q.id} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={q.id} className="hover:bg-ink-50/80 transition-colors">
                     <td className="px-6 py-4">
-                      <p className="font-bold text-slate-900">{q.title}</p>
-                      <p className="text-slate-400 text-[11px] mt-0.5 max-w-sm">{q.description}</p>
+                      <p className="font-bold text-ink-900">{q.title}</p>
+                      <p className="text-ink-500 text-xs mt-0.5 max-w-sm">{q.description}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="px-2 py-0.5 rounded font-black text-[10px] uppercase bg-cyan-50 text-[#0d9fa5] border border-cyan-200">
+                      <span className="px-2 py-0.5 rounded font-bold text-xs uppercase bg-sky-50 text-brand-500 border border-sky-200">
                         {q.questType}
                       </span>
                     </td>
-                    <td className="px-6 py-4 font-mono font-semibold text-slate-700">
+                    <td className="px-6 py-4 font-mono font-semibold text-ink-700">
                       {q.targetAction}
                     </td>
-                    <td className="px-6 py-4 text-center font-bold text-slate-800">
+                    <td className="px-6 py-4 text-center font-bold text-ink-800">
                       {q.targetCount} lần
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                      <span className="font-bold text-sun-700 bg-sun-50 px-2 py-0.5 rounded border border-sun-200">
                         +{q.rewardExp} EXP
                         {q.rewardAiBonus > 0 && ` & +${q.rewardAiBonus} AI`}
                       </span>
@@ -214,8 +214,8 @@ export default function AdminQuestsPage() {
                         onClick={() => handleToggleActive(q.id)}
                         className={`px-3 py-1 rounded-full text-[11px] font-bold cursor-pointer transition-colors ${
                           q.active
-                            ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
-                            : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                            ? "bg-brand-100 text-brand-800 hover:bg-brand-200"
+                            : "bg-ink-100 text-ink-500 hover:bg-ink-200"
                         }`}
                       >
                         {q.active ? "Đang bật" : "Tắt"}
@@ -225,14 +225,14 @@ export default function AdminQuestsPage() {
                       <button
                         type="button"
                         onClick={() => openEditModal(q)}
-                        className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold"
+                        className="btn btn-secondary btn-sm"
                       >
                         Sửa
                       </button>
                       <button
                         type="button"
                         onClick={() => handleDeleteQuest(q.id)}
-                        className="px-2.5 py-1 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold"
+                        className="px-2.5 py-1 rounded-xl border border-danger-200 bg-danger-50 hover:bg-danger-100 text-danger-700 font-bold"
                       >
                         Xóa
                       </button>
@@ -248,14 +248,14 @@ export default function AdminQuestsPage() {
       {/* Modal Add / Edit Quest */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <h3 className="font-black text-slate-900 text-base">
+          <div className="card max-w-md w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-ink-100 pb-3 mb-4">
+              <h3 className="font-bold text-ink-900 text-base">
                 {editingQuest ? "Sửa nhiệm vụ" : "Tạo nhiệm vụ mới"}
               </h3>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold"
+                className="text-ink-500 hover:text-ink-600 text-lg font-bold"
               >
                 &times;
               </button>
@@ -263,35 +263,35 @@ export default function AdminQuestsPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Tiêu đề nhiệm vụ</label>
+                <label className="block font-bold text-ink-700 mb-1">Tiêu đề nhiệm vụ</label>
                 <input
                   type="text"
                   required
                   placeholder="Ví dụ: Luyện tập với camera AI"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 font-semibold"
+                  className="w-full p-2.5 rounded-xl border border-ink-200 font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Mô tả hướng dẫn</label>
+                <label className="block font-bold text-ink-700 mb-1">Mô tả hướng dẫn</label>
                 <input
                   type="text"
                   placeholder="Ví dụ: Hoàn thành 2 lượt chấm camera AI"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200"
+                  className="w-full p-2.5 rounded-xl border border-ink-200"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Loại nhiệm vụ</label>
+                  <label className="block font-bold text-ink-700 mb-1">Loại nhiệm vụ</label>
                   <select
                     value={questType}
                     onChange={(e) => setQuestType(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200"
+                    className="w-full p-2.5 rounded-xl border border-ink-200"
                   >
                     <option value="DAILY">Hàng ngày (Daily)</option>
                     <option value="WEEKLY">Hàng tuần (Weekly)</option>
@@ -299,11 +299,11 @@ export default function AdminQuestsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Hành động cần làm</label>
+                  <label className="block font-bold text-ink-700 mb-1">Hành động cần làm</label>
                   <select
                     value={targetAction}
                     onChange={(e) => setTargetAction(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200"
+                    className="w-full p-2.5 rounded-xl border border-ink-200"
                   >
                     <option value="COMPLETE_LESSON">Hoàn thành bài học</option>
                     <option value="PRACTICE_AI">Luyện camera AI</option>
@@ -315,48 +315,48 @@ export default function AdminQuestsPage() {
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Số lần</label>
+                  <label className="block font-bold text-ink-700 mb-1">Số lần</label>
                   <input
                     type="number"
                     min={1}
                     value={targetCount}
                     onChange={(e) => setTargetCount(parseInt(e.target.value) || 1)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200"
+                    className="w-full p-2.5 rounded-xl border border-ink-200"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Thưởng EXP</label>
+                  <label className="block font-bold text-ink-700 mb-1">Thưởng EXP</label>
                   <input
                     type="number"
                     min={0}
                     value={rewardExp}
                     onChange={(e) => setRewardExp(parseInt(e.target.value) || 0)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 font-bold text-amber-600"
+                    className="w-full p-2.5 rounded-xl border border-ink-200 font-bold text-sun-600"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Thưởng AI</label>
+                  <label className="block font-bold text-ink-700 mb-1">Thưởng AI</label>
                   <input
                     type="number"
                     min={0}
                     value={rewardAiBonus}
                     onChange={(e) => setRewardAiBonus(parseInt(e.target.value) || 0)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 font-bold text-cyan-600"
+                    className="w-full p-2.5 rounded-xl border border-ink-200 font-bold text-sky-600"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-ink-100">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 bg-white font-bold hover:bg-slate-50 cursor-pointer"
+                  className="btn btn-secondary btn-sm cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#0d9fa5] hover:bg-[#08757a] text-white font-bold transition-colors cursor-pointer"
+                  className="btn btn-primary btn-sm cursor-pointer"
                 >
                   Lưu nhiệm vụ
                 </button>

@@ -1,0 +1,319 @@
+{"kind":"deck","id":"pr/9gfr6j","name":"Deck"}
+{"kind":"layout","layoutId":"a61a8de9-3180-4e26-b33d-a7172ee589a3","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"f67476bd-26d3-4c5d-909d-f3e43b549e07","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/vnbstq","slide":1,"title":"SignLight","textShapes":4}
+{"kind":"textbox","id":"sh/4zi1gfyt","slide":1,"text":"SignLight","textPreview":"SignLight","textChars":9,"textLines":1,"bbox":[70,187,560,72]}
+{"kind":"textbox","id":"sh/fup0jqxc","slide":1,"text":"Learn Vietnamese Sign Language\nwith camera-based AI feedback","textPreview":"Learn Vietnamese Sign Language | with camera-based AI feedback","textChars":60,"textLines":2,"bbox":[72,271,588,130]}
+{"kind":"textbox","id":"sh/utgzalgr","slide":1,"text":"EXE201  •  Outcome 1  •  Product and MVP demo","textPreview":"EXE201  •  Outcome 1  •  Product and MVP demo","textChars":45,"textLines":1,"bbox":[73,562,600,35]}
+{"kind":"textbox","id":"sh/hw7il0fi","slide":1,"text":"sightlight1.vercel.app","textPreview":"sightlight1.vercel.app","textChars":22,"textLines":1,"bbox":[73,610,520,31]}
+{"kind":"image","id":"im/ril8zatw","slide":1,"name":"","alt":"Illustration of a learner practicing sign language at a laptop","bbox":[0,0,1280,720]}
+{"kind":"image","id":"im/cjupsfah","slide":1,"name":"","alt":"SignLight logo","bbox":[70,65,74,74]}
+{"kind":"notes","id":"nt/vnbstq","slide":1,"text":"Opening: introduce SignLight and the core promise. The deck is designed for a 20–25 minute presentation. Source: EXE201 Outcome 1 guideline and current SignLight repository. The cover is an illustration, not a screenshot of the product."}
+{"kind":"slide","id":"sl/4mp7ue","slide":2,"title":"Today’s presentation","textShapes":14}
+{"kind":"shape","id":"sh/yds7e5wn","slide":2,"bbox":[0,0,1280,13]}
+{"kind":"textbox","id":"sh/lg3qpkfy","slide":2,"text":"Today’s presentation","textPreview":"Today’s presentation","textChars":20,"textLines":1,"bbox":[68,45,1135,73]}
+{"kind":"textbox","id":"sh/0fupgfed","slide":2,"text":"20–25 MINUTES INCLUDING A LIVE PRODUCT DEMO","textPreview":"20–25 MINUTES INCLUDING A LIVE PRODUCT DEMO","textChars":43,"textLines":1,"bbox":[70,121,1090,28]}
+{"kind":"shape","id":"sh/nil8rux4","slide":2,"bbox":[68,656,1144,1]}
+{"kind":"textbox","id":"sh/mhcripwj","slide":2,"text":"SignLight  •  EXE201 Outcome 1","textPreview":"SignLight  •  EXE201 Outcome 1","textChars":30,"textLines":1,"bbox":[70,666,550,24]}
+{"kind":"textbox","id":"sh/9k3qtkfa","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1153,665,55,24]}
+{"kind":"textbox","id":"sh/8ju9kzep","slide":2,"text":"02 min","textPreview":"02 min","textChars":6,"textLines":1,"bbox":[75,177,145,56]}
+{"kind":"textbox","id":"sh/3mh8fqx0","slide":2,"text":"Team and responsibilities","textPreview":"Team and responsibilities","textChars":25,"textLines":1,"bbox":[230,177,845,56]}
+{"kind":"shape","id":"sh/2l876lwf","slide":2,"bbox":[74,242,1100,2]}
+{"kind":"textbox","id":"sh/ovmho7ep","slide":2,"text":"05 min","textPreview":"05 min","textChars":6,"textLines":1,"bbox":[75,268,145,56]}
+{"kind":"textbox","id":"sh/9wvixcfu","slide":2,"text":"Product, users and proposed plans","textPreview":"Product, users and proposed plans","textChars":33,"textLines":1,"bbox":[230,268,845,56]}
+{"kind":"shape","id":"sh/mt4zmhgj","slide":2,"bbox":[74,333,1100,2]}
+{"kind":"textbox","id":"sh/nud0v2x4","slide":2,"text":"08 min","textPreview":"08 min","textChars":6,"textLines":1,"bbox":[75,359,145,56]}
+{"kind":"textbox","id":"sh/wzm1srel","slide":2,"text":"Live MVP demonstration","textPreview":"Live MVP demonstration","textChars":22,"textLines":1,"bbox":[230,359,845,56]}
+{"kind":"shape","id":"sh/x0vi1wf6","slide":2,"bbox":[74,424,1100,2]}
+{"kind":"textbox","id":"sh/ax4zqhwf","slide":2,"text":"08 min","textPreview":"08 min","textChars":6,"textLines":1,"bbox":[75,450,145,56]}
+{"kind":"textbox","id":"sh/byd0zmx0","slide":2,"text":"Roadmap, sales plan and media plan","textPreview":"Roadmap, sales plan and media plan","textChars":34,"textLines":1,"bbox":[230,450,845,56]}
+{"kind":"shape","id":"sh/c32hgnyh","slide":2,"bbox":[74,515,1100,2]}
+{"kind":"textbox","id":"sh/d4bipsfm","slide":2,"text":"02 min","textPreview":"02 min","textChars":6,"textLines":1,"bbox":[75,541,145,56]}
+{"kind":"textbox","id":"sh/toj6xk3e","slide":2,"text":"Questions and discussion","textPreview":"Questions and discussion","textChars":24,"textLines":1,"bbox":[230,541,845,56]}
+{"kind":"shape","id":"sh/8nap4fmt","slide":2,"bbox":[74,606,1100,2]}
+{"kind":"notes","id":"nt/4mp7ue","slide":2,"text":"Keep the live demonstration at approximately eight minutes. The guideline requires English slides and a 20–25 minute presentation."}
+{"kind":"slide","id":"sl/o1rddq","slide":3,"title":"The learning problem","textShapes":10}
+{"kind":"shape","id":"sh/dgjil4fq","slide":3,"bbox":[0,0,1280,13]}
+{"kind":"textbox","id":"sh/qdszq9gz","slide":3,"text":"The learning problem","textPreview":"The learning problem","textChars":20,"textLines":1,"bbox":[68,45,1135,73]}
+{"kind":"textbox","id":"sh/re10juxk","slide":3,"text":"A LEARNER NEEDS FEEDBACK WHILE PRACTICING ALONE","textPreview":"A LEARNER NEEDS FEEDBACK WHILE PRACTICING ALONE","textChars":47,"textLines":1,"bbox":[70,121,1090,28]}
+{"kind":"shape","id":"sh/4bahozy9","slide":3,"bbox":[68,656,1144,1]}
+{"kind":"textbox","id":"sh/pcjih4fe","slide":3,"text":"SignLight  •  EXE201 Outcome 1","textPreview":"SignLight  •  EXE201 Outcome 1","textChars":30,"textLines":1,"bbox":[70,666,550,24]}
+{"kind":"textbox","id":"sh/29szmpg3","slide":3,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[1153,665,55,24]}
+{"kind":"textbox","id":"sh/3a10fuxo","slide":3,"text":"Video shows the sign.","textPreview":"Video shows the sign.","textChars":21,"textLines":1,"bbox":[77,198,470,60]}
+{"kind":"textbox","id":"sh/o7u10jyd","slide":3,"text":"It cannot tell the learner\nwhat their hands actually did.","textPreview":"It cannot tell the learner | what their hands actually did.","textChars":57,"textLines":2,"bbox":[77,273,502,136]}
+{"kind":"shape","id":"sh/98nitofy","slide":3,"bbox":[614,205,2,330]}
+{"kind":"textbox","id":"sh/xwruhgf6","slide":3,"text":"SIGNLIGHT’S RESPONSE","textPreview":"SIGNLIGHT’S RESPONSE","textChars":20,"textLines":1,"bbox":[672,202,455,28]}
+{"kind":"textbox","id":"sh/wvid8bel","slide":3,"text":"Watch a model sign","textPreview":"Watch a model sign","textChars":18,"textLines":1,"bbox":[672,250,510,50]}
+{"kind":"textbox","id":"sh/bu9cf6xg","slide":3,"text":"Practice in front of the camera","textPreview":"Practice in front of the camera","textChars":31,"textLines":1,"bbox":[672,329,530,75]}
+{"kind":"textbox","id":"sh/at0v61wv","slide":3,"text":"Receive a recognized label and guidance","textPreview":"Receive a recognized label and guidance","textChars":39,"textLines":1,"bbox":[672,431,520,100]}
+{"kind":"notes","id":"nt/o1rddq","slide":3,"text":"Explain the gap in self-study: learners can imitate a video but lack immediate correction. The current product combines sign video, webcam capture and AI feedback. This is a product rationale, not a market-size claim. Source: repository README.md and src/frontend/app/luyen-ai/page.tsx."}
+{"kind":"slide","id":"sl/paj20t","slide":4,"title":"Published MVP: what users can access","textShapes":13}
+{"kind":"shape","id":"sh/bq58n2l8","slide":4,"bbox":[0,0,1280,13]}
+{"kind":"textbox","id":"sh/cre9g7md","slide":4,"text":"Published MVP: what users can access","textPreview":"Published MVP: what users can access","textChars":36,"textLines":1,"bbox":[68,45,1135,73]}
+{"kind":"textbox","id":"sh/dsnqpc3y","slide":4,"text":"CURRENT DEPLOYED WEB APPLICATION","textPreview":"CURRENT DEPLOYED WEB APPLICATION","textChars":32,"textLines":1,"bbox":[70,121,1090,28]}
+{"kind":"shape","id":"sh/ytwrih4j","slide":4,"bbox":[68,656,1144,1]}
+{"kind":"textbox","id":"sh/zu5srml4","slide":4,"text":"SignLight  •  EXE201 Outcome 1","textPreview":"SignLight  •  EXE201 Outcome 1","textChars":30,"textLines":1,"bbox":[70,666,550,24]}
+{"kind":"textbox","id":"sh/0vy9krmp","slide":4,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[1153,665,55,24]}
+{"kind":"textbox","id":"sh/lg7atw3a","slide":4,"text":"https://sightlight1.vercel.app/","textPreview":"https://sightlight1.vercel.app/","textChars":31,"textLines":1,"bbox":[77,174,1100,58]}
+{"kind":"textbox","id":"sh/uxcr6d4f","slide":4,"text":"Learning","textPreview":"Learning","textChars":8,"textLines":1,"bbox":[78,271,220,55]}
+{"kind":"textbox","id":"sh/fyl8fil0","slide":4,"text":"Learning path, lesson video and progress","textPreview":"Learning path, lesson video and progress","textChars":40,"textLines":1,"bbox":[307,271,815,55]}
+{"kind":"shape","id":"sh/ved8nito","slide":4,"bbox":[77,335,1086,2]}
+{"kind":"textbox","id":"sh/ud4reds3","slide":4,"text":"Practice","textPreview":"Practice","textChars":8,"textLines":1,"bbox":[78,357,220,55]}
+{"kind":"textbox","id":"sh/hgvqpsbe","slide":4,"text":"Camera-based sign capture and AI response","textPreview":"Camera-based sign capture and AI response","textChars":41,"textLines":1,"bbox":[307,357,815,55]}
+{"kind":"shape","id":"sh/wfm9gna9","slide":4,"bbox":[77,421,1086,2]}
+{"kind":"textbox","id":"sh/7at8jytc","slide":4,"text":"Lookup","textPreview":"Lookup","textChars":6,"textLines":1,"bbox":[78,443,220,55]}
+{"kind":"textbox","id":"sh/m9k7atcr","slide":4,"text":"Searchable VSL sign dictionary","textPreview":"Searchable VSL sign dictionary","textChars":30,"textLines":1,"bbox":[307,443,815,55]}
+{"kind":"shape","id":"sh/9cbql8bi","slide":4,"bbox":[77,507,1086,2]}
+{"kind":"textbox","id":"sh/8b29c3ux","slide":4,"text":"Plans","textPreview":"Plans","textChars":5,"textLines":1,"bbox":[78,529,220,55]}
+{"kind":"textbox","id":"sh/zmt8fytg","slide":4,"text":"Free entry and Premium purchase flow","textPreview":"Free entry and Premium purchase flow","textChars":36,"textLines":1,"bbox":[307,529,815,55]}
+{"kind":"shape","id":"sh/yl076tcv","slide":4,"bbox":[77,593,1086,2]}
+{"kind":"notes","id":"nt/paj20t","slide":4,"text":"The Vercel URL was supplied by the project owner and opened successfully on 23 Sep 2026. The AI practice route requires login. Published UI availability is verified; full end-to-end AI accuracy and payment completion are not verified by this deck. Source: live site and repository routes."}
+{"kind":"slide","id":"sl/an6nib","slide":5,"title":"Team roles and deliverables","textShapes":14}
+{"kind":"shape","id":"sh/2h43mp8z","slide":5,"bbox":[0,0,1280,13]}
+{"kind":"textbox","id":"sh/pkfmhk7q","slide":5,"text":"Team roles and deliverables","textPreview":"Team roles and deliverables","textChars":27,"textLines":1,"bbox":[68,45,1135,73]}
+{"kind":"textbox","id":"sh/oj65ozq5","slide":5,"text":"CLEAR OWNERSHIP FOR CONTENT, BUSINESS AND TECHNOLOGY","textPreview":"CLEAR OWNERSHIP FOR CONTENT, BUSINESS AND TECHNOLOGY","textChars":52,"textLines":1,"bbox":[70,121,1090,28]}
+{"kind":"shape","id":"sh/bmx4jupw","slide":5,"bbox":[68,656,1144,1]}
+{"kind":"textbox","id":"sh/alonqp8b","slide":5,"text":"SignLight  •  EXE201 Outcome 1","textPreview":"SignLight  •  EXE201 Outcome 1","textChars":30,"textLines":1,"bbox":[70,666,550,24]}
+{"kind":"textbox","id":"sh/xofml47m","slide":5,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[1153,665,55,24]}
+{"kind":"textbox","id":"sh/wn65szq1","slide":5,"text":"Lê Tùng Dương","textPreview":"Lê Tùng Dương","textChars":13,"textLines":1,"bbox":[77,174,364,52]}
+{"kind":"textbox","id":"sh/rqt47apc","slide":5,"text":"Learning content, quizzes and teaching videos","textPreview":"Learning content, quizzes and teaching videos","textChars":45,"textLines":1,"bbox":[449,174,728,52]}
+{"kind":"shape","id":"sh/qpk3e58r","slide":5,"bbox":[76,235,1103,2]}
+{"kind":"textbox","id":"sh/cv2t4bax","slide":5,"text":"Phạm Việt Hoàng","textPreview":"Phạm Việt Hoàng","textChars":15,"textLines":1,"bbox":[77,265,364,52]}
+{"kind":"textbox","id":"sh/dwbadgri","slide":5,"text":"Finance, business model and marketing","textPreview":"Finance, business model and marketing","textChars":37,"textLines":1,"bbox":[449,265,728,52]}
+{"kind":"shape","id":"sh/qt0b21sr","slide":5,"bbox":[76,326,1103,2]}
+{"kind":"textbox","id":"sh/rutsb69c","slide":5,"text":"Hoàng Xuân Thọ","textPreview":"Hoàng Xuân Thọ","textChars":14,"textLines":1,"bbox":[77,356,364,52]}
+{"kind":"textbox","id":"sh/0j2t8vqt","slide":5,"text":"Finance, business model and marketing","textPreview":"Finance, business model and marketing","textChars":37,"textLines":1,"bbox":[449,356,728,52]}
+{"kind":"shape","id":"sh/1kbah0re","slide":5,"bbox":[76,417,1103,2]}
+{"kind":"textbox","id":"sh/exkb6ls3","slide":5,"text":"Nguyễn Thế Duy","textPreview":"Nguyễn Thế Duy","textChars":14,"textLines":1,"bbox":[77,447,364,52]}
+{"kind":"textbox","id":"sh/zytsfq98","slide":5,"text":"Landing page, backend and product interface","textPreview":"Landing page, backend and product interface","textChars":43,"textLines":1,"bbox":[449,447,728,52]}
+{"kind":"shape","id":"sh/gni9wrap","slide":5,"bbox":[76,508,1103,2]}
+{"kind":"textbox","id":"sh/hora5wra","slide":5,"text":"Phan Bùi Bá Đạt","textPreview":"Phan Bùi Bá Đạt","textChars":15,"textLines":1,"bbox":[77,538,364,52]}
+{"kind":"textbox","id":"sh/x8zidofm","slide":5,"text":"AI model training and camera AI function","textPreview":"AI model training and camera AI function","textChars":40,"textLines":1,"bbox":[449,538,728,52]}
+{"kind":"shape","id":"sh/w7qhkjy1","slide":5,"bbox":[76,599,1103,2]}
+{"kind":"notes","id":"nt/an6nib","slide":5,"text":"The responsibilities on this slide were supplied directly by the project owner. Pause here for each person to speak briefly about their own deliverable if the team presentation format allows it."}
+{"kind":"slide","id":"sl/n09l93","slide":6,"title":"Product catalog and proposed prices","textShapes":17}
+{"kind":"shape","id":"sh/f6d0nm1w","slide":6,"bbox":[0,0,1280,13]}
+{"kind":"textbox","id":"sh/076hwrih","slide":6,"text":"Product catalog and proposed prices","textPreview":"Product catalog and proposed prices","textChars":35,"textLines":1,"bbox":[68,45,1135,73]}
+{"kind":"textbox","id":"sh/18fipwz2","slide":6,"text":"PRICING CURRENTLY REPRESENTED IN THE PRODUCT CODE","textPreview":"PRICING CURRENTLY REPRESENTED IN THE PRODUCT CODE","textChars":49,"textLines":1,"bbox":[70,121,1090,28]}
+{"kind":"shape","id":"sh/29ozy107","slide":6,"bbox":[68,656,1144,1]}
+{"kind":"textbox","id":"sh/nax0r6hs","slide":6,"text":"SignLight  •  EXE201 Outcome 1","textPreview":"SignLight  •  EXE201 Outcome 1","textChars":30,"textLines":1,"bbox":[70,666,550,24]}
+{"kind":"textbox","id":"sh/ob610bid","slide":6,"text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[1153,665,55,24]}
+{"kind":"textbox","id":"sh/9cfitgzy","slide":6,"text":"Free","textPreview":"Free","textChars":4,"textLines":1,"bbox":[75,207,252,46]}
+{"kind":"textbox","id":"sh/adoj2l0j","slide":6,"text":"₫0","textPreview":"₫0","textChars":2,"textLines":1,"bbox":[75,275,252,64]}
+{"kind":"textbox","id":"sh/byh0v6h4","slide":6,"text":"First learning unit; limited daily AI practice","textPreview":"First learning unit; limited daily AI practice","textChars":46,"textLines":1,"bbox":[75,363,244,126]}
+{"kind":"shape","id":"sh/7q9w76tk","slide":6,"bbox":[333,212,1,300]}
+{"kind":"textbox","id":"sh/mp0fe1sz","slide":6,"text":"Premium 1 month","textPreview":"Premium 1 month","textChars":15,"textLines":1,"bbox":[347,207,324,46]}
+{"kind":"textbox","id":"sh/9sre9wba","slide":6,"text":"₫99,000","textPreview":"₫99,000","textChars":7,"textLines":1,"bbox":[347,275,324,64]}
+{"kind":"textbox","id":"sh/8rixgba5","slide":6,"text":"Full course and unlimited AI practice","textPreview":"Full course and unlimited AI practice","textChars":37,"textLines":1,"bbox":[347,363,316,126]}
+{"kind":"shape","id":"sh/z29w3mt8","slide":6,"bbox":[677,212,1,300]}
+{"kind":"textbox","id":"sh/y1gfahsn","slide":6,"text":"Premium 6 months","textPreview":"Premium 6 months","textChars":16,"textLines":1,"bbox":[690,207,214,46]}
+{"kind":"textbox","id":"sh/lore5wbe","slide":6,"text":"₫499,000","textPreview":"₫499,000","textChars":8,"textLines":1,"bbox":[690,275,214,64]}
+{"kind":"textbox","id":"sh/knixcrat","slide":6,"text":"Full course and unlimited AI practice","textPreview":"Full course and unlimited AI practice","textChars":37,"textLines":1,"bbox":[690,363,206,126]}
+{"kind":"shape","id":"sh/jytgfqts","slide":6,"bbox":[910,212,1,300]}
+{"kind":"textbox","id":"sh/ixkfmls7","slide":6,"text":"Premium 1 year","textPreview":"Premium 1 year","textChars":14,"textLines":1,"bbox":[924,207,262,46]}
+{"kind":"textbox","id":"sh/edozepcf","slide":6,"text":"₫899,000","textPreview":"₫899,000","textChars":8,"textLines":1,"bbox":[924,275,262,64]}
+{"kind":"textbox","id":"sh/fex0nud0","slide":6,"text":"Full course and unlimited AI practice","textPreview":"Full course and unlimited AI practice","textChars":37,"textLines":1,"bbox":[924,363,254,126]}
+{"kind":"textbox","id":"sh/gf6hgzu5","slide":6,"text":"Prices are proposed for EXE201 and may be revised after user and cost validation.","textPreview":"Prices are proposed for EXE201 and may be revised after user and cost validation.","textChars":81,"textLines":1,"bbox":[77,565,1100,45]}
+{"kind":"notes","id":"nt/n09l93","slide":6,"text":"Source: src/backend/src/main/resources/db/migration/V3__integrate_exe101_features.sql and src/frontend/app/nang-cap/page.tsx. The listed Premium prices are present in code. Treat them as proposed prices for the EXE201 presentation; no sales or payment results are claimed. Free account AI quota is documented in src/README.md."}
+{"kind":"slide","id":"sl/r9m49f","slide":7,"title":"How the camera practice works","textShapes":17}
+{"kind":"shape","id":"sh/3mxs7290","slide":7,"bbox":[0,0,1280,13]}
+{"kind":"textbox","id":"sh/4n6t0nql","slide":7,"text":"How the camera practice works","textPreview":"How the camera practice works","textChars":29,"textLines":1,"bbox":[68,45,1135,73]}
+{"kind":"textbox","id":"sh/pofa9srq","slide":7,"text":"CURRENT IMPLEMENTATION AND PRIVACY BOUNDARY","textPreview":"CURRENT IMPLEMENTATION AND PRIVACY BOUNDARY","textChars":43,"textLines":1,"bbox":[70,121,1090,28]}
+{"kind":"shape","id":"sh/ux4bad83","slide":7,"bbox":[68,656,1144,1]}
+{"kind":"textbox","id":"sh/fyds3i9o","slide":7,"text":"SignLight  •  EXE201 Outcome 1","textPreview":"SignLight  •  EXE201 Outcome 1","textChars":30,"textLines":1,"bbox":[70,666,550,24]}
+{"kind":"textbox","id":"sh/gzmtwnq9","slide":7,"text":"07","textPreview":"07","textChars":2,"textLines":1,"bbox":[1153,665,55,24]}
+{"kind":"textbox","id":"sh/h0va5sru","slide":7,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[77,174,70,58]}
+{"kind":"textbox","id":"sh/6tkb6d87","slide":7,"text":"Watch a VSL video","textPreview":"Watch a VSL video","textChars":17,"textLines":1,"bbox":[157,174,320,55]}
+{"kind":"textbox","id":"sh/7udszy9s","slide":7,"text":"Learner sees the target sign","textPreview":"Learner sees the target sign","textChars":28,"textLines":1,"bbox":[493,174,682,72]}
+{"kind":"shape","id":"sh/nuxc36p4","slide":7,"bbox":[76,251,1104,2]}
+{"kind":"textbox","id":"sh/mtova1oj","slide":7,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[77,284,70,58]}
+{"kind":"textbox","id":"sh/9wzu5w7u","slide":7,"text":"Capture movement","textPreview":"Capture movement","textChars":16,"textLines":1,"bbox":[157,284,320,55]}
+{"kind":"textbox","id":"sh/8vqdcr6p","slide":7,"text":"Browser reads webcam frames","textPreview":"Browser reads webcam frames","textChars":27,"textLines":1,"bbox":[493,284,682,72]}
+{"kind":"shape","id":"sh/vyhw76p0","slide":7,"bbox":[76,361,1104,2]}
+{"kind":"textbox","id":"sh/ax8ve1of","slide":7,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[77,394,70,58]}
+{"kind":"textbox","id":"sh/h0ze9g76","slide":7,"text":"Extract and infer","textPreview":"Extract and infer","textChars":17,"textLines":1,"bbox":[157,394,320,55]}
+{"kind":"textbox","id":"sh/wzqdgb6l","slide":7,"text":"Landmarks become a 64 × 327 tensor; ONNX runs in the browser","textPreview":"Landmarks become a 64 × 327 tensor; ONNX runs in the browser","textChars":60,"textLines":1,"bbox":[493,394,682,72]}
+{"kind":"shape","id":"sh/b2dcvmpw","slide":7,"bbox":[76,471,1104,2]}
+{"kind":"textbox","id":"sh/q14v2hob","slide":7,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[77,504,70,58]}
+{"kind":"textbox","id":"sh/excfap8z","slide":7,"text":"Record the attempt","textPreview":"Record the attempt","textChars":18,"textLines":1,"bbox":[157,504,320,55]}
+{"kind":"textbox","id":"sh/filg3u9k","slide":7,"text":"Backend tracks result and daily quota","textPreview":"Backend tracks result and daily quota","textChars":37,"textLines":1,"bbox":[493,504,682,72]}
+{"kind":"shape","id":"sh/gjuxcfqp","slide":7,"bbox":[76,581,1104,2]}
+{"kind":"textbox","id":"sh/1k3y5kra","slide":7,"text":"Camera pixels stay on the learner’s device.","textPreview":"Camera pixels stay on the learner’s device.","textChars":43,"textLines":1,"bbox":[77,604,1090,39]}
+{"kind":"notes","id":"nt/r9m49f","slide":7,"text":"Source: src/frontend/app/luyen-ai/page.tsx, src/frontend/lib/holistic/extractor.ts, src/frontend/lib/ai/localRecognizer.ts and src/README.md. Browser extracts numeric features and performs local WASM inference. The frontend also sends the numeric tensor to the backend for attempt/quota tracking. The backend AI service currently lacks ONNX weights in src/ai/runs, so its server response can be stubbed; real-world accuracy remains unvalidated."}
+{"kind":"slide","id":"sl/up8czc","slide":8,"title":"Live demo: one learner journey","textShapes":13}
+{"kind":"shape","id":"sh/bmpsb29k","slide":8,"bbox":[0,0,1280,13]}
+{"kind":"textbox","id":"sh/cnytk7q5","slide":8,"text":"Live demo: one learner journey","textPreview":"Live demo: one learner journey","textChars":30,"textLines":1,"bbox":[68,45,1135,73]}
+{"kind":"textbox","id":"sh/do7adcrq","slide":8,"text":"OPEN THE PUBLISHED PRODUCT","textPreview":"OPEN THE PUBLISHED PRODUCT","textChars":26,"textLines":1,"bbox":[70,121,1090,28]}
+{"kind":"shape","id":"sh/2hwbex83","slide":8,"bbox":[68,656,1144,1]}
+{"kind":"textbox","id":"sh/3ips7i9o","slide":8,"text":"SignLight  •  EXE201 Outcome 1","textPreview":"SignLight  •  EXE201 Outcome 1","textChars":30,"textLines":1,"bbox":[70,666,550,24]}
+{"kind":"textbox","id":"sh/ojytgnq9","slide":8,"text":"08","textPreview":"08","textChars":2,"textLines":1,"bbox":[1153,665,55,24]}
+{"kind":"textbox","id":"sh/pk7a9sru","slide":8,"text":"sightlight1.vercel.app","textPreview":"sightlight1.vercel.app","textChars":22,"textLines":1,"bbox":[75,177,1035,76]}
+{"kind":"textbox","id":"sh/etwrad87","slide":8,"text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[79,292,60,45]}
+{"kind":"textbox","id":"sh/fu5s3i9c","slide":8,"text":"Sign in and open the learning path","textPreview":"Sign in and open the learning path","textChars":34,"textLines":1,"bbox":[150,292,934,52]}
+{"kind":"textbox","id":"sh/va94j6ds","slide":8,"text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[79,369,60,45]}
+{"kind":"textbox","id":"sh/a90na1c7","slide":8,"text":"Play a lesson video","textPreview":"Play a lesson video","textChars":19,"textLines":1,"bbox":[150,369,934,52]}
+{"kind":"textbox","id":"sh/xwrmlwvy","slide":8,"text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[79,446,60,45]}
+{"kind":"textbox","id":"sh/wvi5crud","slide":8,"text":"Perform a sign in Camera AI","textPreview":"Perform a sign in Camera AI","textChars":27,"textLines":1,"bbox":[150,446,934,52]}
+{"kind":"textbox","id":"sh/jy9on6d4","slide":8,"text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[79,523,60,45]}
+{"kind":"textbox","id":"sh/ix0ne1cj","slide":8,"text":"Read the feedback and look up a sign","textPreview":"Read the feedback and look up a sign","textChars":36,"textLines":1,"bbox":[150,523,934,52]}
+{"kind":"notes","id":"nt/up8czc","slide":8,"text":"Allow approximately eight minutes for the live product. Pre-demo preparation: create and test a demo account, sign in, check API availability, verify camera permission, choose a sign with a working local video, and avoid any real payment. If live inference fails, explain the visible error and show the prepared UI flow honestly. The camera route requires authentication on the deployed site."}
+{"kind":"slide","id":"sl/ijbpo6","slide":9,"title":"Demo 1: lesson and learning path","textShapes":9}
+{"kind":"shape","id":"sh/mdwz6d03","slide":9,"bbox":[0,0,1280,13]}
+{"kind":"textbox","id":"sh/9g7yhsju","slide":9,"text":"Demo 1: lesson and learning path","textPreview":"Demo 1: lesson and learning path","textChars":32,"textLines":1,"bbox":[68,45,1135,73]}
+{"kind":"textbox","id":"sh/8fyh8ni9","slide":9,"text":"SHOW WHAT THE LEARNER CAN DO BEFORE TURNING ON THE CAMERA","textPreview":"SHOW WHAT THE LEARNER CAN DO BEFORE TURNING ON THE CAMERA","textChars":57,"textLines":1,"bbox":[70,121,1090,28]}
+{"kind":"shape","id":"sh/zq5gbi1c","slide":9,"bbox":[68,656,1144,1]}
+{"kind":"textbox","id":"sh/ypwf2d07","slide":9,"text":"SignLight  •  EXE201 Outcome 1","textPreview":"SignLight  •  EXE201 Outcome 1","textChars":30,"textLines":1,"bbox":[70,666,550,24]}
+{"kind":"textbox","id":"sh/lcnydsji","slide":9,"text":"09","textPreview":"09","textChars":2,"textLines":1,"bbox":[1153,665,55,24]}
+{"kind":"textbox","id":"sh/0beh4nix","slide":9,"text":"/hoc","textPreview":"/hoc","textChars":4,"textLines":1,"bbox":[80,174,283,74]}
+{"kind":"textbox","id":"sh/bmlg7y1g","slide":9,"text":"Browse the course and open an available lesson.","textPreview":"Browse the course and open an available lesson.","textChars":47,"textLines":1,"bbox":[80,255,1092,62]}
+{"kind":"shape","id":"sh/qlcfyt0v","slide":9,"bbox":[78,347,1100,2]}
+{"kind":"textbox","id":"sh/krah4nmx","slide":9,"text":"During the demo","textPreview":"During the demo","textChars":15,"textLines":1,"bbox":[80,372,300,43]}
+{"kind":"textbox","id":"sh/5sjids3i","slide":9,"text":"Play the sign video • answer a lesson question • show saved progress","textPreview":"Play the sign video • answer a lesson question • show saved progress","textChars":68,"textLines":1,"bbox":[80,432,1070,100]}
+{"kind":"textbox","id":"sh/ip8z2d47","slide":9,"text":"Presenter: Nguyễn Thế Duy  +  Lê Tùng Dương","textPreview":"Presenter: Nguyễn Thế Duy  +  Lê Tùng Dương","textChars":43,"textLines":1,"bbox":[80,575,1078,43]}
+{"kind":"notes","id":"nt/ijbpo6","slide":9,"text":"Live navigation: https://sightlight1.vercel.app/hoc . Show a real available lesson, its video and one question. Do not claim all lesson content is complete; the content owner is still preparing lessons, quizzes and teaching videos. Source: user-provided team allocation and repository src/frontend/app/hoc."}
+{"kind":"slide","id":"sl/4kswm5","slide":10,"title":"Demo 2: Camera AI","textShapes":13}
+{"kind":"shape","id":"sh/94rat0f6","slide":10,"bbox":[0,0,1280,13]}
+{"kind":"textbox","id":"sh/m10ry5gf","slide":10,"text":"Demo 2: Camera AI","textPreview":"Demo 2: Camera AI","textChars":17,"textLines":1,"bbox":[68,45,1135,73]}
+{"kind":"textbox","id":"sh/729srax0","slide":10,"text":"THE MAIN PRODUCT DEMONSTRATION","textPreview":"THE MAIN PRODUCT DEMONSTRATION","textChars":30,"textLines":1,"bbox":[70,121,1090,28]}
+{"kind":"shape","id":"sh/kzy9wvy9","slide":10,"bbox":[68,656,1144,1]}
+{"kind":"textbox","id":"sh/l0rap0fu","slide":10,"text":"SignLight  •  EXE201 Outcome 1","textPreview":"SignLight  •  EXE201 Outcome 1","textChars":30,"textLines":1,"bbox":[70,666,550,24]}
+{"kind":"textbox","id":"sh/yxgrulg3","slide":10,"text":"10","textPreview":"10","textChars":2,"textLines":1,"bbox":[1153,665,55,24]}
+{"kind":"textbox","id":"sh/zypsnqxo","slide":10,"text":"/luyen-ai","textPreview":"/luyen-ai","textChars":9,"textLines":1,"bbox":[78,166,533,75]}
+{"kind":"textbox","id":"sh/cvy9sbyd","slide":10,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[80,263,70,55]}
+{"kind":"textbox","id":"sh/xw7algfy","slide":10,"text":"Choose a target sign and watch the model video","textPreview":"Choose a target sign and watch the model video","textChars":46,"textLines":1,"bbox":[159,263,1015,69]}
+{"kind":"shape","id":"sh/143q5c76","slide":10,"bbox":[79,334,1095,2]}
+{"kind":"textbox","id":"sh/g3u9w76l","slide":10,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[80,354,70,55]}
+{"kind":"textbox","id":"sh/fil832p0","slide":10,"text":"Allow camera access and complete one full movement","textPreview":"Allow camera access and complete one full movement","textChars":50,"textLines":1,"bbox":[159,354,1015,69]}
+{"kind":"shape","id":"sh/ehcruxov","slide":10,"bbox":[79,425,1095,2]}
+{"kind":"textbox","id":"sh/tg3q1s7a","slide":10,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[80,445,70,55]}
+{"kind":"textbox","id":"sh/sfu9sn6p","slide":10,"text":"Show the predicted sign, confidence and top 3","textPreview":"Show the predicted sign, confidence and top 3","textChars":45,"textLines":1,"bbox":[159,445,1015,69]}
+{"kind":"shape","id":"sh/rel8z2p4","slide":10,"bbox":[79,516,1095,2]}
+{"kind":"textbox","id":"sh/6dcrqxoj","slide":10,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[80,536,70,55]}
+{"kind":"textbox","id":"sh/5cjqxs7y","slide":10,"text":"Explain retry guidance and the free daily limit","textPreview":"Explain retry guidance and the free daily limit","textChars":47,"textLines":1,"bbox":[159,536,1015,69]}
+{"kind":"shape","id":"sh/4ba9on6d","slide":10,"bbox":[79,607,1095,2]}
+{"kind":"notes","id":"nt/4kswm5","slide":10,"text":"Live navigation: https://sightlight1.vercel.app/luyen-ai . This route requires authentication. Camera permission must be granted by the presenter, not by the audience. Use a working webcam and adequate lighting. The frontend has local ONNX weights, but the backend model files in src/ai/runs are absent. If the page displays a stub warning, state that server-side model output is simulated; do not present this as a measured accuracy test. Source: src/frontend/app/luyen-ai/page.tsx and src/ai/app/recognizer.py."}
+{"kind":"slide","id":"sl/xr5291","slide":11,"title":"Demo 3: dictionary and upgrade path","textShapes":8}
+{"kind":"shape","id":"sh/v6147250","slide":11,"bbox":[0,0,1280,13]}
+{"kind":"textbox","id":"sh/w7al07m5","slide":11,"text":"Demo 3: dictionary and upgrade path","textPreview":"Demo 3: dictionary and upgrade path","textChars":35,"textLines":1,"bbox":[68,45,1135,73]}
+{"kind":"textbox","id":"sh/hsjm9cnq","slide":11,"text":"CLOSE THE JOURNEY WITH ANOTHER REASON TO RETURN","textPreview":"CLOSE THE JOURNEY WITH ANOTHER REASON TO RETURN","textChars":47,"textLines":1,"bbox":[70,121,1090,28]}
+{"kind":"shape","id":"sh/m1s3ud43","slide":11,"bbox":[68,656,1144,1]}
+{"kind":"textbox","id":"sh/72143i5o","slide":11,"text":"SignLight  •  EXE201 Outcome 1","textPreview":"SignLight  •  EXE201 Outcome 1","textChars":30,"textLines":1,"bbox":[70,666,550,24]}
+{"kind":"textbox","id":"sh/83alwnm9","slide":11,"text":"11","textPreview":"11","textChars":2,"textLines":1,"bbox":[1153,665,55,24]}
+{"kind":"textbox","id":"sh/94jm5snu","slide":11,"text":"/tu-dien","textPreview":"/tu-dien","textChars":8,"textLines":1,"bbox":[76,182,387,72]}
+{"kind":"textbox","id":"sh/6xc36h4n","slide":11,"text":"Search a Vietnamese term with or without diacritics; open its sign video.","textPreview":"Search a Vietnamese term with or without diacritics; open its sign video.","textChars":73,"textLines":1,"bbox":[76,265,1115,105]}
+{"kind":"shape","id":"sh/ryl4fm5s","slide":11,"bbox":[76,400,1110,2]}
+{"kind":"textbox","id":"sh/jyxkjqps","slide":11,"text":"/nang-cap","textPreview":"/nang-cap","textChars":9,"textLines":1,"bbox":[76,426,387,70]}
+{"kind":"textbox","id":"sh/yx4jqlo7","slide":11,"text":"Show available plans and pricing. Stop before placing a payment order.","textPreview":"Show available plans and pricing. Stop before placing a payment order.","textChars":70,"textLines":1,"bbox":[76,512,1115,78]}
+{"kind":"notes","id":"nt/xr5291","slide":11,"text":"Live navigation: https://sightlight1.vercel.app/tu-dien and https://sightlight1.vercel.app/nang-cap . Search and show one real result. The payOS checkout code exists, but no end-to-end real payment is claimed or needed for this presentation. Source: src/frontend/app/tu-dien/page.tsx and src/frontend/app/nang-cap/page.tsx."}
+{"kind":"slide","id":"sl/dpuuqc","slide":12,"title":"MVP readiness: live versus next to verify","textShapes":9}
+{"kind":"shape","id":"sh/o7294f6t","slide":12,"bbox":[0,0,1280,13]}
+{"kind":"textbox","id":"sh/36t8vap8","slide":12,"text":"MVP readiness: live versus next to verify","textPreview":"MVP readiness: live versus next to verify","textChars":41,"textLines":1,"bbox":[68,45,1135,73]}
+{"kind":"textbox","id":"sh/25kr25o3","slide":12,"text":"USE EVIDENCE RATHER THAN ASSUMPTIONS","textPreview":"USE EVIDENCE RATHER THAN ASSUMPTIONS","textChars":36,"textLines":1,"bbox":[70,121,1090,28]}
+{"kind":"shape","id":"sh/dwvq147q","slide":12,"bbox":[68,656,1144,1]}
+{"kind":"textbox","id":"sh/cv298z65","slide":12,"text":"SignLight  •  EXE201 Outcome 1","textPreview":"SignLight  •  EXE201 Outcome 1","textChars":30,"textLines":1,"bbox":[70,666,550,24]}
+{"kind":"textbox","id":"sh/bat8zupk","slide":12,"text":"12","textPreview":"12","textChars":2,"textLines":1,"bbox":[1153,665,55,24]}
+{"kind":"textbox","id":"sh/q9kr6poz","slide":12,"text":"AVAILABLE NOW","textPreview":"AVAILABLE NOW","textChars":13,"textLines":1,"bbox":[77,173,480,28]}
+{"kind":"textbox","id":"sh/t0rqp076","slide":12,"text":"Published landing page\nLearning and dictionary routes\nCamera AI UI and browser model\nPremium plan UI","textPreview":"Published landing page | Learning and dictionary routes | Camera AI UI and browser model | Premium plan UI","textChars":100,"textLines":4,"bbox":[77,217,510,260]}
+{"kind":"shape","id":"sh/szipwv6l","slide":12,"bbox":[633,179,2,383]}
+{"kind":"textbox","id":"sh/e1sjyh0z","slide":12,"text":"BEFORE THE OUTCOME 1 DEMO","textPreview":"BEFORE THE OUTCOME 1 DEMO","textChars":25,"textLines":1,"bbox":[684,173,520,28]}
+{"kind":"textbox","id":"sh/f210rmhk","slide":12,"text":"Prepare a demo account\nConfirm API and camera flow\nValidate webcam accuracy\nInstall Google Analytics 4","textPreview":"Prepare a demo account | Confirm API and camera flow | Validate webcam accuracy | Install Google Analytics 4","textChars":102,"textLines":4,"bbox":[684,217,519,260]}
+{"kind":"textbox","id":"sh/g3a10ri5","slide":12,"text":"Current server AI files are missing model weights; accuracy is not yet established.","textPreview":"Current server AI files are missing model weights; accuracy is not yet established.","textChars":83,"textLines":1,"bbox":[77,559,1125,72]}
+{"kind":"notes","id":"nt/dpuuqc","slide":12,"text":"Verified on 23 Sep 2026: published Vercel landing page opens and /luyen-ai requires login. Repository search found no GA4 integration. src/ai/runs contains config and labels but no ONNX weights. The frontend does contain browser ONNX model files. Existing PROJECT_STATE.md explicitly marks webcam accuracy validation as outstanding. This slide distinguishes UI/deployment from test evidence."}
+{"kind":"slide","id":"sl/azk523","slide":13,"title":"Seven-week development plan","textShapes":13}
+{"kind":"shape","id":"sh/atof29w7","slide":13,"bbox":[0,0,1280,13]}
+{"kind":"textbox","id":"sh/hwfedovi","slide":13,"text":"Seven-week development plan","textPreview":"Seven-week development plan","textChars":27,"textLines":1,"bbox":[68,45,1135,73]}
+{"kind":"textbox","id":"sh/wv6x4jex","slide":13,"text":"THREE PHASES ALIGNED TO W3, W6 AND W8","textPreview":"THREE PHASES ALIGNED TO W3, W6 AND W8","textChars":37,"textLines":1,"bbox":[70,121,1090,28]}
+{"kind":"shape","id":"sh/n6dw7udg","slide":13,"bbox":[68,656,1144,1]}
+{"kind":"textbox","id":"sh/m54fy9wv","slide":13,"text":"SignLight  •  EXE201 Outcome 1","textPreview":"SignLight  •  EXE201 Outcome 1","textChars":30,"textLines":1,"bbox":[70,666,550,24]}
+{"kind":"textbox","id":"sh/9sve94vm","slide":13,"text":"13","textPreview":"13","textChars":2,"textLines":1,"bbox":[1153,665,55,24]}
+{"kind":"textbox","id":"sh/8rmx0ze1","slide":13,"text":"W2–W3","textPreview":"W2–W3","textChars":5,"textLines":1,"bbox":[80,179,180,51]}
+{"kind":"textbox","id":"sh/r2hgjydk","slide":13,"text":"Version 1.0 · Stable MVP","textPreview":"Version 1.0 · Stable MVP","textChars":24,"textLines":1,"bbox":[258,179,870,53]}
+{"kind":"textbox","id":"sh/618fatcf","slide":13,"text":"Demo account, camera/API smoke test, lesson content pass, GA4 page and event tracking","textPreview":"Demo account, camera/API smoke test, lesson content pass, GA4 page and event tracking","textChars":85,"textLines":1,"bbox":[259,236,896,76]}
+{"kind":"shape","id":"sh/kzql0bu9","slide":13,"bbox":[78,322,1095,2]}
+{"kind":"textbox","id":"sh/l0zm9wbu","slide":13,"text":"W4–W6","textPreview":"W4–W6","textChars":5,"textLines":1,"bbox":[80,335,180,51]}
+{"kind":"textbox","id":"sh/yx83y1cj","slide":13,"text":"Version 2.0 · Learning depth","textPreview":"Version 2.0 · Learning depth","textChars":28,"textLines":1,"bbox":[258,335,870,53]}
+{"kind":"textbox","id":"sh/jyh476to","slide":13,"text":"Quizzes, stronger feedback, payment QA, real webcam evaluation across people and lighting","textPreview":"Quizzes, stronger feedback, payment QA, real webcam evaluation across people and lighting","textChars":89,"textLines":1,"bbox":[259,392,896,76]}
+{"kind":"shape","id":"sh/wvqlwrud","slide":13,"bbox":[78,478,1095,2]}
+{"kind":"textbox","id":"sh/xwzm5wby","slide":13,"text":"W6–W8","textPreview":"W6–W8","textChars":5,"textLines":1,"bbox":[80,491,180,51]}
+{"kind":"textbox","id":"sh/a983uhc7","slide":13,"text":"Version 3.0 · Launch and refine","textPreview":"Version 3.0 · Launch and refine","textChars":31,"textLines":1,"bbox":[258,491,870,53]}
+{"kind":"textbox","id":"sh/bah43mds","slide":13,"text":"Public launch in W6–W7, improve retention flows, polish content and fix measured issues","textPreview":"Public launch in W6–W7, improve retention flows, polish content and fix measured issues","textChars":87,"textLines":1,"bbox":[259,548,896,76]}
+{"kind":"shape","id":"sh/o76lsru1","slide":13,"bbox":[78,634,1095,2]}
+{"kind":"notes","id":"nt/azk523","slide":13,"text":"The guideline asks for a seven-week plan, ideally phased at W3, W6 and W8, with the final version or collection launched in week 6–7. This is a proposed schedule, not a committed delivery claim. The scope follows current gaps observed in code and project state."}
+{"kind":"slide","id":"sl/fjg59s","slide":14,"title":"Function list by version","textShapes":22}
+{"kind":"shape","id":"sh/yp4zm543","slide":14,"bbox":[0,0,1280,13]}
+{"kind":"textbox","id":"sh/lsvix03e","slide":14,"text":"Function list by version","textPreview":"Function list by version","textChars":24,"textLines":1,"bbox":[68,45,1135,73]}
+{"kind":"textbox","id":"sh/krmhovmt","slide":14,"text":"SCOPE IS PRIORITIZED BY URGENCY AND COMPLEXITY","textPreview":"SCOPE IS PRIORITIZED BY URGENCY AND COMPLEXITY","textChars":46,"textLines":1,"bbox":[70,121,1090,28]}
+{"kind":"shape","id":"sh/7ux0zalk","slide":14,"bbox":[68,656,1144,1]}
+{"kind":"textbox","id":"sh/mtozq54z","slide":14,"text":"SignLight  •  EXE201 Outcome 1","textPreview":"SignLight  •  EXE201 Outcome 1","textChars":30,"textLines":1,"bbox":[70,666,550,24]}
+{"kind":"textbox","id":"sh/9gfi1k3q","slide":14,"text":"14","textPreview":"14","textChars":2,"textLines":1,"bbox":[1153,665,55,24]}
+{"kind":"textbox","id":"sh/8v6hsfm5","slide":14,"text":"V1.0 · W3","textPreview":"V1.0 · W3","textChars":9,"textLines":1,"bbox":[76,182,347,50]}
+{"kind":"textbox","id":"sh/vix03alg","slide":14,"text":"Essential to demo","textPreview":"Essential to demo","textChars":17,"textLines":1,"bbox":[76,245,347,40]}
+{"kind":"textbox","id":"sh/uhojup4v","slide":14,"text":"• Login and profile","textPreview":"• Login and profile","textChars":19,"textLines":1,"bbox":[76,313,343,55]}
+{"kind":"textbox","id":"sh/8rm1ozip","slide":14,"text":"• Course path and lessons","textPreview":"• Course path and lessons","textChars":25,"textLines":1,"bbox":[76,380,343,55]}
+{"kind":"textbox","id":"sh/tsf2h4ja","slide":14,"text":"• Dictionary and Camera AI","textPreview":"• Dictionary and Camera AI","textChars":26,"textLines":1,"bbox":[76,447,343,55]}
+{"kind":"textbox","id":"sh/6p4jm90j","slide":14,"text":"• GA4 instrumentation","textPreview":"• GA4 instrumentation","textChars":21,"textLines":1,"bbox":[76,514,343,55]}
+{"kind":"textbox","id":"sh/7qdkfu14","slide":14,"text":"V2.0 · W6","textPreview":"V2.0 · W6","textChars":9,"textLines":1,"bbox":[470,182,347,50]}
+{"kind":"textbox","id":"sh/gv61sjil","slide":14,"text":"Learning and validation","textPreview":"Learning and validation","textChars":23,"textLines":1,"bbox":[470,245,347,40]}
+{"kind":"textbox","id":"sh/hwf2loj6","slide":14,"text":"• Quiz and review flow","textPreview":"• Quiz and review flow","textChars":22,"textLines":1,"bbox":[470,313,343,55]}
+{"kind":"textbox","id":"sh/utojq90v","slide":14,"text":"• Better AI guidance","textPreview":"• Better AI guidance","textChars":20,"textLines":1,"bbox":[470,380,343,55]}
+{"kind":"textbox","id":"sh/vuxkje1g","slide":14,"text":"• PayOS checkout validation","textPreview":"• PayOS checkout validation","textChars":27,"textLines":1,"bbox":[470,447,343,55]}
+{"kind":"textbox","id":"sh/4jqlwjix","slide":14,"text":"• Webcam accuracy tests","textPreview":"• Webcam accuracy tests","textChars":23,"textLines":1,"bbox":[470,514,343,55]}
+{"kind":"textbox","id":"sh/5kz2poji","slide":14,"text":"V3.0 · W8","textPreview":"V3.0 · W8","textChars":9,"textLines":1,"bbox":[862,182,347,50]}
+{"kind":"textbox","id":"sh/dgv29obm","slide":14,"text":"Release quality","textPreview":"Release quality","textChars":15,"textLines":1,"bbox":[862,245,347,40]}
+{"kind":"textbox","id":"sh/cfm1gja1","slide":14,"text":"• Content quality review","textPreview":"• Content quality review","textChars":24,"textLines":1,"bbox":[862,313,343,55]}
+{"kind":"textbox","id":"sh/redk7etg","slide":14,"text":"• Accessibility and privacy QA","textPreview":"• Accessibility and privacy QA","textChars":30,"textLines":1,"bbox":[862,380,343,55]}
+{"kind":"textbox","id":"sh/qdkje9sv","slide":14,"text":"• Stability and performance","textPreview":"• Stability and performance","textChars":27,"textLines":1,"bbox":[862,447,343,55]}
+{"kind":"textbox","id":"sh/14v2dobi","slide":14,"text":"• Release checklist","textPreview":"• Release checklist","textChars":19,"textLines":1,"bbox":[862,514,343,55]}
+{"kind":"notes","id":"nt/fjg59s","slide":14,"text":"This is the requested function list with a timeline. V1.0 is a hardening phase for existing functionality. V2.0 and V3.0 are proposed additions and validation tasks. The Vercel site is already published; the W6–W7 milestone is the validated public launch of the fuller product, not the first time a page goes online."}
+{"kind":"slide","id":"sl/s1axls","slide":15,"title":"Sales plan and B2B kit","textShapes":15}
+{"kind":"shape","id":"sh/2xgrih43","slide":15,"bbox":[0,0,1280,13]}
+{"kind":"textbox","id":"sh/p07adwne","slide":15,"text":"Sales plan and B2B kit","textPreview":"Sales plan and B2B kit","textChars":22,"textLines":1,"bbox":[68,45,1135,73]}
+{"kind":"textbox","id":"sh/ozy9krmt","slide":15,"text":"PART IV · DRAFT MATERIALS AND PROPOSED OUTREACH","textPreview":"PART IV · DRAFT MATERIALS AND PROPOSED OUTREACH","textChars":47,"textLines":1,"bbox":[70,121,1090,28]}
+{"kind":"shape","id":"sh/fa5s7m5c","slide":15,"bbox":[68,656,1144,1]}
+{"kind":"textbox","id":"sh/e9wreh4r","slide":15,"text":"SignLight  •  EXE201 Outcome 1","textPreview":"SignLight  •  EXE201 Outcome 1","textChars":30,"textLines":1,"bbox":[70,666,550,24]}
+{"kind":"textbox","id":"sh/1c7a9cni","slide":15,"text":"15","textPreview":"15","textChars":2,"textLines":1,"bbox":[1153,665,55,24]}
+{"kind":"textbox","id":"sh/gbe9g7mx","slide":15,"text":"B2B SALES KIT TO PREPARE","textPreview":"B2B SALES KIT TO PREPARE","textChars":24,"textLines":1,"bbox":[78,177,500,28]}
+{"kind":"textbox","id":"sh/r65s325g","slide":15,"text":"• Company brochure and LMS product catalog","textPreview":"• Company brochure and LMS product catalog","textChars":42,"textLines":1,"bbox":[79,224,578,72]}
+{"kind":"textbox","id":"sh/65wrax4v","slide":15,"text":"• Tiered LMS quote · proposed 30–50% education discount","textPreview":"• Tiered LMS quote · proposed 30–50% education discount","textChars":55,"textLines":1,"bbox":[79,311,578,72]}
+{"kind":"textbox","id":"sh/8rixc3id","slide":15,"text":"• ESG / CSR proposal with impact measures","textPreview":"• ESG / CSR proposal with impact measures","textChars":41,"textLines":1,"bbox":[79,398,578,72]}
+{"kind":"textbox","id":"sh/9sre58zy","slide":15,"text":"• Service agreement and SLA · 99.9% uptime target","textPreview":"• Service agreement and SLA · 99.9% uptime target","textChars":49,"textLines":1,"bbox":[79,485,578,72]}
+{"kind":"shape","id":"sh/mp0fad07","slide":15,"bbox":[680,180,2,407]}
+{"kind":"textbox","id":"sh/7q9w3ihs","slide":15,"text":"SALES ACTIONS","textPreview":"SALES ACTIONS","textChars":13,"textLines":1,"bbox":[712,177,454,28]}
+{"kind":"textbox","id":"sh/k3ix83i1","slide":15,"text":"B2C Early Bird","textPreview":"B2C Early Bird","textChars":14,"textLines":1,"bbox":[712,226,456,42]}
+{"kind":"textbox","id":"sh/l4re18zm","slide":15,"text":"Proposed lifetime offer: ₫199,000 for the first 100 buyers; not yet a live price.","textPreview":"Proposed lifetime offer: ₫199,000 for the first 100 buyers; not yet a live price.","textChars":81,"textLines":1,"bbox":[712,275,480,104]}
+{"kind":"textbox","id":"sh/y1gf6t0b","slide":15,"text":"B2B direct pitching","textPreview":"B2B direct pitching","textChars":19,"textLines":1,"bbox":[712,410,456,42]}
+{"kind":"textbox","id":"sh/z2pwzyhg","slide":15,"text":"W4–W6 target: contact 15 inclusive education centers and 10 F&B / retail chains.","textPreview":"W4–W6 target: contact 15 inclusive education centers and 10 F&B / retail chains.","textChars":80,"textLines":1,"bbox":[712,459,484,113]}
+{"kind":"textbox","id":"sh/4z2xknyl","slide":15,"text":"Offers, discount and SLA require finance, legal and technical review.","textPreview":"Offers, discount and SLA require finance, legal and technical review.","textChars":69,"textLines":1,"bbox":[78,606,1100,35]}
+{"kind":"notes","id":"nt/s1axls","slide":15,"text":"Source: Part IV of the user-supplied Outcome 1 document. Present the listed items as proposed sales materials and actions, not completed or signed. The 199,000 VND lifetime Early Bird proposal differs from monthly/6-month/annual pricing currently in the product code, so clearly say it is not a live offer. The 30–50% education discount and 99.9% uptime SLA are drafts pending finance, legal and infrastructure review. Hoàng and Thọ own the business and marketing work; Duy presents this slide."}
+{"kind":"slide","id":"sl/998odu","slide":16,"title":"Media master plan","textShapes":17}
+{"kind":"shape","id":"sh/atwj6lwj","slide":16,"bbox":[0,0,1280,13]}
+{"kind":"textbox","id":"sh/xgni10va","slide":16,"text":"Media master plan","textPreview":"Media master plan","textChars":17,"textLines":1,"bbox":[68,45,1135,73]}
+{"kind":"textbox","id":"sh/wve18vep","slide":16,"text":"PART V · W1–W8 ACTIVITIES AND TARGET OUTCOMES","textPreview":"PART V · W1–W8 ACTIVITIES AND TARGET OUTCOMES","textChars":45,"textLines":1,"bbox":[70,121,1090,28]}
+{"kind":"shape","id":"sh/nq50vqd8","slide":16,"bbox":[68,656,1144,1]}
+{"kind":"textbox","id":"sh/mpcj2lwn","slide":16,"text":"SignLight  •  EXE201 Outcome 1","textPreview":"SignLight  •  EXE201 Outcome 1","textChars":30,"textLines":1,"bbox":[70,666,550,24]}
+{"kind":"textbox","id":"sh/9snixgve","slide":16,"text":"16","textPreview":"16","textChars":2,"textLines":1,"bbox":[1153,665,55,24]}
+{"kind":"textbox","id":"sh/ore14vet","slide":16,"text":"W1–W2","textPreview":"W1–W2","textChars":5,"textLines":1,"bbox":[77,185,166,66]}
+{"kind":"textbox","id":"sh/7mpk7adc","slide":16,"text":"Fanpage + beta survey","textPreview":"Fanpage + beta survey","textChars":21,"textLines":1,"bbox":[258,185,530,70]}
+{"kind":"textbox","id":"sh/6lgje5wr","slide":16,"text":"65+ valid surveys; 18 interviews","textPreview":"65+ valid surveys; 18 interviews","textChars":32,"textLines":1,"bbox":[832,185,366,70]}
+{"kind":"shape","id":"sh/s321oz6h","slide":16,"bbox":[77,267,1121,2]}
+{"kind":"textbox","id":"sh/t4b2x4n2","slide":16,"text":"W3–W4","textPreview":"W3–W4","textChars":5,"textLines":1,"bbox":[77,291,166,66]}
+{"kind":"textbox","id":"sh/610jmpor","slide":16,"text":"“Silent Dinner” short videos + free VSL dictionary","textPreview":"“Silent Dinner” short videos + free VSL dictionary","textChars":50,"textLines":1,"bbox":[258,291,530,70]}
+{"kind":"textbox","id":"sh/72tkvu5c","slide":16,"text":"2,000+ visits; 300+ sign-ups","textPreview":"2,000+ visits; 300+ sign-ups","textChars":28,"textLines":1,"bbox":[832,291,366,70]}
+{"kind":"shape","id":"sh/kzi1kz6l","slide":16,"bbox":[77,373,1121,2]}
+{"kind":"textbox","id":"sh/50rit4n6","slide":16,"text":"W5–W6","textPreview":"W5–W6","textChars":5,"textLines":1,"bbox":[77,397,166,66]}
+{"kind":"textbox","id":"sh/ix0jipof","slide":16,"text":"Light Ambassador + V2 / B2B launch campaign","textPreview":"Light Ambassador + V2 / B2B launch campaign","textChars":43,"textLines":1,"bbox":[258,397,530,70]}
+{"kind":"textbox","id":"sh/jy90ru50","slide":16,"text":"1,000+ sign-ups; 1–2 B2B MOUs","textPreview":"1,000+ sign-ups; 1–2 B2B MOUs","textChars":29,"textLines":1,"bbox":[832,397,366,70]}
+{"kind":"shape","id":"sh/wbi1gf6p","slide":16,"bbox":[77,479,1121,2]}
+{"kind":"textbox","id":"sh/xcripknu","slide":16,"text":"W7–W8","textPreview":"W7–W8","textChars":5,"textLines":1,"bbox":[77,503,166,66]}
+{"kind":"textbox","id":"sh/xsjydgzy","slide":16,"text":"Impact report + partner case studies","textPreview":"Impact report + partner case studies","textChars":36,"textLines":1,"bbox":[258,503,530,70]}
+{"kind":"textbox","id":"sh/crahkbyd","slide":16,"text":"5,000+ visitors; revenue KPI","textPreview":"5,000+ visitors; revenue KPI","textChars":28,"textLines":1,"bbox":[832,503,366,70]}
+{"kind":"shape","id":"sh/bqhgb6hs","slide":16,"bbox":[77,585,1121,2]}
+{"kind":"textbox","id":"sh/a58zi1g7","slide":16,"text":"Targets from the plan; confirm outcomes using GA4 and backend records once tracking is live.","textPreview":"Targets from the plan; confirm outcomes using GA4 and backend records once tracking is live.","textChars":92,"textLines":1,"bbox":[78,604,1115,44]}
+{"kind":"notes","id":"nt/998odu","slide":16,"text":"Source: Part V of the user-supplied Outcome 1 document. W1–W2 is labeled completed there, but the numerical survey and interview results were not independently verified here. Treat all listed counts as targets until evidence is supplied. W3–W8 campaigns and V2/B2B launch remain planned. Google Analytics 4 is not yet confirmed in the current frontend. Hoàng and Thọ own marketing; Duy presents this slide."}
+{"kind":"slide","id":"sl/zkfldk","slide":17,"title":"SignLight","textShapes":4}
+{"kind":"textbox","id":"sh/xkr6p8rq","slide":17,"text":"SignLight","textPreview":"SignLight","textChars":9,"textLines":1,"bbox":[79,206,710,85]}
+{"kind":"textbox","id":"sh/wjipw3al","slide":17,"text":"From watching signs to practicing them with feedback.","textPreview":"From watching signs to practicing them with feedback.","textChars":53,"textLines":1,"bbox":[81,309,996,121]}
+{"kind":"textbox","id":"sh/j6tory9w","slide":17,"text":"Live MVP  •  sightlight1.vercel.app","textPreview":"Live MVP  •  sightlight1.vercel.app","textChars":35,"textLines":1,"bbox":[82,516,790,47]}
+{"kind":"textbox","id":"sh/y507ydsb","slide":17,"text":"Questions?","textPreview":"Questions?","textChars":10,"textLines":1,"bbox":[81,596,400,49]}
+{"kind":"image","id":"im/7mlwr65o","slide":17,"name":"","alt":"SignLight logo","bbox":[81,79,89,89]}
+{"kind":"notes","id":"nt/zkfldk","slide":17,"text":"Conclude with the distinction between what is live now and what the team will validate across the remaining seven weeks. Invite questions. Do not imply that on-screen marketing metrics have been independently verified."}

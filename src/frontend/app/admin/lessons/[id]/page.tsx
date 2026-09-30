@@ -221,11 +221,11 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
   };
 
   if (loading) {
-    return <div className="p-12 text-center text-sm text-slate-500 animate-pulse">Đang tải LMS Lesson Builder...</div>;
+    return <div className="p-12 text-center text-sm text-ink-500 animate-pulse">Đang tải LMS Lesson Builder...</div>;
   }
 
   if (!lesson) {
-    return <div className="p-12 text-center text-slate-500">Không tìm thấy bài học này.</div>;
+    return <div className="p-12 text-center text-ink-500">Không tìm thấy bài học này.</div>;
   }
 
   return (
@@ -234,13 +234,13 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
       <div className="flex items-center justify-between">
         <Link
           href="/admin/courses"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-ink-500 hover:text-ink-800 transition-colors"
         >
           <span>&larr;</span> Quay lại danh sách bài học
         </Link>
         <div className="flex items-center gap-2">
           {savingOrder && (
-            <span className="text-xs font-semibold text-cyan-600 animate-pulse">Đang đồng bộ thứ tự...</span>
+            <span className="text-xs font-semibold text-sky-600 animate-pulse">Đang đồng bộ thứ tự...</span>
           )}
         </div>
       </div>
@@ -250,47 +250,47 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
         <div
           className={`p-4 rounded-xl text-xs font-bold flex items-center justify-between ${
             message.type === "success"
-              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-              : "bg-rose-50 text-rose-800 border border-rose-200"
+              ? "bg-brand-50 text-brand-800 border border-brand-200"
+              : "bg-danger-50 text-danger-800 border border-danger-200"
           }`}
         >
           <span>{message.text}</span>
-          <button onClick={() => setMessage(null)} className="text-slate-400 hover:text-slate-600">
+          <button onClick={() => setMessage(null)} className="text-ink-500 hover:text-ink-600">
             &times;
           </button>
         </div>
       )}
 
       {/* Lesson Header Card */}
-      <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-cyan-100 text-[#0d9fa5]">
+            <span className="px-2 py-0.5 rounded text-xs font-bold uppercase bg-sky-100 text-brand-500">
               LMS Builder
             </span>
-            <span className="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-slate-100 text-slate-700">
+            <span className="px-2 py-0.5 rounded text-xs font-semibold uppercase bg-ink-100 text-ink-700">
               Phiên bản nội dung: v{lesson.contentVersion}
             </span>
-            <span className="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800">
+            <span className="px-2 py-0.5 rounded text-xs font-semibold uppercase bg-brand-100 text-brand-800">
               {lesson.status}
             </span>
           </div>
-          <h1 className="text-xl font-black text-slate-900">{lesson.title}</h1>
-          <p className="text-xs text-slate-500 mt-1 max-w-2xl">{lesson.summary || "Chưa có mô tả tóm tắt"}</p>
+          <h1 className="text-xl font-bold text-ink-900">{lesson.title}</h1>
+          <p className="text-xs text-ink-500 mt-1 max-w-2xl">{lesson.summary || "Chưa có mô tả tóm tắt"}</p>
         </div>
 
         <div className="flex items-center gap-2 self-start md:self-auto">
           <Link
             href={`/hoc/bai/${lesson.id}`}
             target="_blank"
-            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
+            className="btn btn-secondary btn-sm"
           >
             Học thử bài này ↗
           </Link>
           <button
             type="button"
             onClick={openAddModal}
-            className="px-4 py-2 rounded-xl bg-[#0d9fa5] hover:bg-[#08757a] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+            className="btn btn-primary btn-sm cursor-pointer"
           >
             <span>+</span> Thêm Bài Tập
           </button>
@@ -301,54 +301,54 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+            <h2 className="text-base font-semibold text-ink-900 flex items-center gap-2">
               <span>Trình tự các bài tập trong bài học</span>
-              <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-slate-100 text-slate-600">
+              <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-ink-100 text-ink-600">
                 {exercises.length} bài tập
               </span>
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-ink-500 mt-0.5">
               Dùng nút ⬆ / ⬇ để thay đổi thứ tự người học sẽ trải qua. Hệ thống tự động lưu vào Database.
             </p>
           </div>
         </div>
 
         {exercises.length === 0 ? (
-          <div className="p-12 text-center bg-white rounded-2xl border border-dashed border-slate-300">
+          <div className="card p-12 text-center border-dashed border-ink-300">
             <span className="text-3xl block mb-2">📝</span>
-            <p className="text-sm font-bold text-slate-700">Chưa có bài tập nào trong bài này</p>
-            <p className="text-xs text-slate-400 mt-1">Bấm nút "Thêm Bài Tập" ở trên để tạo bài đầu tiên.</p>
+            <p className="text-sm font-bold text-ink-700">Chưa có bài tập nào trong bài này</p>
+            <p className="text-xs text-ink-500 mt-1">Bấm nút “Thêm Bài Tập” ở trên để tạo bài đầu tiên.</p>
           </div>
         ) : (
           <div className="space-y-3">
             {exercises.map((ex, idx) => (
               <div
                 key={ex.id}
-                className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200 hover:border-slate-300 shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                className="card p-4 sm:p-5 hover:border-ink-300 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 {/* Left: Order index & info */}
                 <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
-                  <div className="flex flex-col items-center justify-center shrink-0 w-10 h-10 rounded-xl bg-slate-100 border border-slate-200">
-                    <span className="text-[10px] font-extrabold text-slate-400 leading-none">BƯỚC</span>
-                    <span className="text-sm font-black text-slate-800 leading-tight">#{idx + 1}</span>
+                  <div className="flex flex-col items-center justify-center shrink-0 w-10 h-10 rounded-xl bg-ink-100 border border-ink-200">
+                    <span className="text-xs font-semibold text-ink-500 leading-none">BƯỚC</span>
+                    <span className="text-sm font-bold text-ink-800 leading-tight">#{idx + 1}</span>
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-cyan-50 text-[#0d9fa5] border border-cyan-200">
+                      <span className="px-2 py-0.5 rounded text-xs font-semibold uppercase bg-sky-50 text-brand-500 border border-sky-200">
                         {ex.type}
                       </span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-600">
+                      <span className="px-2 py-0.5 rounded text-xs font-bold uppercase bg-ink-100 text-ink-600">
                         {ex.difficulty}
                       </span>
                       {ex.signName && (
-                        <span className="text-xs font-bold text-slate-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+                        <span className="text-xs font-bold text-ink-700 bg-sun-50 border border-sun-200 px-2 py-0.5 rounded">
                           Ký hiệu: <strong>{ex.signName}</strong>
                         </span>
                       )}
                     </div>
 
-                    <p className="text-sm font-bold text-slate-900 line-clamp-1">
+                    <p className="text-sm font-bold text-ink-900 line-clamp-1">
                       {ex.promptText || ex.instructionText || "Bài tập thực hành VSL"}
                     </p>
 
@@ -360,8 +360,8 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
                             key={oIdx}
                             className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
                               opt.isCorrect
-                                ? "bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold"
-                                : "bg-slate-50 text-slate-600 border border-slate-200"
+                                ? "bg-brand-100 text-brand-800 border border-brand-200 font-bold"
+                                : "bg-ink-50 text-ink-600 border border-ink-200"
                             }`}
                           >
                             {opt.isCorrect ? "✓ " : ""}{opt.labelText}
@@ -373,13 +373,13 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
                 </div>
 
                 {/* Right: Action Buttons (Reorder, Edit, Delete) */}
-                <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100 w-full sm:w-auto justify-end">
+                <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center border-t sm:border-t-0 pt-2 sm:pt-0 border-ink-100 w-full sm:w-auto justify-end">
                   <button
                     type="button"
                     disabled={idx === 0 || savingOrder}
                     onClick={() => moveExercise(idx, "up")}
                     title="Di chuyển lên trên"
-                    className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                    className="p-2 rounded-xl border border-ink-200 bg-white hover:bg-ink-50 text-ink-700 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
                   >
                     ⬆
                   </button>
@@ -388,7 +388,7 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
                     disabled={idx === exercises.length - 1 || savingOrder}
                     onClick={() => moveExercise(idx, "down")}
                     title="Di chuyển xuống dưới"
-                    className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                    className="p-2 rounded-xl border border-ink-200 bg-white hover:bg-ink-50 text-ink-700 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
                   >
                     ⬇
                   </button>
@@ -396,7 +396,7 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
                     type="button"
                     onClick={() => openEditModal(ex)}
                     title="Chỉnh sửa nội dung"
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors cursor-pointer"
+                    className="btn btn-secondary btn-sm cursor-pointer"
                   >
                     Sửa
                   </button>
@@ -404,7 +404,7 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
                     type="button"
                     onClick={() => handleDeleteExercise(ex.id)}
                     title="Xóa bài tập"
-                    className="px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-xs font-bold text-rose-700 transition-colors cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl border border-danger-200 bg-danger-50 hover:bg-danger-100 text-xs font-bold text-danger-700 transition-colors cursor-pointer"
                   >
                     Xóa
                   </button>
@@ -416,15 +416,15 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
       </div>
 
       {/* Content Blocks Section */}
-      <div className="mt-8 pt-8 border-t border-slate-200 space-y-4">
+      <div className="mt-8 pt-8 border-t border-ink-200 space-y-4">
         <div>
-          <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+          <h2 className="text-base font-semibold text-ink-900 flex items-center gap-2">
             <span>Các khối dẫn dắt & Mẹo bài học (Content Blocks)</span>
-            <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-slate-100 text-slate-600">
+            <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-ink-100 text-ink-600">
               {blocks.length} khối
             </span>
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-ink-500 mt-0.5">
             Các đoạn văn, giải thích văn hóa Điếc, mẹo ghi nhớ được đọc trước hoặc sau bài tập.
           </p>
         </div>
@@ -433,17 +433,17 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
           {blocks.map((b, idx) => (
             <div
               key={b.id}
-              className="p-3.5 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs"
+              className="p-3.5 bg-white rounded-xl border border-ink-200 flex items-center justify-between text-xs"
             >
               <div className="flex items-center gap-2.5">
-                <span className="font-extrabold text-slate-400">#{idx + 1}</span>
-                <span className="px-2 py-0.5 rounded font-black text-[10px] uppercase bg-amber-100 text-amber-800">
+                <span className="font-semibold text-ink-500">#{idx + 1}</span>
+                <span className="px-2 py-0.5 rounded font-bold text-xs uppercase bg-sun-100 text-sun-800">
                   {b.blockType}
                 </span>
-                <span className="font-bold text-slate-900">{b.title || "Khối nội dung"}</span>
-                <span className="text-slate-400 line-clamp-1 max-w-xs">{b.bodyText}</span>
+                <span className="font-bold text-ink-900">{b.title || "Khối nội dung"}</span>
+                <span className="text-ink-500 line-clamp-1 max-w-xs">{b.bodyText}</span>
               </div>
-              <span className="text-[10px] font-bold text-emerald-600 uppercase">{b.status}</span>
+              <span className="text-xs font-bold text-brand-600 uppercase">{b.status}</span>
             </div>
           ))}
         </div>
@@ -452,15 +452,15 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
       {/* Add / Edit Exercise Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <h3 className="font-black text-slate-900 text-base">
+          <div className="card max-w-lg w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-ink-100 pb-3 mb-4">
+              <h3 className="font-bold text-ink-900 text-base">
                 {editingExercise ? "Chỉnh sửa bài tập" : "Thêm bài tập mới"}
               </h3>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold"
+                className="text-ink-500 hover:text-ink-600 text-lg font-bold"
               >
                 &times;
               </button>
@@ -468,11 +468,11 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
 
             <form onSubmit={handleSaveExercise} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Dạng bài tập</label>
+                <label className="block font-bold text-ink-700 mb-1">Dạng bài tập</label>
                 <select
                   value={formType}
                   onChange={(e) => setFormType(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-white font-semibold"
+                  className="btn btn-secondary w-full"
                 >
                   <option value="SIGN_TO_MEANING">Ký hiệu &rarr; Nghĩa (Nhìn video chọn chữ)</option>
                   <option value="MEANING_TO_SIGN">Nghĩa &rarr; Ký hiệu (Nhìn chữ chọn video)</option>
@@ -483,35 +483,35 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Câu hỏi / Lời nhắc (Prompt)</label>
+                <label className="block font-bold text-ink-700 mb-1">Câu hỏi / Lời nhắc (Prompt)</label>
                 <input
                   type="text"
                   required
                   placeholder="Ví dụ: Ký hiệu này biểu thị điều gì?"
                   value={formPrompt}
                   onChange={(e) => setFormPrompt(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 font-semibold"
+                  className="w-full p-2.5 rounded-xl border border-ink-200 font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Hướng dẫn trước bài tập</label>
+                <label className="block font-bold text-ink-700 mb-1">Hướng dẫn trước bài tập</label>
                 <input
                   type="text"
                   placeholder="Ví dụ: Quan sát kỹ chuyển động ngón tay..."
                   value={formInstruction}
                   onChange={(e) => setFormInstruction(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200"
+                  className="w-full p-2.5 rounded-xl border border-ink-200"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Độ khó</label>
+                  <label className="block font-bold text-ink-700 mb-1">Độ khó</label>
                   <select
                     value={formDifficulty}
                     onChange={(e) => setFormDifficulty(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200"
+                    className="w-full p-2.5 rounded-xl border border-ink-200"
                   >
                     <option value="INTRO">Nhập môn (Intro)</option>
                     <option value="BASIC">Cơ bản (Basic)</option>
@@ -520,11 +520,11 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Kỹ năng</label>
+                  <label className="block font-bold text-ink-700 mb-1">Kỹ năng</label>
                   <select
                     value={formSkill}
                     onChange={(e) => setFormSkill(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200"
+                    className="w-full p-2.5 rounded-xl border border-ink-200"
                   >
                     <option value="RECOGNITION">Nhận diện (Recognition)</option>
                     <option value="RECALL">Gợi nhớ (Recall)</option>
@@ -535,8 +535,8 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
               </div>
 
               {/* Options */}
-              <div className="border-t border-slate-100 pt-3">
-                <label className="block font-bold text-slate-700 mb-2">Các đáp án lựa chọn (Tích tròn đáp án đúng):</label>
+              <div className="border-t border-ink-100 pt-3">
+                <label className="block font-bold text-ink-700 mb-2">Các đáp án lựa chọn (Tích tròn đáp án đúng):</label>
                 <div className="space-y-2">
                   {formOptions.map((opt, idx) => (
                     <div key={idx} className="flex items-center gap-2">
@@ -551,7 +551,7 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
                           }));
                           setFormOptions(updated);
                         }}
-                        className="w-4 h-4 text-[#0d9fa5] cursor-pointer"
+                        className="w-4 h-4 text-brand-500 cursor-pointer"
                       />
                       <input
                         type="text"
@@ -563,7 +563,7 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
                           setFormOptions(updated);
                         }}
                         className={`flex-1 p-2 rounded-xl border text-xs ${
-                          opt.isCorrect ? "border-emerald-400 bg-emerald-50/30 font-bold" : "border-slate-200"
+                          opt.isCorrect ? "border-brand-400 bg-brand-50/30 font-bold" : "border-ink-200"
                         }`}
                       />
                     </div>
@@ -571,17 +571,17 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-ink-100">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold hover:bg-slate-50 cursor-pointer"
+                  className="btn btn-secondary btn-sm cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#0d9fa5] hover:bg-[#08757a] text-white font-bold transition-colors cursor-pointer"
+                  className="btn btn-primary btn-sm cursor-pointer"
                 >
                   Lưu bài tập
                 </button>

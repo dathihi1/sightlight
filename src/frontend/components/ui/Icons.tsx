@@ -269,3 +269,105 @@ export function IconShield({ className = "w-5 h-5" }: IconProps) {
     </svg>
   );
 }
+
+/* ---------- Game icons (filled, two-tone) — dùng cho streak / XP / tim / huy hiệu ---------- */
+
+export function IconFlame({ className = "w-5 h-5" }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="var(--color-flame-400)" d="M12 2c1 3.5 5.5 5.6 5.5 11a5.5 5.5 0 0 1-11 0c0-2.4 1.1-4 2.4-5.2.3 1.6 1 2.6 2 3C10.2 7.6 11.3 4.5 12 2z" />
+      <path fill="var(--color-sun-300)" d="M12 12.5c.6 1.6 2.6 2.5 2.6 4.7a2.6 2.6 0 0 1-5.2 0c0-1.3.6-2.2 1.4-2.8.1.7.4 1.1.9 1.3-.1-1.3.1-2.3.3-3.2z" />
+    </svg>
+  );
+}
+
+export function IconGem({ className = "w-5 h-5" }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="var(--color-sky-400)" d="M6 3h12l4 6-10 12L2 9z" />
+      <path fill="var(--color-sky-200)" d="M6 3h12l-3 6H9z" />
+      <path fill="var(--color-sky-500)" d="M12 21 9 9h6z" opacity=".55" />
+    </svg>
+  );
+}
+
+export function IconStar({ className = "w-5 h-5" }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="var(--color-sun-400)"
+        stroke="var(--color-sun-500)"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        d="m12 2.5 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z"
+      />
+    </svg>
+  );
+}
+
+
+export function IconCheck({ className = "w-5 h-5" }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 12.5 10 17 19 7" />
+    </svg>
+  );
+}
+
+export function IconLock({ className = "w-5 h-5" }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M7 10V7a5 5 0 0 1 10 0v3h1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zm2 0h6V7a3 3 0 0 0-6 0z" />
+    </svg>
+  );
+}
+
+export function IconCrown({ className = "w-5 h-5" }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="var(--color-sun-400)" stroke="var(--color-sun-600)" strokeWidth="1.5" strokeLinejoin="round" d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z" />
+      <circle cx="12" cy="14.5" r="1.6" fill="var(--color-danger-400)" />
+    </svg>
+  );
+}
+
+export function IconPlay({ className = "w-5 h-5" }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.5-6.5a1 1 0 0 0 0-1.8L9.5 4.6A1 1 0 0 0 8 5.5z" />
+    </svg>
+  );
+}
+
+export function IconArrowRight({ className = "w-5 h-5" }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+export function IconSearch({ className = "w-5 h-5" }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
+export function IconLogout({ className = "w-5 h-5" }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+    </svg>
+  );
+}
+
+export function IconMenu({ className = "w-5 h-5" }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  );
+}

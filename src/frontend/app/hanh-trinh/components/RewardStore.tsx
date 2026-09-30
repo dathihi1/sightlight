@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { apiCall, ApiError } from "@/lib/api";
 import { StoreCatalogResponse, StoreItem } from "../types";
+import { IconStar } from "@/components/ui/Icons";
 
 interface RedeemRequest {
   itemId: string;
@@ -52,15 +53,15 @@ export function RewardStore() {
   if (catalogQuery.isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <p className="text-[var(--color-ink-600)]">{t("Đang tải cửa hàng…", "Loading store…")}</p>
+        <p className="text-ink-600">{t("Đang tải cửa hàng…", "Loading store…")}</p>
       </div>
     );
   }
 
   if (catalogQuery.isError || !catalogQuery.data) {
     return (
-      <div className="p-6 bg-[var(--color-error-50)] border border-[var(--color-error-200)] rounded-lg">
-        <p className="text-[var(--color-error-700)]">
+      <div className="p-6 bg-danger-50 border border-danger-200 rounded-xl">
+        <p className="text-danger-700">
           {t("Không thể tải cửa hàng. Vui lòng thử lại.", "Failed to load store. Please try again.")}
         </p>
       </div>
@@ -82,8 +83,8 @@ export function RewardStore() {
         <div
           className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-2xl px-5 py-3.5 text-sm font-bold text-white shadow-2xl transition-all animate-in fade-in slide-in-from-bottom-3 duration-200 ${
             toastType === "success"
-              ? "bg-[#10b981] border border-[#059669]/30"
-              : "bg-[#ef4444] border border-[#dc2626]/30"
+              ? "bg-brand-400 border border-brand-600/30"
+              : "bg-danger-500 border border-danger-600/30"
           }`}
         >
           <svg
@@ -108,21 +109,21 @@ export function RewardStore() {
       )}
 
       {/* EXP Balance Header */}
-      <div className="bg-gradient-to-r from-[#0d9fa5]/10 to-[#0a8287]/10 rounded-3xl p-8 border border-[#0d9fa5]/20">
+      <div className="rounded-3xl border border-sun-200 bg-sun-50 p-8">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold text-[#64748B] mb-1">
-              {t("Số dư EXP hiện tại", "Current EXP Balance")}
+            <p className="text-sm font-bold text-sun-700 mb-1">
+              {t("Số XP hiện có", "Your XP")}
             </p>
-            <p className="text-4xl font-extrabold text-[#0d9fa5]">{catalog.expBalance.toLocaleString()}</p>
+            <p className="text-5xl font-bold text-ink-900">{catalog.expBalance.toLocaleString()}</p>
           </div>
-          <div className="text-5xl">⭐</div>
+          <IconStar className="h-16 w-16" />
         </div>
       </div>
 
       {/* Consumables Section */}
       <div className="space-y-4">
-        <h3 className="text-xl font-bold text-[#0F172A]">
+        <h3 className="text-xl font-bold text-ink-900">
           {t("Vật phẩm có thể tiêu dùng", "Consumable Items")}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -142,7 +143,7 @@ export function RewardStore() {
 
       {/* Badges Section */}
       <div className="space-y-4">
-        <h3 className="text-xl font-bold text-[#0F172A]">
+        <h3 className="text-xl font-bold text-ink-900">
           {t("Huy hiệu danh dự", "Honor Badges")}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -191,33 +192,33 @@ function StoreItemCard({
 
   return (
     <div
-      className={`relative flex flex-col rounded-2xl p-5 border-2 transition-all ${
+      className={`relative flex flex-col rounded-2xl p-5 border transition-all ${
         item.owned
-          ? "border-[#0d9fa5] bg-[#0d9fa5]/5"
+          ? "border-brand-500 bg-brand-500/5"
           : canAfford
-            ? "border-[#E2DBD0] bg-white hover:border-[#0d9fa5] hover:shadow-md"
-            : "border-[#CBD5E1] bg-[#F1ECE4]/50 opacity-60"
+            ? "border-ink-200 bg-white hover:border-brand-500"
+            : "border-ink-300 bg-ink-100/50 opacity-60"
       }`}
     >
       {item.owned && (
-        <div className="absolute -top-3 -right-3 w-7 h-7 rounded-full bg-[#10b981] text-white flex items-center justify-center text-sm font-bold shadow-md">
+        <div className="absolute -top-3 -right-3 w-7 h-7 rounded-full bg-brand-400 text-white flex items-center justify-center text-sm font-bold">
           ✓
         </div>
       )}
 
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="text-4xl">{iconMap[item.iconType] || "🎁"}</div>
-        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FFA500]/10 border border-[#FFA500]/30">
-          <span>⭐</span>
-          <span className="text-xs font-bold text-[#F59E0B]">{item.expCost}</span>
-        </div>
+        <span className="chip bg-sun-100 text-sun-700">
+          <IconStar className="h-4 w-4" />
+          {item.expCost} XP
+        </span>
       </div>
 
-      <h4 className="text-sm font-bold text-[#0F172A] mb-1">{itemName}</h4>
-      <p className="text-xs text-[#64748B] mb-4 line-clamp-2">{itemDesc}</p>
+      <h4 className="text-sm font-bold text-ink-900 mb-1">{itemName}</h4>
+      <p className="text-xs text-ink-600 mb-4 line-clamp-2">{itemDesc}</p>
 
       {item.quantity && (
-        <p className="text-xs text-[#0d9fa5] font-semibold mb-3">
+        <p className="text-xs text-brand-500 font-semibold mb-3">
           {t(`Số lượng: ${item.quantity}`, `Quantity: ${item.quantity}`)}
         </p>
       )}
@@ -227,10 +228,10 @@ function StoreItemCard({
         disabled={item.owned || !canAfford || isRedeeming}
         className={`w-full py-2.5 rounded-lg text-xs font-bold transition-all ${
           item.owned
-            ? "bg-[#0d9fa5] text-white cursor-default"
+            ? "bg-brand-500 text-white cursor-default"
             : canAfford
-              ? "bg-[#0d9fa5] text-white hover:bg-[#0a8287] cursor-pointer"
-              : "bg-[#CBD5E1] text-[#94A3B8] cursor-not-allowed"
+              ? "bg-brand-500 text-white hover:bg-brand-600 cursor-pointer"
+              : "bg-ink-300 text-ink-400 cursor-not-allowed"
         } disabled:opacity-60`}
       >
         {item.owned

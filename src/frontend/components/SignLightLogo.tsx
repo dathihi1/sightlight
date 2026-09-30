@@ -9,17 +9,17 @@ export function SignLightLogo({ size = 40, className = "" }: { size?: number; cl
     >
       <defs>
         <linearGradient id="signLightLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#0284C7" />
-          <stop offset="100%" stopColor="#0d9fa5" />
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="100%" stopColor="var(--color-brand-100)" />
         </linearGradient>
         <filter id="signLightGlow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#0284C7" floodOpacity="0.35" />
+          <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="var(--color-brand-800)" floodOpacity="0.4" />
         </filter>
       </defs>
-      <rect width="200" height="200" rx="44" fill="#0F172A" />
+      <rect width="200" height="200" rx="52" fill="var(--color-brand-700)" /><rect width="200" height="188" rx="52" fill="var(--color-brand-400)" />
       <g filter="url(#signLightGlow)">
         {/* Light spark / beacon radiating light */}
-        <path d="M100 28 L104 46 L122 50 L104 54 L100 72 L96 54 L78 50 L96 46 Z" fill="#FACC15" />
+        <path d="M100 28 L104 46 L122 50 L104 54 L100 72 L96 54 L78 50 L96 46 Z" fill="var(--color-sun-400)" />
         {/* Stylized hand gesture conveying 'Light' & 'Sign' connection */}
         <path
           d="M72 145 C65 145 60 138 60 128 L60 92 C60 86 64 82 70 82 C76 82 80 86 80 92 L80 120"

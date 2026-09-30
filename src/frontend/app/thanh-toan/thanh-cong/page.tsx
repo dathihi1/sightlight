@@ -46,20 +46,20 @@ function SuccessContent() {
   return (
     <div className="mx-auto max-w-lg px-4 py-16 text-center space-y-6">
       {isPaid ? (
-        <div className="mx-auto w-20 h-20 rounded-full bg-[#e6f7f8] border-2 border-[#b2e7e9] flex items-center justify-center text-3xl text-[#0d9fa5] animate-bounce">
+        <div className="mx-auto w-20 h-20 rounded-full bg-brand-50 border border-brand-200 flex items-center justify-center text-3xl text-brand-500 animate-bounce">
           ✓
         </div>
       ) : (
-        <div className="mx-auto w-16 h-16 rounded-full border-4 border-[#0d9fa5] border-t-transparent animate-spin" />
+        <div className="mx-auto w-16 h-16 rounded-full border-4 border-brand-500 border-t-transparent animate-spin" />
       )}
 
       <div className="space-y-2">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A]">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-ink-900">
           {isPaid
             ? t("Thanh toán thành công!", "Payment Successful!")
             : t("Đang kiểm tra giao dịch…", "Verifying transaction…")}
         </h1>
-        <p className="text-sm text-[#64748B]">
+        <p className="text-sm text-ink-600">
           {isPaid
             ? t(
                 "Tài khoản của bạn đã được nâng cấp thành công lên gói Premium. Toàn bộ 17 Units và tính năng luyện AI không giới hạn đã sẵn sàng!",
@@ -73,26 +73,26 @@ function SuccessContent() {
       </div>
 
       {statusQuery.data && (
-        <div className="bg-white rounded-2xl p-5 border border-[#E2DBD0] text-left space-y-2 text-xs text-[#475569]">
+        <div className="card p-5 text-left space-y-2 text-xs text-ink-700">
           <div className="flex justify-between">
-            <span className="text-[#94A3B8]">{t("Mã đơn hàng:", "Order Code:")}</span>
-            <span className="font-semibold text-[#0F172A]">#{statusQuery.data.orderCode}</span>
+            <span className="text-ink-500">{t("Mã đơn hàng:", "Order Code:")}</span>
+            <span className="font-semibold text-ink-900">#{statusQuery.data.orderCode}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-[#94A3B8]">{t("Mã tham chiếu:", "Order Ref:")}</span>
-            <span className="font-mono text-[#0F172A]">{statusQuery.data.orderRef}</span>
+            <span className="text-ink-500">{t("Mã tham chiếu:", "Order Ref:")}</span>
+            <span className="font-mono text-ink-900">{statusQuery.data.orderRef}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-[#94A3B8]">{t("Số tiền:", "Amount:")}</span>
-            <span className="font-bold text-[#0d9fa5]">
+            <span className="text-ink-500">{t("Số tiền:", "Amount:")}</span>
+            <span className="font-bold text-brand-500">
               {statusQuery.data.amount.toLocaleString("vi-VN")} đ
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-[#94A3B8]">{t("Trạng thái:", "Status:")}</span>
+            <span className="text-ink-500">{t("Trạng thái:", "Status:")}</span>
             <span
               className={`font-bold uppercase ${
-                isPaid ? "text-[#0d9fa5]" : "text-amber-500"
+                isPaid ? "text-brand-500" : "text-sun-500"
               }`}
             >
               {statusQuery.data.status}
@@ -106,13 +106,13 @@ function SuccessContent() {
           <>
             <Link
               href="/hoc"
-              className="rounded-full bg-[#0d9fa5] hover:bg-[#0a8287] px-6 py-3 font-bold text-sm text-white shadow-md transition-all hover:scale-[1.02]"
+              className="btn btn-primary"
             >
               {t("Khám phá 17 Units ngay", "Explore 17 Units now")}
             </Link>
             <Link
               href="/luyen-ai"
-              className="rounded-full border border-[#E2DBD0] bg-white hover:bg-[#F4EFE6] px-6 py-3 font-bold text-sm text-[#0F172A] transition-all"
+              className="btn btn-secondary"
             >
               {t("Luyện Camera AI", "Practice Camera AI")}
             </Link>
@@ -122,14 +122,14 @@ function SuccessContent() {
             {orderCode && (
               <Link
                 href={`/thanh-toan?orderCode=${orderCode}`}
-                className="rounded-full bg-[#0d9fa5] hover:bg-[#0a8287] px-6 py-3 font-bold text-sm text-white shadow-md transition-all hover:scale-[1.02]"
+                className="btn btn-primary"
               >
                 {t("Xem mã QR & Chuyển khoản", "View QR Code & Transfer")}
               </Link>
             )}
             <Link
               href="/nang-cap"
-              className="rounded-full border border-[#E2DBD0] bg-white hover:bg-[#F4EFE6] px-6 py-3 font-bold text-sm text-[#0F172A] transition-all"
+              className="btn btn-secondary"
             >
               {t("Quay lại trang Gói", "Back to Plans")}
             </Link>
@@ -145,7 +145,7 @@ export default function PaymentSuccessPage() {
     <Suspense
       fallback={
         <div className="mx-auto max-w-lg px-4 py-16 text-center">
-          <p className="text-sm text-[#64748B]">Đang tải thông tin giao dịch…</p>
+          <p className="text-sm text-ink-600">Đang tải thông tin giao dịch…</p>
         </div>
       }
     >

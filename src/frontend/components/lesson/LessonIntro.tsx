@@ -1,4 +1,8 @@
+import Link from "next/link";
 import { ContentBlockNode } from "@/lib/lesson-types";
+import { Mascot } from "@/components/ui/Mascot";
+import { SignVideoPlayer } from "@/components/SignVideoPlayer";
+import { IconCheck } from "@/components/ui/Icons";
 
 interface LessonIntroProps {
   title: string;
@@ -26,70 +30,55 @@ export function LessonIntro({
   onStart,
 }: LessonIntroProps) {
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-[var(--color-ink-900)]">{title}</h1>
+    <div className="mx-auto max-w-2xl px-4 pb-32 pt-8">
+      <Link href="/hoc" className="btn btn-ghost btn-sm -ml-3">
+        ← Lộ trình
+      </Link>
 
-        {/* Metadata badges */}
-        <div className="flex flex-wrap gap-2 text-sm">
-          {topic && (
-            <span className="px-3 py-1 bg-[var(--color-brand-100)] text-[var(--color-brand-700)] rounded-full">
-              {topic}
-            </span>
-          )}
-          {targetLevel && (
-            <span className="px-3 py-1 bg-[var(--color-ink-100)] text-[var(--color-ink-700)] rounded-full">
-              {targetLevel}
-            </span>
-          )}
-          {estimatedMinutes && (
-            <span className="px-3 py-1 bg-[var(--color-ink-100)] text-[var(--color-ink-700)] rounded-full">
-              {estimatedMinutes} phút
-            </span>
-          )}
+      <div className="mt-4 flex items-center gap-5">
+        <Mascot className="w-24 shrink-0" wave />
+        <div>
+          <div className="flex flex-wrap gap-2">
+            {topic && <span className="chip bg-brand-100 text-brand-700">{topic}</span>}
+            {targetLevel && <span className="chip bg-sky-100 text-sky-700">{targetLevel}</span>}
+            {estimatedMinutes && <span className="chip bg-sun-100 text-sun-700">{estimatedMinutes} phút</span>}
+          </div>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink-900 sm:text-4xl">{title}</h1>
         </div>
       </div>
 
-      {/* Summary */}
-      {summary && (
-        <div className="p-4 bg-[var(--color-brand-50)] rounded-lg">
-          <p className="text-[var(--color-ink-700)]">{summary}</p>
-        </div>
-      )}
+      {summary && <p className="mt-6 text-lg leading-relaxed text-ink-600">{summary}</p>}
 
-      {/* Learning Objectives */}
       {learningObjectives && learningObjectives.length > 0 && (
-        <div className="space-y-2">
-          <h2 className="text-lg font-semibold text-[var(--color-ink-900)]">Mục tiêu học tập</h2>
-          <ul className="space-y-2">
+        <div className="card mt-6 p-6">
+          <h2 className="text-lg font-bold text-ink-900">Sau bài này bạn sẽ</h2>
+          <ul className="mt-3 space-y-3">
             {learningObjectives.map((objective, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <span className="text-[var(--color-brand-600)] mt-1">✓</span>
-                <span className="text-[var(--color-ink-700)]">{objective}</span>
+              <li key={idx} className="flex items-start gap-3 text-base text-ink-700 font-semibold">
+                <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-400 text-white">
+                  <IconCheck className="h-3.5 w-3.5" />
+                </span>
+                {objective}
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      {/* Content Blocks */}
       {blocks && blocks.length > 0 && (
-        <div className="space-y-4">
+        <div className="mt-6 space-y-4">
           {blocks.map((block) => (
             <ContentBlock key={block.id} block={block} />
           ))}
         </div>
       )}
 
-      {/* Start Button */}
-      <div className="pt-4">
-        <button
-          onClick={onStart}
-          className="w-full py-3 px-6 bg-[var(--color-brand-600)] text-white rounded-lg font-medium hover:bg-[var(--color-brand-700)] transition-colors"
-        >
-          Bắt đầu luyện tập
-        </button>
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ink-100 bg-white">
+        <div className="mx-auto flex max-w-2xl justify-end px-4 py-5">
+          <button onClick={onStart} className="btn btn-primary btn-lg w-full sm:w-64">
+            Bắt đầu
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -123,9 +112,9 @@ function ContentBlock({ block }: { block: ContentBlockNode }) {
 
 function IntroBlock({ block }: { block: ContentBlockNode }) {
   return (
-    <div className="p-4 bg-white border border-[var(--color-ink-200)] rounded-lg">
-      {block.title && <h3 className="font-semibold text-[var(--color-ink-900)] mb-2">{block.title}</h3>}
-      {block.bodyText && <p className="text-[var(--color-ink-700)]">{block.bodyText}</p>}
+    <div className="card-flat p-5">
+      {block.title && <h3 className="font-bold text-ink-900 mb-2">{block.title}</h3>}
+      {block.bodyText && <p className="text-ink-700 font-semibold">{block.bodyText}</p>}
     </div>
   );
 }
@@ -133,13 +122,13 @@ function IntroBlock({ block }: { block: ContentBlockNode }) {
 function ObjectivesBlock({ block }: { block: ContentBlockNode }) {
   const objectives = block.payload?.objectives || [];
   return (
-    <div className="p-4 bg-[var(--color-brand-50)] border border-[var(--color-brand-200)] rounded-lg">
-      <h3 className="font-semibold text-[var(--color-ink-900)] mb-3">Mục tiêu</h3>
+    <div className="rounded-3xl border border-brand-200 bg-brand-50 p-5">
+      <h3 className="font-bold text-ink-900 mb-3">Mục tiêu</h3>
       <ul className="space-y-2">
         {objectives.map((obj: string, idx: number) => (
           <li key={idx} className="flex items-start gap-2">
-            <span className="text-[var(--color-brand-600)]">✓</span>
-            <span className="text-[var(--color-ink-700)]">{obj}</span>
+            <span className="text-brand-600">✓</span>
+            <span className="text-ink-700 font-semibold">{obj}</span>
           </li>
         ))}
       </ul>
@@ -149,13 +138,11 @@ function ObjectivesBlock({ block }: { block: ContentBlockNode }) {
 
 function SignCardBlock({ block }: { block: ContentBlockNode }) {
   return (
-    <div className="p-4 bg-white border-2 border-[var(--color-brand-300)] rounded-lg">
-      {block.title && <h3 className="text-xl font-bold text-[var(--color-ink-900)] mb-2">{block.title}</h3>}
-      {block.bodyText && <p className="text-[var(--color-ink-700)] mb-3">{block.bodyText}</p>}
+    <div className="card p-5">
+      {block.title && <h3 className="text-xl font-bold text-ink-900 mb-2">{block.title}</h3>}
+      {block.bodyText && <p className="text-ink-700 font-semibold mb-3">{block.bodyText}</p>}
       {block.mediaRef && (
-        <div className="rounded overflow-hidden bg-[var(--color-ink-100)]">
-          <video src={block.mediaRef} controls className="w-full" />
-        </div>
+        <SignVideoPlayer videoUrl={block.mediaRef} title={block.title} autoPlay={false} />
       )}
     </div>
   );
@@ -163,12 +150,12 @@ function SignCardBlock({ block }: { block: ContentBlockNode }) {
 
 function MemoryTipBlock({ block }: { block: ContentBlockNode }) {
   return (
-    <div className="p-4 bg-[var(--color-warning-50)] border border-[var(--color-warning-200)] rounded-lg">
+    <div className="rounded-3xl border border-sun-200 bg-sun-50 p-5">
       <div className="flex items-start gap-2">
-        <span className="text-2xl">💡</span>
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sun-400 text-lg font-bold text-ink-900" aria-hidden="true">!</span>
         <div>
-          <h3 className="font-semibold text-[var(--color-ink-900)] mb-1">Mẹo ghi nhớ</h3>
-          {block.bodyText && <p className="text-[var(--color-ink-700)]">{block.bodyText}</p>}
+          <h3 className="font-bold text-ink-900 mb-1">Mẹo ghi nhớ</h3>
+          {block.bodyText && <p className="text-ink-700 font-semibold">{block.bodyText}</p>}
         </div>
       </div>
     </div>
@@ -177,11 +164,11 @@ function MemoryTipBlock({ block }: { block: ContentBlockNode }) {
 
 function ExampleBlock({ block }: { block: ContentBlockNode }) {
   return (
-    <div className="p-4 bg-[var(--color-ink-50)] border border-[var(--color-ink-200)] rounded-lg">
-      <h3 className="font-semibold text-[var(--color-ink-900)] mb-2">Ví dụ</h3>
-      {block.bodyText && <p className="text-[var(--color-ink-700)] italic">{block.bodyText}</p>}
+    <div className="rounded-3xl border border-ink-200 bg-ink-50 p-5">
+      <h3 className="font-bold text-ink-900 mb-2">Ví dụ</h3>
+      {block.bodyText && <p className="text-ink-700 font-semibold italic">{block.bodyText}</p>}
       {block.payload?.translation && (
-        <p className="text-[var(--color-ink-600)] text-sm mt-1">→ {block.payload.translation}</p>
+        <p className="text-ink-600 text-sm mt-1">→ {block.payload.translation}</p>
       )}
     </div>
   );
@@ -190,13 +177,13 @@ function ExampleBlock({ block }: { block: ContentBlockNode }) {
 function SummaryBlock({ block }: { block: ContentBlockNode }) {
   const keyPoints = block.payload?.keyPoints || [];
   return (
-    <div className="p-4 bg-[var(--color-success-50)] border border-[var(--color-success-200)] rounded-lg">
-      <h3 className="font-semibold text-[var(--color-ink-900)] mb-2">Tóm tắt</h3>
-      {block.bodyText && <p className="text-[var(--color-ink-700)] mb-3">{block.bodyText}</p>}
+    <div className="rounded-3xl border border-brand-200 bg-brand-50 p-5">
+      <h3 className="font-bold text-ink-900 mb-2">Tóm tắt</h3>
+      {block.bodyText && <p className="text-ink-700 font-semibold mb-3">{block.bodyText}</p>}
       {keyPoints.length > 0 && (
         <ul className="space-y-1">
           {keyPoints.map((point: string, idx: number) => (
-            <li key={idx} className="text-[var(--color-ink-700)] text-sm">
+            <li key={idx} className="text-ink-700 font-semibold text-sm">
               • {point}
             </li>
           ))}
@@ -208,9 +195,9 @@ function SummaryBlock({ block }: { block: ContentBlockNode }) {
 
 function GenericBlock({ block }: { block: ContentBlockNode }) {
   return (
-    <div className="p-4 bg-white border border-[var(--color-ink-200)] rounded-lg">
-      {block.title && <h3 className="font-semibold text-[var(--color-ink-900)] mb-2">{block.title}</h3>}
-      {block.bodyText && <p className="text-[var(--color-ink-700)]">{block.bodyText}</p>}
+    <div className="card-flat p-5">
+      {block.title && <h3 className="font-bold text-ink-900 mb-2">{block.title}</h3>}
+      {block.bodyText && <p className="text-ink-700 font-semibold">{block.bodyText}</p>}
     </div>
   );
 }

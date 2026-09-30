@@ -8,9 +8,11 @@ export function ErrorNotice({ message }: { message: string }) {
   return (
     <p
       role="alert"
-      className="flex items-start gap-2 rounded-lg bg-[var(--color-danger-050)] px-4 py-3 text-sm text-[var(--color-danger-700)]"
+      className="flex items-start gap-3 rounded-2xl border border-danger-200 bg-danger-50 px-4 py-3 text-base font-bold text-danger-700"
     >
-      <span aria-hidden="true">⚠</span>
+      <span aria-hidden="true" className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-danger-500 text-sm font-bold text-white">
+        !
+      </span>
       <span>{message}</span>
     </p>
   );

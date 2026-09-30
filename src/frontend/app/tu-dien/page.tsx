@@ -4,6 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ErrorNotice } from "@/components/ErrorNotice";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Mascot } from "@/components/ui/Mascot";
+import { IconPlay } from "@/components/ui/Icons";
 import { SignVideoPlayer } from "@/components/SignVideoPlayer";
 import { apiCall } from "@/lib/api";
 
@@ -73,6 +76,15 @@ export default function DictionaryPage() {
     setActiveVariantIndex(0);
   }, [selectedSignId]);
 
+  // Ô tìm kiếm trên thanh trên (AppShell) chuyển sang đây với ?q=
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) {
+      setInput(q);
+      setQuery(q);
+    }
+  }, []);
+
   // Đóng modal khi nhấn ESC
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -88,12 +100,16 @@ export default function DictionaryPage() {
   const activeVariant = variants[activeVariantIndex] ?? variants[0];
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#0F172A]">Từ điển ký hiệu VSL-400</h1>
-        <p className="text-sm text-[var(--color-ink-600)]">
-          Tra cứu hơn 400 từ vựng ký hiệu chuẩn kèm video hướng dẫn thực tế theo vùng miền. Gõ có dấu hay không dấu đều được.
-        </p>
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 space-y-8">
+      <header className="flex items-center gap-5">
+        <Mascot className="hidden w-20 shrink-0 sm:block" mood="wow" />
+        <div>
+          <p className="eyebrow text-sky-700">Từ điển VSL</p>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight text-ink-900 sm:text-4xl">Tra ký hiệu</h1>
+          <p className="mt-1 text-base text-ink-600">
+            400 ký hiệu kèm video mẫu theo vùng miền. Gõ có dấu hay không dấu đều được.
+          </p>
+        </div>
       </header>
 
       <form
@@ -111,75 +127,88 @@ export default function DictionaryPage() {
           id="q"
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          placeholder="Nhập từ cần tra (vd: Anh, Cảm ơn, Cái bàn)..."
-          className="flex-1 rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3 text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0d9fa5]"
+          placeholder="Ví dụ: cảm ơn, gia đình, cái bàn"
+          className="input h-14 flex-1 text-lg"
         />
         <button
           type="submit"
-          className="rounded-xl bg-[#0d9fa5] px-6 py-3 font-semibold text-white shadow-sm hover:bg-[#08757a] transition-colors"
+          className="btn btn-primary h-14"
         >
           Tra cứu
         </button>
       </form>
 
-      {search.isError && <ErrorNotice message="Không tra cứu được, vui lòng thử lại." />}
-      {search.isLoading && query && <p className="text-[var(--color-ink-600)]">Đang tìm kiếm...</p>}
+      {!query && (
+        <div>
+          <p className="text-sm font-bold text-ink-500">Thử tra</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {["Cảm ơn", "Xin chào", "Gia đình", "Yêu thương", "Ăn", "Uống nước"].map((w) => (
+              <button
+                key={w}
+                type="button"
+                onClick={() => {
+                  setInput(w);
+                  setQuery(w);
+                }}
+                className="rounded-2xl border border-ink-200 bg-white px-4 py-2 text-base font-semibold text-ink-700 hover:bg-ink-50"
+              >
+                {w}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {search.isError && <ErrorNotice message="Không tra cứu được. Kiểm tra mạng rồi thử lại." />}
+      {search.isLoading && query && <p className="text-base font-bold text-ink-600" role="status">Đang tìm…</p>}
 
       {search.data && (
         <section className="space-y-3">
-          <p className="text-sm font-medium text-[var(--color-ink-600)]">
+          <p className="text-base font-bold text-ink-600">
             Tìm thấy {search.data.totalElements} kết quả cho &ldquo;{query}&rdquo;
           </p>
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {search.data.items.map((sign) => (
-              <li
-                key={sign.id}
-                className="group flex flex-col justify-between rounded-2xl border border-[#E2DBD0] bg-white p-5 shadow-sm transition-all hover:border-[#0d9fa5] hover:shadow-md"
-              >
+              <li key={sign.id}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSignId(sign.id)}
+                  className="card card-interactive group flex h-full w-full flex-col justify-between p-5 text-left hover:border-sky-300"
+                >
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-lg font-bold text-[#0F172A] group-hover:text-[#0d9fa5] transition-colors">
+                    <h3 className="text-xl font-bold text-ink-900">
                       {sign.word}
                     </h3>
                     {sign.aiRecognizable && (
-                      <span className="shrink-0 rounded-full bg-[#e6f7f8] border border-[#b2e7e9] px-2.5 py-0.5 text-xs font-semibold text-[#08757a]">
+                      <span className="chip shrink-0 bg-grape-100 text-grape-700">
                         Chấm AI
                       </span>
                     )}
                   </div>
 
                   {sign.meaning && (
-                    <p className="text-sm text-[#475569] line-clamp-2">{sign.meaning}</p>
+                    <p className="text-base text-ink-600 line-clamp-2">{sign.meaning}</p>
                   )}
 
                   {sign.topic && (
-                    <p className="text-xs text-[#64748B]">Chủ đề: {sign.topic}</p>
+                    <p className="text-sm font-bold text-ink-500">{sign.topic}</p>
                   )}
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-[#F1F5F9] flex items-center justify-between">
-                  <span className="text-xs text-[#94A3B8]">
-                    {sign.wordClass ? `Từ loại: ${sign.wordClass}` : ""}
+                <div className="mt-4 flex items-center justify-between border-t border-ink-100 pt-3">
+                  <span className="text-sm font-bold text-ink-500">{sign.wordClass ?? ""}</span>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-sky-600">
+                    <IconPlay className="h-4 w-4" /> Xem video
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedSignId(sign.id)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#e6f7f8] px-3 py-1.5 text-xs font-bold text-[#08757a] hover:bg-[#0d9fa5] hover:text-white transition-colors"
-                  >
-                    <span>▶</span>
-                    <span>Xem video</span>
-                  </button>
                 </div>
+                </button>
               </li>
             ))}
           </ul>
 
           {search.data.items.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-[#CBD5E1] p-8 text-center">
-              <p className="text-[#64748B]">
-                Chưa có ký hiệu nào khớp với từ khóa. Bạn có thể thử tìm từ khác hoặc liên hệ để bổ sung.
-              </p>
-            </div>
+            <EmptyState heading="h2" title="Không tìm thấy ký hiệu" body="Thử từ khác, hoặc bỏ bớt từ trong cụm." mood="sad" />
           )}
         </section>
       )}
@@ -193,14 +222,14 @@ export default function DictionaryPage() {
           onClick={() => setSelectedSignId(null)}
         >
           <div
-            className="relative w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl border border-[#E2DBD0] space-y-4 max-h-[90vh] overflow-y-auto"
+            className="card relative w-full max-w-2xl space-y-4 max-h-[90vh] overflow-y-auto p-6"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Nút đóng */}
             <button
               type="button"
               onClick={() => setSelectedSignId(null)}
-              className="absolute right-4 top-4 rounded-full p-2 text-[#64748B] hover:bg-[#F1F5F9] transition-colors"
+              className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-xl text-xl font-bold text-ink-500 hover:bg-ink-100"
               aria-label="Đóng"
             >
               ✕
@@ -208,7 +237,7 @@ export default function DictionaryPage() {
 
             {signDetail.isLoading && (
               <div className="flex h-64 items-center justify-center">
-                <p className="text-sm text-[#64748B]">Đang tải video ký hiệu...</p>
+                <p className="text-base font-bold text-ink-600" role="status">Đang tải video…</p>
               </div>
             )}
 
@@ -222,31 +251,32 @@ export default function DictionaryPage() {
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-2xl font-bold text-[#0F172A]">{signDetail.data.word}</h2>
+                    <h2 className="text-3xl font-bold text-ink-900">{signDetail.data.word}</h2>
                     {signDetail.data.wordClass && (
-                      <span className="rounded-md bg-[#F1F5F9] px-2 py-0.5 text-xs text-[#64748B]">
+                      <span className="chip bg-ink-100 text-ink-600">
                         {signDetail.data.wordClass}
                       </span>
                     )}
                   </div>
                   {signDetail.data.meaning && (
-                    <p className="text-sm text-[#475569] mt-1">{signDetail.data.meaning}</p>
+                    <p className="mt-1 text-lg text-ink-600">{signDetail.data.meaning}</p>
                   )}
                 </div>
 
                 {/* Bộ chọn biến thể vùng miền nếu có nhiều video */}
                 {variants.length > 1 && (
                   <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                    <span className="text-xs font-semibold text-[#64748B]">Biến thể:</span>
+                    <span className="text-sm font-bold text-ink-500">Biến thể</span>
                     {variants.map((v, idx) => (
                       <button
                         key={v.id}
                         type="button"
                         onClick={() => setActiveVariantIndex(idx)}
-                        className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
+                        aria-pressed={idx === activeVariantIndex}
+                        className={`shrink-0 rounded-xl border px-3 py-1.5 text-sm font-semibold transition-colors ${
                           idx === activeVariantIndex
-                            ? "bg-[#0d9fa5] text-white shadow-sm"
-                            : "bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0]"
+                            ? "border-brand-300 bg-brand-50 text-brand-700"
+                            : "border-ink-200 text-ink-600 hover:bg-ink-50"
                         }`}
                       >
                         {v.regionLabel || `Bản ${idx + 1}`}
@@ -265,7 +295,7 @@ export default function DictionaryPage() {
                 />
 
                 {/* Thông tin chi tiết */}
-                <div className="rounded-xl bg-[#F8FAFC] p-3 text-xs text-[#64748B] flex flex-wrap items-center justify-between gap-2">
+                <div className="rounded-2xl bg-ink-50 p-4 text-sm text-ink-600 flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <span>Khu vực: <strong>{activeVariant?.regionLabel || "Toàn quốc"}</strong></span>
                     {activeVariant?.signerLabel && (
@@ -282,15 +312,15 @@ export default function DictionaryPage() {
                   {signDetail.data.aiRecognizable && (
                     <Link
                       href={`/luyen-ai?signId=${signDetail.data.id}`}
-                      className="rounded-xl bg-[#08757a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#065b5f] transition-colors"
+                      className="btn btn-grape btn-sm"
                     >
-                      Luyện ký hiệu này với AI →
+                      Luyện với AI
                     </Link>
                   )}
                   <button
                     type="button"
                     onClick={() => setSelectedSignId(null)}
-                    className="rounded-xl border border-[#CBD5E1] px-4 py-2 text-sm font-semibold text-[#475569] hover:bg-[#F1F5F9] transition-colors"
+                    className="btn btn-secondary btn-sm"
                   >
                     Đóng
                   </button>

@@ -3,14 +3,58 @@
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ErrorNotice } from "@/components/ErrorNotice";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Mascot } from "@/components/ui/Mascot";
+import { Confetti, CountUp } from "@/components/ui/Celebrate";
+import { IconCheck, IconFlame, IconStar } from "@/components/ui/Icons";
 import { LessonIntro } from "@/components/lesson/LessonIntro";
 import { ExerciseHeader } from "@/components/lesson/ExerciseHeader";
 import { ExerciseRenderer } from "@/components/lesson/ExerciseRenderer";
 import { SignVideoPlayer } from "@/components/SignVideoPlayer";
 import { ApiError, apiCall } from "@/lib/api";
 import { LessonResult, AnswerResult, CompleteResult, MatchPair } from "@/lib/lesson-types";
+
+/** Lời khen / động viên luân phiên theo số câu đã làm — thay đổi để phản hồi không nhàm. */
+const PRAISE = ["Chính xác!", "Tuyệt vời!", "Làm tốt lắm!", "Quá chuẩn!", "Xuất sắc!"];
+const ENCOURAGE = ["Chưa đúng", "Chưa đúng rồi", "Chưa chính xác"];
+
+/** Thanh trên cùng khi làm bài: nút thoát + thanh tiến độ tổng. */
+function LessonTopBar({ percent }: { percent: number }) {
+  return (
+    <div className="mx-auto flex w-full max-w-4xl items-center gap-4 px-4 pt-6">
+      <Link
+        href="/hoc"
+        aria-label="Thoát bài học, quay lại lộ trình"
+        className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-2xl font-bold text-ink-400 hover:bg-ink-100 hover:text-ink-700"
+      >
+        ✕
+      </Link>
+      <div
+        className="progress flex-1"
+        role="progressbar"
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Tiến độ bài học"
+      >
+        <span className="transition-[width] duration-500" style={{ width: `${Math.max(percent, 4)}%` }} />
+      </div>
+    </div>
+  );
+}
+
+/** Thanh hành động dính đáy, nền trung tính — kết quả đúng/sai hiện trong nội dung, không tô màu cả thanh. */
+function ActionFooter({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="sticky bottom-0 z-40 mt-10 border-t border-ink-200 bg-white/90 backdrop-blur">
+      <div className="mx-auto flex max-w-4xl justify-end px-4 py-4">
+        <div className="w-full sm:w-56">{children}</div>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Lesson page mới với hỗ trợ:
@@ -23,13 +67,11 @@ export default function NewLessonPage() {
   const router = useRouter();
   const lessonId = params.lessonId;
 
-  // Fetch lesson data
   const lesson = useQuery({
     queryKey: ["lesson", lessonId],
     queryFn: () => apiCall<LessonResult>(`/api/v1/lessons/${lessonId}`),
   });
 
-  // UI state
   const [showIntro, setShowIntro] = useState(true);
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [index, setIndex] = useState(0);
@@ -41,36 +83,37 @@ export default function NewLessonPage() {
   const [summary, setSummary] = useState<CompleteResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Số câu đúng liên tiếp (combo) và bộ đếm để phát lại hiệu ứng mỗi lần trả lời.
+  const [combo, setCombo] = useState(0);
+  const [answered, setAnswered] = useState(0);
+  const feedbackRef = useRef<HTMLDivElement>(null);
 
-  // Loading state
+  // Sau mỗi lần chấm, đưa thẻ phản hồi vào tầm nhìn (tránh bị thanh nút dưới che mất).
+  useEffect(() => {
+    if (answered > 0) feedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [answered]);
+
   if (lesson.isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <p className="text-[var(--color-ink-600)]">Đang tải bài học…</p>
-      </div>
-    );
+    return <EmptyState title="Đang tải bài học…" mood="wow" />;
   }
 
-  // Error state
   if (lesson.isError || !lesson.data) {
-    const message =
-      lesson.error instanceof ApiError ? lesson.error.errorMessage : "Không tải được bài học.";
+    const message = lesson.error instanceof ApiError ? lesson.error.errorMessage : "Không tải được bài học.";
     return (
-      <div className="space-y-4">
-        <ErrorNotice message={message} />
-        <Link href="/hoc" className="text-[var(--color-brand-600)] underline">
+      <EmptyState title="Không mở được bài học" body={message} mood="sad">
+        <Link href="/hoc" className="btn btn-primary">
           Quay lại lộ trình
         </Link>
-      </div>
+      </EmptyState>
     );
   }
 
   const exercises = lesson.data.exercises;
   const blocks = lesson.data.blocks || [];
-  const hasIntro = blocks.some(b => b.blockType === "INTRO");
-  const signCards = blocks.filter(b => b.blockType === "SIGN_CARD");
+  const hasIntro = blocks.some((b) => b.blockType === "INTRO");
+  const signCards = blocks.filter((b) => b.blockType === "SIGN_CARD");
+  const totalSteps = signCards.length + (exercises?.length ?? 0) || 1;
 
-  // Show intro if has intro block and not started yet
   if (showIntro && hasIntro) {
     return (
       <LessonIntro
@@ -83,169 +126,130 @@ export default function NewLessonPage() {
         blocks={lesson.data.blocks}
         onStart={() => {
           setShowIntro(false);
-          // Start with SIGN_CARD blocks if available
-          if (signCards.length > 0) {
-            setCurrentBlockIndex(0);
-          }
+          if (signCards.length > 0) setCurrentBlockIndex(0);
         }}
       />
     );
   }
 
-  // Show SIGN_CARD blocks before exercises (interleaved teaching)
+  // Thẻ ký hiệu mới — dạy trước khi làm bài tập
   if (currentBlockIndex < signCards.length) {
     const card = signCards[currentBlockIndex];
-    const progressPercent = Math.round(((currentBlockIndex + 1) / signCards.length) * 100);
+    const isLast = currentBlockIndex === signCards.length - 1;
 
     return (
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <Link href="/hoc" className="text-[var(--color-brand-600)] hover:underline flex items-center gap-1 text-sm font-medium">
-            ← Quay lại lộ trình
-          </Link>
-          <h2 className="text-lg font-bold text-[var(--color-ink-900)] truncate max-w-[60%] text-center">
-            {lesson.data.title}
-          </h2>
-          <div className="text-xs font-semibold text-[var(--color-ink-500)]">
-            Học từ mới: {currentBlockIndex + 1}/{signCards.length}
-          </div>
-        </div>
+      <div className="flex min-h-screen flex-col">
+        <LessonTopBar percent={Math.round((currentBlockIndex / totalSteps) * 100)} />
 
-        {/* Progress bar */}
-        <div className="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
-          <div
-            className="bg-[var(--color-brand-600)] h-2 rounded-full transition-all duration-300"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
+        <main className="mx-auto w-full max-w-4xl flex-1 px-4 pt-8">
+          <span className="chip bg-grape-100 text-grape-700">
+            Ký hiệu mới · {currentBlockIndex + 1}/{signCards.length}
+          </span>
+          {card.title && <h1 className="mt-3 text-4xl font-bold tracking-tight text-ink-900 sm:text-5xl">{card.title}</h1>}
 
-        <div className="p-6 sm:p-8 bg-white border border-[var(--color-ink-200)] rounded-2xl shadow-sm space-y-6">
-          <div className="text-center space-y-3">
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 rounded-full text-xs font-bold uppercase tracking-wider">
-              <span>📖</span>
-              <span>Bước 1: Học từ mới ({currentBlockIndex + 1}/{signCards.length})</span>
-            </div>
-
-            {card.title && (
-              <h3 className="text-3xl sm:text-4xl font-extrabold text-[var(--color-ink-900)] tracking-tight">
-                {card.title}
-              </h3>
-            )}
-
-            {card.bodyText && (
-              <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl px-5 py-3.5 max-w-lg mx-auto shadow-xs">
-                <span className="text-xs font-bold uppercase tracking-wider text-amber-700 block mb-0.5">
-                  Ý nghĩa / Định nghĩa
-                </span>
-                <p className="text-lg sm:text-xl font-bold text-amber-950">
-                  {card.bodyText}
-                </p>
+          <div className="mt-6">
+            {card.mediaRef ? (
+              <SignVideoPlayer videoUrl={card.mediaRef} title={card.title || undefined} autoPlay={true} loop={true} />
+            ) : (
+              <div className="grid aspect-video place-items-center rounded-3xl border border-ink-200 bg-ink-50 text-base font-bold text-ink-500">
+                Đang tải video mẫu…
               </div>
             )}
           </div>
 
-          {card.mediaRef ? (
-            <div className="max-w-md mx-auto rounded-2xl overflow-hidden shadow-md border border-[var(--color-ink-200)] bg-black">
-              <SignVideoPlayer
-                videoUrl={card.mediaRef}
-                title={card.title || undefined}
-                autoPlay={true}
-                loop={true}
-              />
-            </div>
-          ) : (
-            <div className="max-w-md mx-auto p-8 rounded-2xl bg-stone-100 text-stone-500 text-center text-sm border border-stone-200">
-              Đang tải video mẫu ký hiệu...
+          {card.bodyText && (
+            <div className="mt-5 flex items-center gap-4 rounded-3xl border border-ink-200 bg-white px-5 py-4">
+              <Mascot className="w-14 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-ink-500">Nghĩa là</p>
+                <p className="text-xl font-bold text-ink-900">{card.bodyText}</p>
+              </div>
             </div>
           )}
 
-          <p className="text-xs text-[var(--color-ink-500)] text-center flex items-center justify-center gap-1.5">
-            <span>💡</span>
-            <span>Quan sát kỹ khẩu hình và hình thái bàn tay trong video trước khi bắt đầu bài tập luyện tập.</span>
+          <p className="mt-6 text-base text-ink-600">
+            Mẹo: chú ý hình dạng bàn tay, hướng lòng bàn tay và biểu cảm khuôn mặt.
           </p>
+        </main>
 
-          <div className="flex items-center gap-3 pt-2">
+        <ActionFooter>
+          <div className="flex gap-3">
             {currentBlockIndex > 0 && (
-              <button
-                type="button"
-                onClick={() => setCurrentBlockIndex(currentBlockIndex - 1)}
-                className="px-5 py-3.5 rounded-xl border border-stone-300 text-stone-700 font-semibold hover:bg-stone-50 transition-colors"
-              >
-                ← Từ trước
+              <button type="button" onClick={() => setCurrentBlockIndex(currentBlockIndex - 1)} className="btn btn-secondary" aria-label="Ký hiệu trước">
+                ←
               </button>
             )}
-
-            <button
-              type="button"
-              onClick={() => {
-                if (currentBlockIndex < signCards.length - 1) {
-                  setCurrentBlockIndex(currentBlockIndex + 1);
-                } else {
-                  setCurrentBlockIndex(signCards.length);
-                }
-              }}
-              className="flex-1 py-3.5 px-6 bg-[var(--color-brand-600)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] text-white rounded-xl font-bold text-base shadow-sm transition-all text-center"
-            >
-              {currentBlockIndex < signCards.length - 1
-                ? `Tiếp tục học từ tiếp theo (${currentBlockIndex + 2}/${signCards.length}) →`
-                : "Đã hiểu! Bắt đầu luyện tập bài tập 🚀"}
+            <button type="button" onClick={() => setCurrentBlockIndex(currentBlockIndex + 1)} className="btn btn-primary flex-1">
+              {isLast ? "Luyện tập" : "Tiếp tục"}
             </button>
           </div>
-        </div>
+        </ActionFooter>
       </div>
     );
   }
 
-  // Show summary if completed
+  // Màn tổng kết
   if (summary) {
+    const stats = [
+      {
+        label: "XP",
+        value: <CountUp to={summary.earnedExp} prefix="+" />,
+        icon: <IconStar className="h-6 w-6" />,
+        tone: "border-sun-300 bg-sun-50 text-sun-700",
+      },
+      {
+        label: "Chính xác",
+        value: <CountUp to={summary.scorePercent} suffix="%" />,
+        icon: <IconCheck className="h-6 w-6" />,
+        tone: "border-success-200 bg-success-50 text-success-700",
+      },
+      {
+        label: "Chuỗi ngày",
+        value: <CountUp to={summary.streak.current} />,
+        icon: <IconFlame className="h-6 w-6" />,
+        tone: "border-flame-300 bg-flame-50 text-flame-700",
+      },
+    ];
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="text-center space-y-4">
-          <h1 className="text-3xl font-bold text-[var(--color-ink-900)]">
-            {summary.firstTryPerfect ? "Xuất sắc! 🎉" : "Hoàn thành! ✅"}
-          </h1>
-          <div className="text-6xl font-bold text-[var(--color-brand-600)]">
-            {summary.scorePercent}%
-          </div>
-          <p className="text-[var(--color-ink-600)]">
-            {summary.effectiveMinutes} phút • {summary.newSignsLearned} ký hiệu mới
+      <div className="mx-auto flex max-w-lg flex-col items-center px-4 py-12 text-center">
+        <Confetti mode="rain" />
+        <div className="animate-pop-in">
+          <Mascot className="w-32" mood={summary.firstTryPerfect ? "wow" : "happy"} wave />
+        </div>
+        <h1 className="mt-6 text-4xl font-bold tracking-tight text-sun-700">
+          {summary.firstTryPerfect ? "Hoàn hảo!" : "Hoàn thành bài học!"}
+        </h1>
+        <p className="mt-2 text-lg font-bold text-ink-600">
+          {summary.newSignsLearned} ký hiệu mới · {summary.effectiveMinutes} phút
+        </p>
+
+        <ul className="mt-8 grid w-full grid-cols-3 gap-3">
+          {stats.map((s) => (
+            <li key={s.label} className={`rounded-2xl border px-2 pb-4 pt-3 ${s.tone}`}>
+              <p className="text-xs font-bold">{s.label}</p>
+              <p className="mt-2 flex items-center justify-center gap-1.5 text-2xl font-bold">
+                {s.icon}
+                {s.value}
+              </p>
+            </li>
+          ))}
+        </ul>
+
+        {summary.streak.goalMetToday && (
+          <p className="mt-6 flex items-center gap-2 text-base font-semibold text-success-700">
+            <IconCheck className="h-5 w-5" /> Đã đạt mục tiêu hôm nay
           </p>
-          {summary.earnedExp > 0 && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-warning-50)] border border-[var(--color-warning-200)] rounded-lg">
-              <span className="text-2xl">⭐</span>
-              <span className="font-semibold text-[var(--color-warning-700)]">+{summary.earnedExp} EXP</span>
-            </div>
-          )}
-        </div>
+        )}
+        <p className="mt-2 text-sm font-bold text-ink-500">Chuỗi dài nhất: {summary.streak.longest} ngày</p>
 
-        <div className="p-6 bg-white border border-[var(--color-ink-200)] rounded-lg space-y-3">
-          <div className="flex justify-between">
-            <span className="text-[var(--color-ink-600)]">Streak hiện tại</span>
-            <span className="font-semibold">{summary.streak.current} ngày</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-[var(--color-ink-600)]">Streak dài nhất</span>
-            <span className="font-semibold">{summary.streak.longest} ngày</span>
-          </div>
-          {summary.streak.goalMetToday && (
-            <p className="text-[var(--color-success-600)] text-sm">✓ Đã đạt mục tiêu hôm nay</p>
-          )}
-        </div>
-
-        <div className="flex gap-3">
+        <div className="mt-10 w-full">
           {summary.nextLessonId ? (
-            <button
-              onClick={() => router.push(`/hoc/bai-moi/${summary.nextLessonId}`)}
-              className="flex-1 py-3 bg-[var(--color-brand-600)] text-white rounded-lg font-medium hover:bg-[var(--color-brand-700)]"
-            >
+            <button onClick={() => router.push(`/hoc/bai-moi/${summary.nextLessonId}`)} className="btn btn-primary btn-lg w-full">
               Bài tiếp theo
             </button>
           ) : (
-            <Link
-              href="/hoc"
-              className="flex-1 py-3 bg-[var(--color-brand-600)] text-white rounded-lg font-medium text-center hover:bg-[var(--color-brand-700)]"
-            >
-              Quay lại lộ trình
+            <Link href="/hoc" className="btn btn-primary btn-lg w-full">
+              Về lộ trình
             </Link>
           )}
         </div>
@@ -253,68 +257,61 @@ export default function NewLessonPage() {
     );
   }
 
-  // No exercises
   if (!exercises || exercises.length === 0) {
-    return <ErrorNotice message="Bài học này chưa có bài tập nào." />;
+    return (
+      <EmptyState title="Bài học chưa có bài tập" body="Nội dung đang được bổ sung." mood="sad">
+        <Link href="/hoc" className="btn btn-primary">
+          Quay lại lộ trình
+        </Link>
+      </EmptyState>
+    );
   }
 
   const exercise = exercises[index];
 
-  // Submit answer
   const handleSubmit = async () => {
     if (busy) return;
 
-    // Validate input based on exercise type
-    if (
-      (exercise.type === "SIGN_TO_MEANING" || exercise.type === "MEANING_TO_SIGN") &&
-      !selectedOptionId
-    ) {
-      setError("Vui lòng chọn một đáp án");
+    if ((exercise.type === "SIGN_TO_MEANING" || exercise.type === "MEANING_TO_SIGN") && !selectedOptionId) {
+      setError("Chọn một đáp án để kiểm tra.");
       return;
     }
-
     if ((exercise.type === "TYPE_WHAT_YOU_SEE" || exercise.type === "SIGN_VIDEO_RECALL") && !typedAnswer.trim()) {
-      setError("Vui lòng nhập câu trả lời");
+      setError("Nhập câu trả lời để kiểm tra.");
       return;
     }
-
     if (exercise.type === "SENTENCE_ORDER" && orderedTokens.length === 0) {
-      setError("Vui lòng sắp xếp các từ");
+      setError("Chạm vào các từ để sắp xếp câu.");
       return;
     }
-
     if (exercise.type === "MATCH_SIGN_MEANING" && matches.length === 0) {
-      setError("Vui lòng ghép các cặp ký hiệu - ý nghĩa");
+      setError("Ghép ít nhất một cặp ký hiệu – ý nghĩa.");
       return;
     }
 
     setBusy(true);
     setError(null);
-
     try {
-      const result = await apiCall<AnswerResult>(
-        `/api/v1/lessons/${lessonId}/exercises/${exercise.id}/answer`,
-        {
-          method: "POST",
-          body: {
-            answerType: exercise.type,
-            selectedOptionId: selectedOptionId ?? undefined,
-            typedAnswer: typedAnswer.trim() || undefined,
-            orderedTokens: orderedTokens.length > 0 ? orderedTokens : undefined,
-            matches: matches.length > 0 ? matches : undefined,
-          },
-        }
-      );
-
+      const result = await apiCall<AnswerResult>(`/api/v1/lessons/${lessonId}/exercises/${exercise.id}/answer`, {
+        method: "POST",
+        body: {
+          answerType: exercise.type,
+          selectedOptionId: selectedOptionId ?? undefined,
+          typedAnswer: typedAnswer.trim() || undefined,
+          orderedTokens: orderedTokens.length > 0 ? orderedTokens : undefined,
+          matches: matches.length > 0 ? matches : undefined,
+        },
+      });
       setFeedback(result);
+      setCombo((c) => (result.isCorrect ? c + 1 : 0));
+      setAnswered((n) => n + 1);
     } catch (err) {
-      setError(err instanceof ApiError ? err.errorMessage : "Có lỗi xảy ra");
+      setError(err instanceof ApiError ? err.errorMessage : "Không gửi được câu trả lời. Thử lại nhé.");
     } finally {
       setBusy(false);
     }
   };
 
-  // Continue to next exercise
   const handleContinue = () => {
     if (index < exercises.length - 1) {
       setIndex(index + 1);
@@ -329,7 +326,6 @@ export default function NewLessonPage() {
     }
   };
 
-  // Complete lesson
   const completeLesson = async () => {
     setBusy(true);
     try {
@@ -339,87 +335,101 @@ export default function NewLessonPage() {
       });
       setSummary(result);
     } catch (err) {
-      setError(err instanceof ApiError ? err.errorMessage : "Không thể hoàn thành bài học");
+      setError(err instanceof ApiError ? err.errorMessage : "Không lưu được kết quả bài học. Thử lại nhé.");
     } finally {
       setBusy(false);
     }
   };
 
+  const done = signCards.length + index + (feedback ? 1 : 0);
+
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <Link href="/hoc" className="text-[var(--color-brand-600)] hover:underline">
-          ← Lộ trình
-        </Link>
-        <h2 className="text-lg font-semibold text-[var(--color-ink-900)]">{lesson.data.title}</h2>
-        <div className="w-20" /> {/* Spacer for centering */}
-      </div>
+    <div className="flex min-h-screen flex-col">
+      <LessonTopBar percent={Math.round((done / totalSteps) * 100)} />
 
-      {/* Exercise Header with metadata */}
-      <ExerciseHeader exercise={exercise} currentIndex={index} totalExercises={exercises.length} />
+      <main className="mx-auto w-full max-w-4xl flex-1 px-4 pt-8">
+        <ExerciseHeader exercise={exercise} />
+        <div className="mt-6">
+          <ExerciseRenderer
+            exercise={exercise}
+            selectedOptionId={selectedOptionId}
+            typedAnswer={typedAnswer}
+            onSelectOption={setSelectedOptionId}
+            onTypeAnswer={setTypedAnswer}
+            orderedTokens={orderedTokens}
+            onOrderTokens={setOrderedTokens}
+            matches={matches}
+            onMatches={setMatches}
+            disabled={!!feedback || busy}
+            feedback={feedback ? { isCorrect: feedback.isCorrect, correctOptionId: feedback.correctOptionId } : null}
+          />
+        </div>
 
-      {/* Exercise Content */}
-      <div className="p-6 bg-white border border-[var(--color-ink-200)] rounded-lg">
-        <ExerciseRenderer
-          exercise={exercise}
-          selectedOptionId={selectedOptionId}
-          typedAnswer={typedAnswer}
-          onSelectOption={setSelectedOptionId}
-          onTypeAnswer={setTypedAnswer}
-          orderedTokens={orderedTokens}
-          onOrderTokens={setOrderedTokens}
-          matches={matches}
-          onMatches={setMatches}
-          disabled={!!feedback || busy}
-        />
-      </div>
-
-      {/* Error */}
-      {error && <ErrorNotice message={error} />}
-
-      {/* Feedback */}
-      {feedback && (
-        <div
-          className={`p-4 rounded-lg ${
-            feedback.isCorrect
-              ? "bg-[var(--color-success-50)] border border-[var(--color-success-200)]"
-              : "bg-[var(--color-error-50)] border border-[var(--color-error-200)]"
-          }`}
-        >
-          <p
-            className={`font-semibold mb-2 ${
-              feedback.isCorrect ? "text-[var(--color-success-700)]" : "text-[var(--color-error-700)]"
-            }`}
-          >
-            {feedback.isCorrect ? "✓ Chính xác!" : "✗ Chưa đúng"}
-          </p>
-          {!feedback.isCorrect && feedback.correctAnswerText && (
-            <p className="text-[var(--color-ink-700)]">Đáp án đúng: {feedback.correctAnswerText}</p>
+        {/* Phản hồi hiện ngay dưới câu hỏi — luôn có icon + chữ, không chỉ dựa vào màu */}
+        <div aria-live="polite" ref={feedbackRef}>
+          {feedback && (
+            <div
+              key={answered}
+              className={`relative mt-6 flex items-start gap-4 rounded-2xl border p-5 ${
+                feedback.isCorrect ? "animate-pop-in border-success-200 bg-success-50" : "animate-shake border-danger-200 bg-danger-50"
+              }`}
+            >
+              {feedback.isCorrect && <Confetti />}
+              <span
+                className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-white ${
+                  feedback.isCorrect ? "bg-success-600" : "bg-danger-600"
+                }`}
+              >
+                {feedback.isCorrect ? (
+                  <IconCheck className="h-5 w-5" />
+                ) : (
+                  <span className="text-lg font-bold" aria-hidden="true">
+                    ✕
+                  </span>
+                )}
+              </span>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className={`text-lg font-bold ${feedback.isCorrect ? "text-success-700" : "text-danger-700"}`}>
+                    {feedback.isCorrect ? PRAISE[answered % PRAISE.length] : ENCOURAGE[answered % ENCOURAGE.length]}
+                  </p>
+                  {feedback.isCorrect && combo >= 2 && (
+                    <span className="chip animate-pop-in bg-flame-100 text-flame-700">
+                      <IconFlame className="h-4 w-4" /> {combo} câu đúng liên tiếp
+                    </span>
+                  )}
+                </div>
+                {!feedback.isCorrect && feedback.correctAnswerText && (
+                  <p className="text-base text-ink-800">
+                    Đáp án đúng: <strong className="font-semibold">{feedback.correctAnswerText}</strong>
+                  </p>
+                )}
+                {!feedback.isCorrect && feedback.willRepeat && (
+                  <p className="text-sm text-ink-600">Câu này sẽ quay lại để bạn thử lần nữa.</p>
+                )}
+              </div>
+            </div>
           )}
         </div>
-      )}
 
-      {/* Actions */}
-      <div className="flex gap-3">
+        {error && (
+          <div className="mt-6">
+            <ErrorNotice message={error} />
+          </div>
+        )}
+      </main>
+
+      <ActionFooter>
         {feedback ? (
-          <button
-            onClick={handleContinue}
-            disabled={busy}
-            className="flex-1 py-3 bg-[var(--color-brand-600)] text-white rounded-lg font-medium hover:bg-[var(--color-brand-700)] disabled:opacity-60"
-          >
-            {index < exercises.length - 1 ? "Tiếp tục" : "Hoàn thành bài học"}
+          <button onClick={handleContinue} disabled={busy} className="btn btn-primary w-full">
+            {index < exercises.length - 1 ? "Câu tiếp theo" : "Hoàn thành"}
           </button>
         ) : (
-          <button
-            onClick={handleSubmit}
-            disabled={busy}
-            className="flex-1 py-3 bg-[var(--color-brand-600)] text-white rounded-lg font-medium hover:bg-[var(--color-brand-700)] disabled:opacity-60"
-          >
-            {busy ? "Đang kiểm tra..." : "Kiểm tra"}
+          <button onClick={handleSubmit} disabled={busy} className="btn btn-primary w-full">
+            {busy ? "Đang kiểm tra…" : "Kiểm tra"}
           </button>
         )}
-      </div>
+      </ActionFooter>
     </div>
   );
 }

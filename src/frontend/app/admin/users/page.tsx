@@ -136,8 +136,8 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Quản trị Học viên</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-ink-900 tracking-tight">Quản trị Học viên</h1>
+          <p className="text-sm text-ink-500 mt-0.5">
             Tìm kiếm, xem hồ sơ, khóa tài khoản, phân quyền và điều chỉnh EXP/AI
           </p>
         </div>
@@ -145,7 +145,7 @@ export default function AdminUsersPage() {
 
       {/* Error Alert */}
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-danger-50 border border-danger-200 text-danger-800 text-xs flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span>⚠️</span>
             <span>{errorMessage}</span>
@@ -153,7 +153,7 @@ export default function AdminUsersPage() {
           <button
             type="button"
             onClick={fetchUsers}
-            className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-[11px] transition-colors cursor-pointer"
+            className="px-3 py-1 bg-danger-600 hover:bg-danger-700 text-white rounded-xl font-bold text-xs transition-colors cursor-pointer"
           >
             Thử lại
           </button>
@@ -161,32 +161,32 @@ export default function AdminUsersPage() {
       )}
 
       {/* Filter and Search Bar */}
-      <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="card p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
         <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full sm:w-80">
           <input
             type="text"
             placeholder="Tìm kiếm theo email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 p-2 rounded-xl border border-slate-200 text-xs"
+            className="flex-1 p-2 rounded-xl border border-ink-200 text-xs"
           />
           <button
             type="submit"
-            className="px-3 py-2 bg-[#0d9fa5] text-white text-xs font-bold rounded-xl hover:bg-[#08757a] transition-colors cursor-pointer"
+            className="btn btn-primary btn-sm cursor-pointer"
           >
             Tìm
           </button>
         </form>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <label className="text-xs font-bold text-slate-600">Trạng thái:</label>
+          <label className="text-xs font-bold text-ink-600">Trạng thái:</label>
           <select
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value);
               setPage(0);
             }}
-            className="p-2 rounded-xl border border-slate-200 text-xs bg-white font-medium"
+            className="p-2 rounded-xl border border-ink-200 text-xs bg-white font-semibold"
           >
             <option value="">Tất cả</option>
             <option value="ACTIVE">Hoạt động (ACTIVE)</option>
@@ -197,12 +197,12 @@ export default function AdminUsersPage() {
 
       {/* Users Table */}
       {loading ? (
-        <div className="p-12 text-center text-sm text-slate-400 animate-pulse">Đang tải danh sách học viên...</div>
+        <div className="p-12 text-center text-sm text-ink-500 animate-pulse">Đang tải danh sách học viên...</div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
+              <thead className="bg-ink-50 text-ink-500 font-bold">
                 <tr>
                   <th className="px-6 py-3.5">Học viên</th>
                   <th className="px-6 py-3.5">Gói cước</th>
@@ -212,58 +212,58 @@ export default function AdminUsersPage() {
                   <th className="px-6 py-3.5 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-ink-100">
                 {users.map((u) => {
                   const isAdmin = u.roles.some((r) => r.includes("ADMIN"));
                   const isLocked = u.status === "LOCKED";
 
                   return (
-                    <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={u.id} className="hover:bg-ink-50/80 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <span className="w-8 h-8 rounded-full bg-cyan-100 text-[#0d9fa5] font-black text-xs flex items-center justify-center shrink-0">
+                          <span className="w-8 h-8 rounded-full bg-sky-100 text-brand-500 font-bold text-xs flex items-center justify-center shrink-0">
                             {u.displayName.charAt(0)}
                           </span>
                           <div>
-                            <p className="font-bold text-slate-900">{u.displayName}</p>
-                            <p className="text-slate-400 text-[11px]">{u.email}</p>
+                            <p className="font-bold text-ink-900">{u.displayName}</p>
+                            <p className="text-ink-500 text-xs">{u.email}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         {u.isPremium ? (
-                          <span className="font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                          <span className="font-bold text-sun-700 bg-sun-50 px-2 py-0.5 rounded border border-sun-200">
                             ★ {u.planName}
                           </span>
                         ) : (
-                          <span className="font-medium text-slate-400">Miễn phí</span>
+                          <span className="font-semibold text-ink-500">Miễn phí</span>
                         )}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">
+                        <span className="font-bold text-sun-600 bg-sun-50 px-2 py-0.5 rounded">
                           {u.expBalance} EXP
                         </span>
                         {u.aiBonusQuota > 0 && (
-                          <span className="ml-1.5 font-bold text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded">
+                          <span className="ml-1.5 font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded">
                             +{u.aiBonusQuota} AI
                           </span>
                         )}
                       </td>
                       <td className="px-6 py-4 text-center">
                         {isAdmin ? (
-                          <span className="font-black text-xs text-white bg-slate-900 px-2 py-0.5 rounded-full">
+                          <span className="font-bold text-xs text-white bg-ink-900 px-2 py-0.5 rounded-full">
                             ADMIN
                           </span>
                         ) : (
-                          <span className="font-semibold text-slate-500">Học viên</span>
+                          <span className="font-semibold text-ink-500">Học viên</span>
                         )}
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span
                           className={`px-2.5 py-0.5 rounded-full font-bold text-[11px] ${
                             isLocked
-                              ? "bg-rose-100 text-rose-800"
-                              : "bg-emerald-100 text-emerald-800"
+                              ? "bg-danger-100 text-danger-800"
+                              : "bg-brand-100 text-brand-800"
                           }`}
                         >
                           {u.status}
@@ -277,7 +277,7 @@ export default function AdminUsersPage() {
                             setExpDelta(50);
                             setAiQuotaDelta(5);
                           }}
-                          className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold"
+                          className="btn btn-secondary btn-sm"
                           title="Cộng/Trừ EXP và AI"
                         >
                           Tặng EXP
@@ -285,7 +285,7 @@ export default function AdminUsersPage() {
                         <button
                           type="button"
                           onClick={() => handleToggleAdminRole(u)}
-                          className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold"
+                          className="btn btn-secondary btn-sm"
                         >
                           {isAdmin ? "Bỏ Admin" : "Lên Admin"}
                         </button>
@@ -294,8 +294,8 @@ export default function AdminUsersPage() {
                           onClick={() => handleToggleStatus(u)}
                           className={`px-2.5 py-1 rounded-lg font-bold transition-colors ${
                             isLocked
-                              ? "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                              : "border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                              ? "border border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100"
+                              : "border border-danger-200 bg-danger-50 text-danger-700 hover:bg-danger-100"
                           }`}
                         >
                           {isLocked ? "Mở khóa" : "Khóa"}
@@ -310,20 +310,20 @@ export default function AdminUsersPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="px-6 py-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <div className="px-6 py-3 border-t border-ink-100 flex items-center justify-between text-xs text-ink-500">
               <span>Trang {page + 1} / {totalPages}</span>
               <div className="flex gap-1">
                 <button
                   disabled={page === 0}
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  className="px-3 py-1 rounded border border-slate-200 disabled:opacity-30 cursor-pointer"
+                  className="px-3 py-1 rounded border border-ink-200 disabled:opacity-30 cursor-pointer"
                 >
                   &larr; Trước
                 </button>
                 <button
                   disabled={page >= totalPages - 1}
                   onClick={() => setPage((p) => p + 1)}
-                  className="px-3 py-1 rounded border border-slate-200 disabled:opacity-30 cursor-pointer"
+                  className="px-3 py-1 rounded border border-ink-200 disabled:opacity-30 cursor-pointer"
                 >
                   Sau &rarr;
                 </button>
@@ -336,54 +336,54 @@ export default function AdminUsersPage() {
       {/* Adjust Balance Modal */}
       {adjustingUser && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">
-            <h3 className="font-black text-slate-900 text-base mb-1">
+          <div className="card max-w-sm w-full p-6 shadow-2xl">
+            <h3 className="font-bold text-ink-900 text-base mb-1">
               Thưởng / Điều chỉnh tài khoản
             </h3>
-            <p className="text-xs text-slate-500 mb-4">{adjustingUser.email}</p>
+            <p className="text-xs text-ink-500 mb-4">{adjustingUser.email}</p>
 
             <form onSubmit={handleAdjustBalance} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Số EXP điều chỉnh (+ hoặc -)</label>
+                <label className="block font-bold text-ink-700 mb-1">Số EXP điều chỉnh (+ hoặc -)</label>
                 <input
                   type="number"
                   value={expDelta}
                   onChange={(e) => setExpDelta(parseInt(e.target.value) || 0)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 font-bold"
+                  className="w-full p-2.5 rounded-xl border border-ink-200 font-bold"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Số lượt Camera AI thưởng thêm</label>
+                <label className="block font-bold text-ink-700 mb-1">Số lượt Camera AI thưởng thêm</label>
                 <input
                   type="number"
                   value={aiQuotaDelta}
                   onChange={(e) => setAiQuotaDelta(parseInt(e.target.value) || 0)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 font-bold"
+                  className="w-full p-2.5 rounded-xl border border-ink-200 font-bold"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Lý do điều chỉnh (gửi thông báo)</label>
+                <label className="block font-bold text-ink-700 mb-1">Lý do điều chỉnh (gửi thông báo)</label>
                 <input
                   type="text"
                   value={adjustReason}
                   onChange={(e) => setAdjustReason(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200"
+                  className="w-full p-2.5 rounded-xl border border-ink-200"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-ink-100">
                 <button
                   type="button"
                   onClick={() => setAdjustingUser(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 bg-white font-bold hover:bg-slate-50 cursor-pointer"
+                  className="btn btn-secondary btn-sm cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#0d9fa5] hover:bg-[#08757a] text-white font-bold transition-colors cursor-pointer"
+                  className="btn btn-primary btn-sm cursor-pointer"
                 >
                   Xác nhận
                 </button>

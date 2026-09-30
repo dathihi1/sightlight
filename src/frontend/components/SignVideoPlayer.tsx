@@ -37,12 +37,15 @@ export function extractGoogleDriveId(url?: string | null): string | null {
   return null;
 }
 
+const RATES = [0.5, 0.75, 1];
+const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+
 /**
- * Trình phát video ký hiệu thông minh:
- * - Hỗ trợ phát lại liên tục (loop) tự động giúp người học rèn luyện ký hiệu nhiều lần.
- * - Phát luồng MP4 trực tiếp qua endpoint /api/media/drive/[fileId] để thẻ <video>
- *   chạy mượt mà, hỗ trợ loop vô tận, tua byte-range và đổi tốc độ học (0.5x, 0.75x, 1x).
- * - Tự động dự phòng sang thẻ iframe nếu trình duyệt không hỗ trợ định dạng trực tiếp.
+ * Trình phát video ký hiệu:
+ * - Phát MP4 trực tiếp qua /api/media/drive/[fileId] (loop, tua byte-range, đổi tốc độ).
+ * - Thanh điều khiển tự vẽ (không dùng `controls` của trình duyệt — bị cắt trong khung bo góc và mỗi trình duyệt một kiểu).
+ * - Khung tự khớp tỉ lệ thật của video, cao tối đa 70vh.
+ * - Dự phòng sang iframe Google Drive nếu thẻ <video> không nạp được nguồn.
  */
 export function SignVideoPlayer({
   videoUrl,
@@ -55,9 +58,14 @@ export function SignVideoPlayer({
   muted = true,
 }: SignVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
   const [isLooping, setIsLooping] = useState(loop);
-  const [playbackRate, setPlaybackRate] = useState<number>(1);
+  const [rate, setRate] = useState(1);
   const [useIframeFallback, setUseIframeFallback] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [time, setTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [ratio, setRatio] = useState(16 / 9);
 
   const resolvedDriveId = useMemo(() => {
     if (driveFileId && driveFileId.trim().length > 0) {
@@ -66,22 +74,17 @@ export function SignVideoPlayer({
     return extractGoogleDriveId(videoUrl);
   }, [driveFileId, videoUrl]);
 
-  // Reset fallback khi đổi video
   useEffect(() => {
     setUseIframeFallback(false);
+    setTime(0);
+    setDuration(0);
   }, [videoUrl, driveFileId]);
 
   // Nguồn phát trực tiếp cho thẻ HTML5 <video>
   const directSrc = useMemo(() => {
-    // 1. Ưu tiên tuyệt đối đường dẫn tĩnh cục bộ hoặc backend streaming (tránh iframe Google Drive)
-    if (
-      videoUrl &&
-      !videoUrl.includes("drive.google.com") &&
-      !videoUrl.includes("drive.usercontent.google.com")
-    ) {
+    if (videoUrl && !videoUrl.includes("drive.google.com") && !videoUrl.includes("drive.usercontent.google.com")) {
       return videoUrl;
     }
-    // 2. Nếu videoUrl là liên kết Google Drive nhưng có driveId, dùng endpoint proxy
     if (resolvedDriveId) {
       return `/api/media/drive/${resolvedDriveId}`;
     }
@@ -90,22 +93,20 @@ export function SignVideoPlayer({
 
   useEffect(() => {
     if (videoRef.current) {
-      videoRef.current.playbackRate = playbackRate;
+      videoRef.current.playbackRate = rate;
       videoRef.current.loop = isLooping;
     }
-  }, [playbackRate, isLooping]);
+  }, [rate, isLooping]);
 
   if (placeholderVideo || (!videoUrl && !resolvedDriveId)) {
     return <PlaceholderVideo label={title || "Video ký hiệu mẫu"} />;
   }
 
-  // Dự phòng nhúng qua iframe nếu thẻ <video> gặp lỗi nạp nguồn
   if (useIframeFallback && resolvedDriveId) {
-    const previewSrc = `https://drive.google.com/file/d/${resolvedDriveId}/preview`;
     return (
-      <div className={`relative aspect-video w-full overflow-hidden rounded-2xl bg-black shadow-inner ${className}`}>
+      <div className={`relative aspect-video w-full overflow-hidden rounded-3xl bg-black ${className}`}>
         <iframe
-          src={previewSrc}
+          src={`https://drive.google.com/file/d/${resolvedDriveId}/preview`}
           className="h-full w-full border-0"
           allow="autoplay; encrypted-media"
           allowFullScreen
@@ -115,57 +116,114 @@ export function SignVideoPlayer({
     );
   }
 
+  const toggle = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.paused) void v.play();
+    else v.pause();
+  };
+
   return (
-    <div className={`group relative aspect-video w-full overflow-hidden rounded-2xl bg-black shadow-inner border border-[#E2DBD0]/60 ${className}`}>
+    <div
+      ref={wrapRef}
+      className={`group relative mx-auto w-full overflow-hidden rounded-3xl bg-ink-950 ${className}`}
+      style={{ aspectRatio: ratio, maxHeight: "70vh" }}
+    >
       <video
         ref={videoRef}
         key={directSrc}
         src={directSrc || undefined}
-        controls
         autoPlay={autoPlay}
         loop={isLooping}
         muted={muted}
         playsInline
-        onError={() => {
-          if (resolvedDriveId) {
-            setUseIframeFallback(true);
-          }
+        aria-label={title || "Video ký hiệu mẫu"}
+        onClick={toggle}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
+        onLoadedMetadata={(e) => {
+          const v = e.currentTarget;
+          v.playbackRate = rate;
+          setDuration(v.duration || 0);
+          // Giữ khung trong khoảng 3:4 (dọc) → 16:9 (ngang) để video không quá cao hay quá dẹt.
+          if (v.videoWidth && v.videoHeight) setRatio(Math.min(16 / 9, Math.max(3 / 4, v.videoWidth / v.videoHeight)));
         }}
-        className="h-full w-full object-contain bg-black"
+        onError={() => resolvedDriveId && setUseIframeFallback(true)}
+        className="h-full w-full cursor-pointer object-contain"
       />
 
-      {/* Thanh công cụ hỗ trợ người học: Bật/Tắt lặp lại liên tục và chỉnh tốc độ */}
-      <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 backdrop-blur-xs px-2.5 py-1 rounded-full text-xs text-white shadow-md">
-        {/* Nút bật tắt lặp lại */}
+      {/* Tốc độ + lặp: luôn hiện (không ẩn sau hover) vì đây là công cụ học chính */}
+      <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-black/60 p-1 text-sm text-white backdrop-blur">
+        {RATES.map((r) => (
+          <button
+            key={r}
+            type="button"
+            onClick={() => setRate(r)}
+            aria-pressed={rate === r}
+            aria-label={`Tốc độ ${r}x`}
+            className={`min-h-0 rounded-full px-2.5 py-1 font-semibold transition-colors ${rate === r ? "bg-white text-ink-900" : "text-white/85 hover:bg-white/15"}`}
+          >
+            {r}x
+          </button>
+        ))}
         <button
           type="button"
-          onClick={() => setIsLooping((prev) => !prev)}
-          title={isLooping ? "Đang bật phát lại liên tục" : "Đã tắt phát lại liên tục"}
-          className={`flex items-center gap-1 px-2 py-0.5 rounded-full transition-colors cursor-pointer ${
-            isLooping ? "bg-[#0d9fa5] text-white font-bold" : "bg-white/20 text-[#CBD5E1] hover:bg-white/30"
-          }`}
+          onClick={() => setIsLooping((p) => !p)}
+          aria-pressed={isLooping}
+          title={isLooping ? "Đang lặp lại" : "Không lặp lại"}
+          aria-label="Lặp lại video"
+          className={`grid min-h-0 h-8 w-8 place-items-center rounded-full transition-colors ${isLooping ? "bg-brand-500 text-white" : "text-white/85 hover:bg-white/15"}`}
         >
-          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m17 2 4 4-4 4" />
-            <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
-            <path d="m7 22-4-4 4-4" />
-            <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="m17 2 4 4-4 4M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4M21 13v1a4 4 0 0 1-4 4H3" />
           </svg>
-          <span>{isLooping ? "Lặp: Bật" : "Lặp: Tắt"}</span>
         </button>
+      </div>
 
-        {/* Nút chỉnh tốc độ: 0.5x, 0.75x, 1x */}
+      {/* Thanh điều khiển dưới */}
+      <div className="absolute inset-x-0 bottom-0 flex items-center gap-3 bg-gradient-to-t from-black/75 to-transparent px-4 pb-3 pt-10 text-white">
         <button
           type="button"
-          onClick={() => {
-            const rates = [1, 0.75, 0.5];
-            const nextIdx = (rates.indexOf(playbackRate) + 1) % rates.length;
-            setPlaybackRate(rates[nextIdx]);
-          }}
-          title="Thay đổi tốc độ phát (chậm để dễ quan sát)"
-          className="px-2 py-0.5 rounded-full bg-white/20 text-[#CBD5E1] hover:bg-white/30 transition-colors font-medium cursor-pointer"
+          onClick={toggle}
+          aria-label={playing ? "Tạm dừng" : "Phát"}
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white text-ink-900 transition-transform active:scale-95"
         >
-          {playbackRate}x
+          {playing ? (
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <rect x="6" y="5" width="4" height="14" rx="1" />
+              <rect x="14" y="5" width="4" height="14" rx="1" />
+            </svg>
+          ) : (
+            <svg className="ml-0.5 h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.5-6.5a1 1 0 0 0 0-1.8L9.5 4.6A1 1 0 0 0 8 5.5z" />
+            </svg>
+          )}
+        </button>
+        <span className="w-10 shrink-0 text-sm tabular-nums">{fmt(time)}</span>
+        <input
+          type="range"
+          min={0}
+          max={duration || 0}
+          step={0.05}
+          value={time}
+          onChange={(e) => {
+            const v = videoRef.current;
+            if (v) v.currentTime = Number(e.target.value);
+          }}
+          aria-label="Tua video"
+          className="h-1.5 flex-1 cursor-pointer accent-brand-400"
+        />
+        <span className="w-10 shrink-0 text-sm tabular-nums text-white/80">{fmt(duration)}</span>
+        <button
+          type="button"
+          onClick={() => (document.fullscreenElement ? document.exitFullscreen() : wrapRef.current?.requestFullscreen())}
+          aria-label="Toàn màn hình"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full hover:bg-white/15"
+        >
+          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+          </svg>
         </button>
       </div>
     </div>

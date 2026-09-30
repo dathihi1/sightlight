@@ -107,15 +107,15 @@ export default function AdminCoursesPage() {
   }, []);
 
   if (loading) {
-    return <div className="p-12 text-center text-sm text-slate-500 animate-pulse">Đang tải danh mục khóa học & lộ trình...</div>;
+    return <div className="p-12 text-center text-sm text-ink-500 animate-pulse">Đang tải danh mục khóa học & lộ trình...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Quản trị Khóa học & LMS</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-ink-900 tracking-tight">Quản trị Khóa học & LMS</h1>
+          <p className="text-sm text-ink-500 mt-0.5">
             Duyệt cây bài học và chọn bài cần thêm bớt, sắp xếp lại trình tự bài tập
           </p>
         </div>
@@ -123,14 +123,14 @@ export default function AdminCoursesPage() {
 
       {/* Error Alert */}
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-danger-50 border border-danger-200 text-danger-800 text-xs flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span>⚠️</span>
             <span>{errorMessage}</span>
           </div>
           <Link
             href="/dang-nhap?redirect=/admin/courses"
-            className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-[11px] transition-colors"
+            className="px-3 py-1 bg-danger-600 hover:bg-danger-700 text-white rounded-xl font-bold text-xs transition-colors"
           >
             Đăng nhập lại
           </Link>
@@ -138,7 +138,7 @@ export default function AdminCoursesPage() {
       )}
 
       {/* Course Selector Tabs & Search */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-ink-200 pb-3">
         <div className="flex items-center gap-2 overflow-x-auto">
           {courses.map((c) => (
             <button
@@ -147,15 +147,15 @@ export default function AdminCoursesPage() {
               onClick={() => loadCoursePath(c.id)}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
                 selectedCourseId === c.id
-                  ? "bg-[#0d9fa5] text-white shadow-xs"
-                  : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                  ? "bg-brand-500 text-white"
+                  : "bg-white text-ink-600 hover:bg-ink-100 border border-ink-200"
               }`}
             >
               {c.name} ({c.code})
             </button>
           ))}
           {courses.length === 0 && !loading && (
-            <span className="text-xs text-slate-400 italic">Không tìm thấy khóa học nào</span>
+            <span className="text-xs text-ink-500 italic">Không tìm thấy khóa học nào</span>
           )}
         </div>
 
@@ -166,14 +166,14 @@ export default function AdminCoursesPage() {
             placeholder="Tìm tên bài học..."
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            className="w-full text-xs px-3 py-2 pl-8 rounded-xl bg-white border border-slate-200 focus:outline-hidden focus:border-[#0d9fa5] focus:ring-1 focus:ring-[#0d9fa5]"
+            className="w-full text-xs px-3 py-2 pl-8 rounded-xl bg-white border border-ink-200 focus:outline-hidden focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
           />
-          <span className="absolute left-2.5 top-2 text-slate-400 text-xs">🔍</span>
+          <span className="absolute left-2.5 top-2 text-ink-500 text-xs">🔍</span>
           {searchKeyword && (
             <button
               type="button"
               onClick={() => setSearchKeyword("")}
-              className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 text-xs font-bold cursor-pointer"
+              className="absolute right-2.5 top-2 text-ink-500 hover:text-ink-600 text-xs font-bold cursor-pointer"
             >
               ✕
             </button>
@@ -182,27 +182,27 @@ export default function AdminCoursesPage() {
       </div>
 
       {pathLoading ? (
-        <div className="p-12 text-center text-sm text-slate-400 animate-pulse">
+        <div className="p-12 text-center text-sm text-ink-500 animate-pulse">
           Đang tải cấu trúc bài học...
         </div>
       ) : !path ? (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-500">
-          <p className="font-semibold text-slate-700 mb-1">Không tìm thấy dữ liệu lộ trình bài học</p>
-          <p className="text-xs text-slate-400 mb-4">
+        <div className="card p-12 text-center text-ink-500">
+          <p className="font-semibold text-ink-700 mb-1">Không tìm thấy dữ liệu lộ trình bài học</p>
+          <p className="text-xs text-ink-500 mb-4">
             Vui lòng kiểm tra lại phiên đăng nhập quản trị viên hoặc chọn khóa học phía trên.
           </p>
           <Link
             href="/dang-nhap?redirect=/admin/courses"
-            className="inline-block px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#0d9fa5] hover:bg-[#0b8287] transition-colors"
+            className="btn btn-primary btn-sm"
           >
             Đăng nhập Quản trị viên
           </Link>
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="flex items-center justify-between text-xs text-slate-500 px-1">
+          <div className="flex items-center justify-between text-xs text-ink-500 px-1">
             <span>Tổng cộng: <strong>{path.units.length}</strong> Units</span>
-            <span className="text-emerald-600 font-semibold">Tất cả Unit đang mở cho biên tập</span>
+            <span className="text-brand-600 font-semibold">Tất cả Unit đang mở cho biên tập</span>
           </div>
 
           <div className="space-y-3">
@@ -220,26 +220,26 @@ export default function AdminCoursesPage() {
               return (
                 <div
                   key={unit.id}
-                  className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs transition-all"
+                  className="card overflow-hidden transition-all"
                 >
                   {/* Unit Header */}
                   <div
                     onClick={() => setExpandedUnitId(isExpanded && !kw ? null : unit.id)}
-                    className="p-4 sm:p-5 flex items-center justify-between hover:bg-slate-50/80 cursor-pointer transition-colors"
+                    className="p-4 sm:p-5 flex items-center justify-between hover:bg-ink-50/80 cursor-pointer transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="w-8 h-8 rounded-xl bg-cyan-100 text-[#0d9fa5] font-black text-xs flex items-center justify-center">
+                      <span className="w-8 h-8 rounded-xl bg-sky-100 text-brand-500 font-bold text-xs flex items-center justify-center">
                         U{uIdx + 1}
                       </span>
                       <div>
-                        <h2 className="text-sm font-extrabold text-slate-900">{unit.title}</h2>
-                        <p className="text-xs text-slate-400 mt-0.5">
+                        <h2 className="text-sm font-semibold text-ink-900">{unit.title}</h2>
+                        <p className="text-xs text-ink-500 mt-0.5">
                           {unit.chapters.length} Chương &bull; {totalLessons} Bài học
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-slate-400 font-medium">
+                      <span className="text-xs text-ink-500 font-semibold">
                         {isExpanded ? "Thu gọn ▲" : "Mở rộng ▼"}
                       </span>
                     </div>
@@ -247,7 +247,7 @@ export default function AdminCoursesPage() {
 
                   {/* Chapters & Lessons */}
                   {isExpanded && (
-                    <div className="border-t border-slate-100 bg-[#FAF8F5]/50 p-4 sm:p-5 space-y-4">
+                    <div className="border-t border-ink-100 bg-ink-50/50 p-4 sm:p-5 space-y-4">
                       {unit.chapters.map((chap, cIdx) => {
                         const filteredLessons = kw
                           ? chap.lessons.filter(l => l.title.toLowerCase().includes(kw))
@@ -256,33 +256,33 @@ export default function AdminCoursesPage() {
                         if (kw && filteredLessons.length === 0) return null;
 
                         return (
-                          <div key={chap.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs">
-                            <h3 className="text-xs font-black text-slate-800 uppercase tracking-wide mb-3 flex items-center gap-2">
-                              <span className="text-[#0d9fa5]">§{cIdx + 1}</span> {chap.title}
+                          <div key={chap.id} className="bg-white rounded-xl border border-ink-200 p-4">
+                            <h3 className="text-xs font-bold text-ink-800 mb-3 flex items-center gap-2">
+                              <span className="text-brand-500">§{cIdx + 1}</span> {chap.title}
                             </h3>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                               {filteredLessons.map((lesson, lIdx) => (
                                 <div
                                   key={lesson.id}
-                                  className="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-[#0d9fa5] hover:shadow-xs transition-all flex flex-col justify-between"
+                                  className="p-3.5 rounded-xl border border-ink-200 bg-white hover:border-brand-500 transition-all flex flex-col justify-between"
                                 >
                                   <div>
                                     <div className="flex items-center justify-between gap-1 mb-1">
-                                      <span className="text-[10px] font-bold text-slate-400 uppercase">
+                                      <span className="text-xs font-bold text-ink-500 uppercase">
                                         Bài {lIdx + 1}
                                       </span>
-                                      <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-brand-100 text-brand-800">
                                         {lesson.status}
                                       </span>
                                     </div>
-                                    <p className="text-xs font-bold text-slate-900 line-clamp-1">{lesson.title}</p>
+                                    <p className="text-xs font-bold text-ink-900 line-clamp-1">{lesson.title}</p>
                                   </div>
 
-                                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                                  <div className="mt-3 pt-2.5 border-t border-ink-100 flex items-center justify-between">
                                     <Link
                                       href={`/admin/lessons/${lesson.id}`}
-                                      className="w-full text-center px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#0d9fa5] hover:bg-[#08757a] transition-colors shadow-2xs"
+                                      className="btn btn-primary btn-sm w-full text-center"
                                     >
                                       Chỉnh sửa bài học &rarr;
                                     </Link>
