@@ -74,6 +74,7 @@ public class LessonService {
     private final vn.duy.signlight.content.application.LessonContentService lessonContentService;
     private final vn.duy.signlight.gamification.application.GamificationStoreService gamificationStoreService;
     private final vn.duy.signlight.gamification.application.QuestService questService;
+    private final vn.duy.signlight.notification.application.NotificationService notificationService;
 
     public LessonService(ContentTreeService contentTree,
             MediaUrlService mediaUrlService,
@@ -88,6 +89,26 @@ public class LessonService {
             vn.duy.signlight.content.application.LessonContentService lessonContentService,
             vn.duy.signlight.gamification.application.GamificationStoreService gamificationStoreService,
             vn.duy.signlight.gamification.application.QuestService questService) {
+        this(contentTree, mediaUrlService, learningPathService, lessonStateRepository,
+                attemptRepository, completionRepository, preferenceRepository, streakService,
+                authService, objectMapper, lessonContentService, gamificationStoreService, questService, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public LessonService(ContentTreeService contentTree,
+            MediaUrlService mediaUrlService,
+            LearningPathService learningPathService,
+            UserLessonStateRepository lessonStateRepository,
+            ExerciseAttemptRepository attemptRepository,
+            LessonCompletionRepository completionRepository,
+            UserPreferenceRepository preferenceRepository,
+            StreakService streakService,
+            AuthService authService,
+            ObjectMapper objectMapper,
+            vn.duy.signlight.content.application.LessonContentService lessonContentService,
+            vn.duy.signlight.gamification.application.GamificationStoreService gamificationStoreService,
+            vn.duy.signlight.gamification.application.QuestService questService,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) vn.duy.signlight.notification.application.NotificationService notificationService) {
         this.contentTree = contentTree;
         this.mediaUrlService = mediaUrlService;
         this.learningPathService = learningPathService;
@@ -101,6 +122,7 @@ public class LessonService {
         this.lessonContentService = lessonContentService;
         this.gamificationStoreService = gamificationStoreService;
         this.questService = questService;
+        this.notificationService = notificationService;
     }
 
     // ----------------------------------------------------------- đọc bài học
@@ -491,6 +513,17 @@ public class LessonService {
             if (scorePercent == 100) {
                 questService.recordAction(userId, "SCORE_PERFECT", 1);
             }
+            if (notificationService != null) {
+                try {
+                    String notifTitle = "Tiến độ học tập: Hoàn thành " + lesson.getTitle();
+                    String notifContent = "Chúc mừng bạn đạt " + scorePercent + "% điểm và nhận +" + earnedExp + " EXP! " +
+                            (streak.goalMetToday() ? "Bạn cũng đã hoàn thành mục tiêu ngày và giữ vững chuỗi " + streak.current() + " ngày! 🔥" : "Tiếp tục bài tiếp theo để duy trì chuỗi học nhé!");
+                    notificationService.sendNotification(userId, notifTitle, notifContent, "PROGRESS",
+                            nextLessonId != null ? "/hoc/bai/" + nextLessonId : "/hoc");
+                } catch (Exception e) {
+                    log.warn("failed_to_send_lesson_progress_notification", e);
+                }
+            }
         }
 
         return new CompleteLessonResult(scorePercent,
@@ -577,6 +610,7 @@ public class LessonService {
             payload.put("selectedOptionId", request.getSelectedOptionId());
             payload.put("typedAnswer", stripHtml(request.getTypedAnswer()));
             payload.put("orderedTokens", request.getOrderedTokens());
+            payload.put("matches", request.getMatches());
             return objectMapper.writeValueAsString(payload);
         } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
             return null;

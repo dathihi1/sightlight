@@ -55,7 +55,7 @@ export function AppShell({
       </Link>
 
       <p className="mt-9 px-3 text-xs font-semibold uppercase tracking-wider text-ink-500">{menuLabel}</p>
-      <nav className="mt-3 flex flex-col gap-1" aria-label={menuLabel}>
+      <nav className="mt-3 flex flex-col gap-1" aria-label={menuLabel} suppressHydrationWarning>
         {nav.map(({ href, label, Icon, active, badge }) => (
           <Link
             key={href}

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { useAuthSession } from "@/lib/useAuthSession";
-import { IconBook, IconGrid, IconTarget, IconUsers } from "@/components/ui/Icons";
+import { IconArticle, IconBook, IconGrid, IconTarget, IconUsers, IconVideo } from "@/components/ui/Icons";
+import { NotificationDropdown } from "@/components/NotificationDropdown";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -17,6 +18,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       label: "Khoá học & bài học",
       Icon: IconBook,
       active: pathname.startsWith("/admin/courses") || pathname.startsWith("/admin/lessons"),
+    },
+    {
+      href: "/admin/signs",
+      label: "Video & Định nghĩa",
+      Icon: IconVideo,
+      active: pathname.startsWith("/admin/signs"),
+    },
+    {
+      href: "/admin/articles",
+      label: "Bài viết & Tags",
+      Icon: IconArticle,
+      active: pathname.startsWith("/admin/articles"),
     },
     { href: "/admin/quests", label: "Nhiệm vụ", Icon: IconTarget, active: pathname.startsWith("/admin/quests") },
     { href: "/admin/users", label: "Học viên", Icon: IconUsers, active: pathname.startsWith("/admin/users") },
@@ -50,9 +63,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       }
       topbarRight={
-        <Link href="/hoc" className="btn btn-secondary btn-sm">
-          Xem giao diện học
-        </Link>
+        <div className="flex items-center gap-2.5">
+          <NotificationDropdown />
+          <Link href="/hoc" className="btn btn-secondary btn-sm">
+            Xem giao diện học
+          </Link>
+        </div>
       }
     >
       <div className="mx-auto w-full max-w-7xl overflow-x-hidden p-6 sm:p-8">{children}</div>

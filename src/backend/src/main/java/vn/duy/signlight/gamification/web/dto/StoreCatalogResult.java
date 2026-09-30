@@ -6,6 +6,7 @@ public record StoreCatalogResult(
         int expBalance,
         int aiBonusQuota,
         int freezeCount,
+        int lessonPassCount,
         List<StoreItemDto> items,
         List<String> ownedBadges
 ) {
@@ -17,4 +18,8 @@ public record StoreCatalogResult(
             int costExp,
             boolean isOwned
     ) {}
+
+    public StoreCatalogResult(int expBalance, int aiBonusQuota, int freezeCount, List<StoreItemDto> items, List<String> ownedBadges) {
+        this(expBalance, aiBonusQuota, freezeCount, 0, items, ownedBadges);
+    }
 }

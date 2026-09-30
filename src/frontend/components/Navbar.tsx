@@ -6,7 +6,9 @@ import { usePathname } from "next/navigation";
 import { SignLightLogo } from "./SignLightLogo";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuthSession } from "@/lib/useAuthSession";
-import { IconMenu } from "@/components/ui/Icons";
+import { IconArticle, IconMenu } from "@/components/ui/Icons";
+
+import { NotificationDropdown } from "./NotificationDropdown";
 
 export function LangSwitch() {
   const { lang, setLang, t } = useLanguage();
@@ -47,15 +49,18 @@ export function Navbar() {
   const links = [
     { href: "/#our-web", label: t("Tính năng", "Features"), active: false },
     { href: "/about", label: t("Về chúng tôi", "About"), active: pathname === "/about" },
-    { href: "/blog", label: t("Bài viết", "Blog"), active: pathname.startsWith("/blog") },
+    { href: "/blog", label: t("Bài viết", "Blog"), active: pathname.startsWith("/blog"), Icon: IconArticle },
     { href: "/#businesses", label: t("Tổ chức", "Organizations"), active: false },
   ];
 
   const actions =
     isClient && isLoggedIn ? (
-      <Link href="/hoc" className="btn btn-primary btn-sm">
-        {t("Vào học", "Go to app")}
-      </Link>
+      <div className="flex items-center gap-2.5">
+        <NotificationDropdown />
+        <Link href="/hoc" className="btn btn-primary btn-sm">
+          {t("Vào học", "Go to app")}
+        </Link>
+      </div>
     ) : (
       <>
         <Link href="/dang-nhap" className="btn btn-ghost btn-sm">
@@ -81,11 +86,12 @@ export function Navbar() {
               key={l.href}
               href={l.href}
               aria-current={l.active ? "page" : undefined}
-              className={`rounded-full px-4 py-2 text-[15px] font-medium transition-colors ${
+              className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-[15px] font-medium transition-colors ${
                 l.active ? "bg-brand-50 text-brand-600" : "text-ink-700 hover:bg-ink-50 hover:text-ink-900"
               }`}
             >
-              {l.label}
+              {l.Icon && <l.Icon className="h-4 w-4 shrink-0" />}
+              <span>{l.label}</span>
             </Link>
           ))}
         </nav>
@@ -96,6 +102,7 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-2 lg:hidden">
+          {isClient && isLoggedIn && <NotificationDropdown />}
           <LangSwitch />
           <button
             type="button"
@@ -114,8 +121,9 @@ export function Navbar() {
         <div id="mobile-nav" className="border-t border-ink-200 bg-white px-4 pb-6 pt-3 lg:hidden">
           <nav className="flex flex-col gap-1" aria-label={t("Điều hướng chính", "Main")}>
             {links.map((l) => (
-              <Link key={l.href} href={l.href} className="rounded-2xl px-4 py-3 text-base font-medium text-ink-800 hover:bg-ink-50">
-                {l.label}
+              <Link key={l.href} href={l.href} className="flex items-center gap-2.5 rounded-2xl px-4 py-3 text-base font-medium text-ink-800 hover:bg-ink-50">
+                {l.Icon && <l.Icon className="h-5 w-5 shrink-0 text-brand-600" />}
+                <span>{l.label}</span>
               </Link>
             ))}
           </nav>

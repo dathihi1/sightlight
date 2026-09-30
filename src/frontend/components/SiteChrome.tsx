@@ -9,9 +9,9 @@ import { Footer } from "./Footer";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuthSession } from "@/lib/useAuthSession";
-import { IconGrid, IconWebcam, IconBook, IconTrophy, IconCrown, IconSearch, IconLogout } from "@/components/ui/Icons";
+import { IconGrid, IconWebcam, IconBook, IconTrophy, IconCrown, IconSearch, IconLogout, IconArticle, IconShop } from "@/components/ui/Icons";
 
-const APP_PREFIXES = ["/hoc", "/luyen-ai", "/tu-dien", "/nang-cap", "/thanh-toan", "/hanh-trinh"];
+const APP_PREFIXES = ["/hoc", "/luyen-ai", "/tu-dien", "/cua-hang", "/thong-bao", "/nang-cap", "/thanh-toan", "/hanh-trinh"];
 
 function SearchBox() {
   const { t } = useLanguage();
@@ -52,7 +52,9 @@ function LearnerShell({ children }: { children: React.ReactNode }) {
     { href: "/hoc", label: t("Tổng quan", "Overview"), Icon: IconGrid, active: pathname === "/hoc" },
     { href: "/luyen-ai", label: t("Luyện camera", "Camera practice"), Icon: IconWebcam, active: pathname.startsWith("/luyen-ai") },
     { href: "/tu-dien", label: t("Từ điển", "Dictionary"), Icon: IconBook, active: pathname.startsWith("/tu-dien") },
+    { href: "/cua-hang", label: t("Cửa hàng", "Shop"), Icon: IconShop, active: pathname.startsWith("/cua-hang") },
     { href: "/hanh-trinh", label: t("Hành trình", "Journey"), Icon: IconTrophy, active: pathname.startsWith("/hanh-trinh") },
+    { href: "/blog", label: t("Bài viết", "Blog"), Icon: IconArticle, active: pathname.startsWith("/blog") },
     { href: "/nang-cap", label: "Premium", Icon: IconCrown, active: pathname.startsWith("/nang-cap") || pathname.startsWith("/thanh-toan") },
   ];
   const current = nav.find((n) => n.active);

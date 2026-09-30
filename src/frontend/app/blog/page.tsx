@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { apiCall } from "@/lib/api";
 
 export default function BlogPage() {
   const { lang, t } = useLanguage();
@@ -118,12 +119,44 @@ export default function BlogPage() {
       readTimeEn: "5 min read",
     },
   ];
+  const [serverArticles, setServerArticles] = useState<any[]>([]);
+
+  useEffect(() => {
+    apiCall<any[]>("/api/v1/articles")
+      .then((data) => {
+        if (data && data.length > 0) {
+          const mapped = data.map((a) => ({
+            id: a.slug || a.id,
+            category: a.category,
+            categoryLabelVi: a.categoryLabelVi || "Mẹo học tập",
+            categoryLabelEn: a.categoryLabelEn || "Learning Tips",
+            titleVi: a.titleVi,
+            titleEn: a.titleEn || a.titleVi,
+            excerptVi: a.excerptVi || "",
+            excerptEn: a.excerptEn || a.excerptVi || "",
+            contentVi: a.contentVi,
+            contentEn: a.contentEn,
+            author: a.author || "Đội ngũ SignLight",
+            date: a.createdAt ? new Date(a.createdAt).toISOString().split("T")[0] : "2026-09-20",
+            readTimeVi: a.readTimeVi || "5 phút đọc",
+            readTimeEn: a.readTimeEn || "5 min read",
+            tags: a.tags || [],
+          }));
+          setServerArticles(mapped);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const allPosts = useMemo(() => {
+    return serverArticles.length > 0 ? serverArticles : posts;
+  }, [serverArticles]);
 
   const filteredPosts = useMemo(() => {
     return activeCategory === "all"
-      ? posts
-      : posts.filter((p) => p.category === activeCategory);
-  }, [activeCategory]);
+      ? allPosts
+      : allPosts.filter((p) => p.category === activeCategory);
+  }, [activeCategory, allPosts]);
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,8 +167,8 @@ export default function BlogPage() {
   };
 
   const selectedPost = useMemo(() => {
-    return posts.find((p) => p.id === selectedPostId) ?? null;
-  }, [selectedPostId]);
+    return allPosts.find((p) => p.id === selectedPostId) ?? null;
+  }, [selectedPostId, allPosts]);
 
   return (
     <div className="w-full bg-ink-50 min-h-screen py-12 sm:py-20">

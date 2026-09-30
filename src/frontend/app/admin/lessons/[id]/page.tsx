@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from "react";
 import { apiCall } from "@/lib/api";
 import Link from "next/link";
+import { SignVideoPlayer } from "@/components/SignVideoPlayer";
 
 interface ExerciseOption {
   id?: string;
@@ -69,6 +70,8 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
+  const [availableSigns, setAvailableSigns] = useState<any[]>([]);
+  const [previewVideo, setPreviewVideo] = useState<{ url: string; title: string } | null>(null);
 
   // Form states for adding/editing exercise
   const [formType, setFormType] = useState("SIGN_TO_MEANING");
@@ -77,6 +80,7 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
   const [formCorrectText, setFormCorrectText] = useState("");
   const [formDifficulty, setFormDifficulty] = useState("BASIC");
   const [formSkill, setFormSkill] = useState("RECOGNITION");
+  const [formSignId, setFormSignId] = useState("");
   const [formOptions, setFormOptions] = useState<ExerciseOption[]>([
     { orderIndex: 0, labelText: "", isCorrect: true },
     { orderIndex: 1, labelText: "", isCorrect: false },
@@ -102,6 +106,11 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
 
   useEffect(() => {
     fetchLesson();
+    apiCall<{ items: any[] }>("/api/v1/admin/signs?size=150")
+      .then((res) => {
+        if (res?.items) setAvailableSigns(res.items);
+      })
+      .catch(() => {});
   }, [lessonId]);
 
   // Reorder Exercises: Move Up / Down
@@ -157,6 +166,7 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
     setFormCorrectText(ex.correctAnswerText || "");
     setFormDifficulty(ex.difficulty || "BASIC");
     setFormSkill(ex.skill || "RECOGNITION");
+    setFormSignId(ex.signId || "");
     setFormOptions(
       ex.options && ex.options.length > 0
         ? ex.options.map((o, idx) => ({ orderIndex: idx, labelText: o.labelText, isCorrect: o.isCorrect }))
@@ -177,6 +187,7 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
     setFormCorrectText("");
     setFormDifficulty("BASIC");
     setFormSkill("RECOGNITION");
+    setFormSignId("");
     setFormOptions([
       { orderIndex: 0, labelText: "", isCorrect: true },
       { orderIndex: 1, labelText: "", isCorrect: false },
@@ -196,6 +207,7 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
       promptText: formPrompt,
       instructionText: formInstruction,
       correctAnswerText: formCorrectText,
+      signId: formSignId ? formSignId : undefined,
       options: formOptions.filter((o) => o.labelText.trim().length > 0),
     };
 
@@ -346,6 +358,15 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
                           Ký hiệu: <strong>{ex.signName}</strong>
                         </span>
                       )}
+                      {ex.videoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewVideo({ url: ex.videoUrl!, title: ex.signName || ex.promptText })}
+                          className="px-2 py-0.5 rounded text-xs font-bold bg-brand-50 text-brand-600 border border-brand-200 hover:bg-brand-100 transition-colors cursor-pointer flex items-center gap-1"
+                        >
+                          <span>▶</span> Video học
+                        </button>
+                      )}
                     </div>
 
                     <p className="text-sm font-bold text-ink-900 line-clamp-1">
@@ -483,6 +504,58 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
               </div>
 
               <div>
+                <label className="block font-bold text-ink-700 mb-1">
+                  Ký hiệu & Video học gắn kèm (Tùy chọn)
+                </label>
+                <select
+                  value={formSignId}
+                  onChange={(e) => {
+                    const selectedId = e.target.value;
+                    setFormSignId(selectedId);
+                    const sign = availableSigns.find((s) => s.id === selectedId);
+                    if (sign) {
+                      if (!formPrompt) setFormPrompt(`Ký hiệu "${sign.word}" có ý nghĩa là gì?`);
+                      if (!formCorrectText) setFormCorrectText(sign.meaning || sign.word);
+                    }
+                  }}
+                  className="w-full p-2.5 rounded-xl border border-ink-200 bg-white"
+                >
+                  <option value="">-- Không gắn ký hiệu riêng (Bài tập câu hoặc ngữ cảnh) --</option>
+                  {availableSigns.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.word} ({s.topic}) - {s.meaning ? s.meaning.slice(0, 40) + "..." : "Chưa có định nghĩa"}
+                    </option>
+                  ))}
+                </select>
+
+                {formSignId && (
+                  <div className="mt-2 p-2.5 rounded-xl bg-ink-50 border border-ink-200 space-y-1">
+                    {(() => {
+                      const s = availableSigns.find((x) => x.id === formSignId);
+                      if (!s) return null;
+                      return (
+                        <>
+                          <p className="font-bold text-ink-900">
+                            Ký hiệu: <span className="text-brand-600">{s.word}</span> &bull; Cấp độ: {s.cefrLevel || "A1"}
+                          </p>
+                          <p className="text-ink-600">
+                            <strong>Định nghĩa:</strong> {s.meaning || "Chưa có"}
+                          </p>
+                          {s.videoUrl ? (
+                            <p className="text-brand-600 font-bold flex items-center gap-1">
+                              <span>📹</span> Có video học sẵn sàng
+                            </p>
+                          ) : (
+                            <p className="text-sun-600 font-medium">⚠️ Ký hiệu này chưa có video trong kho</p>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+
+              <div>
                 <label className="block font-bold text-ink-700 mb-1">Câu hỏi / Lời nhắc (Prompt)</label>
                 <input
                   type="text"
@@ -587,6 +660,38 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Video Preview Modal */}
+      {previewVideo && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="card max-w-xl w-full p-4 bg-ink-950 text-white shadow-2xl animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3">
+              <h3 className="font-bold text-base text-white">
+                Video học: <span className="text-brand-400">{previewVideo.title}</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setPreviewVideo(null)}
+                className="text-white/60 hover:text-white text-xl font-bold cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="aspect-video w-full rounded-xl overflow-hidden bg-black">
+              <SignVideoPlayer videoUrl={previewVideo.url} title={previewVideo.title} autoPlay={true} />
+            </div>
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setPreviewVideo(null)}
+                className="btn btn-secondary btn-sm bg-white/10 text-white hover:bg-white/20"
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         </div>
       )}

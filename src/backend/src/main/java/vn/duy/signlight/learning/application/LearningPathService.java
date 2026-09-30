@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.duy.signlight.content.application.ContentCatalogService;
@@ -14,6 +15,7 @@ import vn.duy.signlight.content.domain.Chapter;
 import vn.duy.signlight.content.domain.Course;
 import vn.duy.signlight.content.domain.Lesson;
 import vn.duy.signlight.content.domain.Unit;
+import vn.duy.signlight.gamification.repository.UserInventoryRepository;
 import vn.duy.signlight.identity.application.AuthService;
 import vn.duy.signlight.learning.domain.UserLessonState;
 import vn.duy.signlight.learning.repository.UserLessonStateRepository;
@@ -36,15 +38,26 @@ public class LearningPathService {
     private final ContentTreeService contentTree;
     private final UserLessonStateRepository lessonStateRepository;
     private final AuthService authService;
+    private final UserInventoryRepository userInventoryRepository;
+
+    @Autowired
+    public LearningPathService(ContentCatalogService contentCatalog,
+            ContentTreeService contentTree,
+            UserLessonStateRepository lessonStateRepository,
+            AuthService authService,
+            UserInventoryRepository userInventoryRepository) {
+        this.contentCatalog = contentCatalog;
+        this.contentTree = contentTree;
+        this.lessonStateRepository = lessonStateRepository;
+        this.authService = authService;
+        this.userInventoryRepository = userInventoryRepository;
+    }
 
     public LearningPathService(ContentCatalogService contentCatalog,
             ContentTreeService contentTree,
             UserLessonStateRepository lessonStateRepository,
             AuthService authService) {
-        this.contentCatalog = contentCatalog;
-        this.contentTree = contentTree;
-        this.lessonStateRepository = lessonStateRepository;
-        this.authService = authService;
+        this(contentCatalog, contentTree, lessonStateRepository, authService, null);
     }
 
     @Transactional(readOnly = true)
@@ -62,6 +75,14 @@ public class LearningPathService {
         UUID nextLessonId = null;
         boolean previousCompleted = true;   // bài đầu tiên của khoá luôn mở
 
+        boolean hasUnitPass = userId != null && userInventoryRepository != null
+                && userInventoryRepository.existsByUserIdAndItemTypeAndItemKey(userId, "LESSON_PASS", "LESSON_UNLOCK_UNIT");
+        int remainingLessonPasses = (userId != null && userInventoryRepository != null)
+                ? (int) userInventoryRepository.findByUserIdAndItemType(userId, "LESSON_PASS").stream()
+                        .filter(i -> "LESSON_UNLOCK_1".equals(i.getItemKey()))
+                        .count()
+                : 0;
+
         for (Unit unit : tree.units()) {
             boolean premiumLocked = false;   // Toàn bộ 17 Units mở miễn phí cho mọi người học
             List<LearningPathResult.ChapterNode> chapterNodes = new ArrayList<>();
@@ -75,6 +96,13 @@ public class LearningPathService {
                     String status = state == null ? UserLessonState.NOT_STARTED : state.getStatus();
                     boolean completed = UserLessonState.COMPLETED.equals(status);
                     boolean locked = !unitLessonPreviousCompleted;
+
+                    if (locked && hasUnitPass) {
+                        locked = false;
+                    } else if (locked && remainingLessonPasses > 0) {
+                        locked = false;
+                        remainingLessonPasses--;
+                    }
 
                     lessonNodes.add(new LearningPathResult.LessonNode(
                             lesson.getId(), lesson.getTitle(), status, locked, premiumLocked,

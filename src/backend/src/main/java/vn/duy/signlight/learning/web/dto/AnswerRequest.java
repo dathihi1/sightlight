@@ -48,7 +48,7 @@ public class AnswerRequest extends BaseRequest {
      */
     @Data
     public static class MatchPair {
-        private UUID promptId;
+        private String promptId;
         private UUID optionId;
     }
 }

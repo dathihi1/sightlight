@@ -376,25 +376,43 @@ function MatchSignMeaningExercise({
       <div className="grid md:grid-cols-2 gap-4">
         {/* Prompts (left side) */}
         <div className="space-y-2">
-          <p className="text-sm font-bold text-ink-500">Ký hiệu:</p>
+          <p className="text-sm font-bold text-ink-500">Cột ký hiệu:</p>
           {options.map((option, idx) => {
             const promptId = `prompt-${idx}`;
             const matched = getMatchedOption(promptId);
+            const isSelected = selectedPrompt === promptId;
+            const isMatched = isPromptMatched(promptId);
             return (
               <button
                 key={promptId}
+                type="button"
                 onClick={() => handleSelectPrompt(promptId)}
                 disabled={disabled}
                 className={`
-                  w-full rounded-2xl border p-4 text-left text-lg font-bold transition-colors
-                  ${selectedPrompt === promptId ? "border-brand-500 bg-brand-50" : ""}
-                  ${isPromptMatched(promptId) && selectedPrompt !== promptId ? "border-brand-500 bg-brand-50" : ""}
-                  ${!isPromptMatched(promptId) && selectedPrompt !== promptId ? "border-ink-200 bg-white hover:bg-ink-50" : ""}
+                  w-full rounded-2xl border p-4 text-left transition-all
+                  ${isSelected ? "border-brand-500 bg-brand-50 ring-2 ring-brand-200" : ""}
+                  ${isMatched && !isSelected ? "border-brand-300 bg-brand-50/50" : ""}
+                  ${!isMatched && !isSelected ? "border-ink-200 bg-white hover:bg-ink-50" : ""}
                   ${disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"}
                 `}
               >
-                <span className="font-semibold text-ink-900">{idx + 1}</span>
-                {matched && <span className="ml-2 text-ink-700">→ {matched.labelText}</span>}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-brand-100 text-xs font-bold text-brand-700">
+                      {idx + 1}
+                    </span>
+                    <span className="text-sm font-semibold text-ink-800">Ký hiệu #{idx + 1}</span>
+                  </div>
+                  {matched ? (
+                    <span className="text-xs font-bold text-brand-700 bg-brand-100 px-2.5 py-1 rounded-full">
+                      → {matched.labelText}
+                    </span>
+                  ) : isSelected ? (
+                    <span className="text-xs font-semibold text-brand-600 animate-pulse">
+                      Chọn nghĩa bên phải...
+                    </span>
+                  ) : null}
+                </div>
               </button>
             );
           })}
@@ -402,22 +420,34 @@ function MatchSignMeaningExercise({
 
         {/* Options (right side) */}
         <div className="space-y-2">
-          <p className="text-sm font-bold text-ink-500">Ý nghĩa:</p>
-          {options.map((option) => (
-            <button
-              key={option.id}
-              onClick={() => handleSelectOption(option.id)}
-              disabled={disabled || !selectedPrompt}
-              className={`
-                w-full rounded-2xl border p-4 text-left text-lg font-bold transition-colors
-                ${isOptionMatched(option.id) ? "border-brand-500 bg-brand-50" : ""}
-                ${!isOptionMatched(option.id) ? "border-ink-200 bg-white hover:bg-ink-50" : ""}
-                ${disabled || !selectedPrompt ? "cursor-not-allowed opacity-70" : "cursor-pointer"}
-              `}
-            >
-              <span className="text-ink-900">{option.labelText}</span>
-            </button>
-          ))}
+          <p className="text-sm font-bold text-ink-500">Cột ý nghĩa:</p>
+          {options.map((option) => {
+            const isMatched = isOptionMatched(option.id);
+            return (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => handleSelectOption(option.id)}
+                disabled={disabled || !selectedPrompt}
+                className={`
+                  w-full rounded-2xl border p-4 text-left transition-all
+                  ${isMatched ? "border-brand-400 bg-brand-50/60" : ""}
+                  ${!isMatched && selectedPrompt ? "border-ink-200 bg-white hover:border-brand-300 hover:bg-ink-50" : ""}
+                  ${!isMatched && !selectedPrompt ? "border-ink-200 bg-white opacity-85" : ""}
+                  ${disabled || !selectedPrompt ? "cursor-not-allowed" : "cursor-pointer"}
+                `}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-bold text-ink-900">{option.labelText}</span>
+                  {isMatched && (
+                    <span className="text-xs font-semibold text-success-700 bg-success-50 px-2 py-0.5 rounded-full">
+                      ✓ Đã ghép
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
