@@ -93,7 +93,7 @@ public class SecurityConfig {
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers("/api/v1/cms/content/*/approve").hasAnyRole("CONTENT_APPROVER", "ADMIN")
                         .requestMatchers("/api/v1/cms/**").hasAnyRole("CONTENT_CREATOR", "CONTENT_APPROVER", "ADMIN")
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "CONTENT_CREATOR", "CONTENT_APPROVER")
                         .anyRequest().authenticated())
                 .exceptionHandling(handling -> handling
                         .authenticationEntryPoint((request, response, ex) ->

@@ -27,7 +27,7 @@ import vn.duy.signlight.common.web.TransactionResponse;
 @RestController
 @RequestMapping("/api/v1/admin/articles")
 @Tag(name = "admin-articles", description = "Quản trị bài viết & Tags (Admin)")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'CONTENT_CREATOR', 'CONTENT_APPROVER')")
 public class AdminArticleController {
 
     private final ArticleService articleService;

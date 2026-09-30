@@ -54,7 +54,6 @@ function LearnerShell({ children }: { children: React.ReactNode }) {
     { href: "/tu-dien", label: t("Từ điển", "Dictionary"), Icon: IconBook, active: pathname.startsWith("/tu-dien") },
     { href: "/cua-hang", label: t("Cửa hàng", "Shop"), Icon: IconShop, active: pathname.startsWith("/cua-hang") },
     { href: "/hanh-trinh", label: t("Hành trình", "Journey"), Icon: IconTrophy, active: pathname.startsWith("/hanh-trinh") },
-    { href: "/blog", label: t("Bài viết", "Blog"), Icon: IconArticle, active: pathname.startsWith("/blog") },
     { href: "/nang-cap", label: "Premium", Icon: IconCrown, active: pathname.startsWith("/nang-cap") || pathname.startsWith("/thanh-toan") },
   ];
   const current = nav.find((n) => n.active);
