@@ -51,7 +51,8 @@ public class Exercise {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "accepted_answers", nullable = false)
-    private String acceptedAnswers;
+    @Builder.Default
+    private String acceptedAnswers = "[]";
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "correct_order")
