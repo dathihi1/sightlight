@@ -25,12 +25,17 @@ export default function HomePage() {
   return (
     <div className="w-full overflow-hidden bg-[#F4EFE6]">
       {/* Floating Language Mode Indicator Pill */}
-      <div className="fixed bottom-6 right-6 z-40 hidden sm:flex items-center gap-2 p-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-xl border border-[#E2DBD0] text-xs">
-        <span className="text-[11px] font-bold text-[#64748B] px-2">
+      <div
+        className="fixed bottom-6 right-6 z-40 hidden sm:flex items-center gap-2 p-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-xl border border-[#E2DBD0] text-xs"
+        suppressHydrationWarning
+      >
+        <span className="text-[11px] font-bold text-[#64748B] px-2" suppressHydrationWarning>
           {lang === "vi" ? "Ngôn ngữ giao diện:" : "Display language:"}
         </span>
         <button
+          type="button"
           onClick={() => setLang("vi")}
+          suppressHydrationWarning
           className={`px-3 py-1.5 rounded-full font-bold transition-all ${
             lang === "vi"
               ? "bg-[#0d9fa5] text-white shadow-xs"
@@ -40,7 +45,9 @@ export default function HomePage() {
           Tiếng Việt (VSL)
         </button>
         <button
+          type="button"
           onClick={() => setLang("en")}
+          suppressHydrationWarning
           className={`px-3 py-1.5 rounded-full font-bold transition-all ${
             lang === "en"
               ? "bg-[#0d9fa5] text-white shadow-xs"

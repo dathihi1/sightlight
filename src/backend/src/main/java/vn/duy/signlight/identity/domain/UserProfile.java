@@ -33,4 +33,12 @@ public class UserProfile {
 
     @Column(nullable = false, length = 64)
     private String timezone;
+
+    @Column(name = "exp_balance", nullable = false)
+    @Builder.Default
+    private int expBalance = 0;
+
+    @Column(name = "ai_bonus_quota", nullable = false)
+    @Builder.Default
+    private int aiBonusQuota = 0;
 }

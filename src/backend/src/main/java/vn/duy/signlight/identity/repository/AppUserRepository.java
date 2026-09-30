@@ -12,4 +12,10 @@ public interface AppUserRepository extends JpaRepository<AppUser, UUID> {
     /** So khớp không phân biệt hoa thường, khớp với chỉ mục {@code uq_user_email_ci}. */
     @Query("select u from AppUser u where lower(u.email) = lower(:email)")
     Optional<AppUser> findByEmailIgnoreCase(@Param("email") String email);
+
+    org.springframework.data.domain.Page<AppUser> findByEmailContainingIgnoreCase(
+            String email, org.springframework.data.domain.Pageable pageable);
+
+    org.springframework.data.domain.Page<AppUser> findByStatus(
+            String status, org.springframework.data.domain.Pageable pageable);
 }

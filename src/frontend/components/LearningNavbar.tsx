@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignLightLogo } from "./SignLightLogo";
+import { NotificationDropdown } from "./NotificationDropdown";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuthSession } from "@/lib/useAuthSession";
 
@@ -62,7 +63,7 @@ export function LearningNavbar() {
   ];
 
   // Specific runner mode for lesson runner page: clean focus bar
-  const isLessonRunner = pathname.startsWith("/hoc/bai/");
+  const isLessonRunner = pathname.startsWith("/hoc/bai/") || pathname.startsWith("/hoc/bai-moi/");
 
   if (isLessonRunner) {
     return (
@@ -135,10 +136,12 @@ export function LearningNavbar() {
             className="flex items-center p-1 rounded-full bg-white border border-[#E2DBD0] shadow-2xs"
             role="group"
             aria-label={t("Chọn ngôn ngữ", "Select language")}
+            suppressHydrationWarning
           >
             <button
               type="button"
               onClick={() => setLang("vi")}
+              suppressHydrationWarning
               className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold transition-all ${
                 lang === "vi"
                   ? "bg-[#0d9fa5] text-white shadow-xs"
@@ -151,6 +154,7 @@ export function LearningNavbar() {
             <button
               type="button"
               onClick={() => setLang("en")}
+              suppressHydrationWarning
               className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold transition-all ${
                 lang === "en"
                   ? "bg-[#0d9fa5] text-white shadow-xs"
@@ -164,9 +168,21 @@ export function LearningNavbar() {
 
           <div className="h-5 w-[1px] bg-[#E2DBD0]" />
 
-          {/* 7. Navbar tài khoản & 8. Thoát */}
+          {/* 7. Navbar tài khoản, Thông báo & 8. Thoát */}
           {isClient && isLoggedIn ? (
             <div className="flex items-center gap-2">
+              <NotificationDropdown />
+
+              {user?.roles?.some(r => r.includes("ADMIN") || r.includes("CONTENT")) && (
+                <Link
+                  href="/admin"
+                  title="Truy cập Bảng Quản trị"
+                  className="px-3 py-1.5 rounded-full bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors shadow-2xs"
+                >
+                  Admin
+                </Link>
+              )}
+
               <Link
                 href="/hanh-trinh"
                 title={t("Xem hành trình học tập của bạn", "View your learning journey")}
@@ -218,10 +234,11 @@ export function LearningNavbar() {
 
         {/* Mobile Hamburger Button */}
         <div className="flex items-center gap-2 md:hidden">
-          <div className="flex items-center p-0.5 rounded-full bg-white border border-[#E2DBD0]">
+          <div className="flex items-center p-0.5 rounded-full bg-white border border-[#E2DBD0]" suppressHydrationWarning>
             <button
               type="button"
               onClick={() => setLang("vi")}
+              suppressHydrationWarning
               className={`px-2.5 py-1 rounded-full text-xs font-bold ${
                 lang === "vi" ? "bg-[#0d9fa5] text-white" : "text-[#64748B]"
               }`}
@@ -231,6 +248,7 @@ export function LearningNavbar() {
             <button
               type="button"
               onClick={() => setLang("en")}
+              suppressHydrationWarning
               className={`px-2.5 py-1 rounded-full text-xs font-bold ${
                 lang === "en" ? "bg-[#0d9fa5] text-white" : "text-[#64748B]"
               }`}

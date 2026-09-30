@@ -49,7 +49,7 @@ public class SecurityConfig {
             "/api/v1/media/**",
             "/api/v1/onboarding/answers",
             "/api/v1/onboarding/answers/**",
-            "/api/v1/courses",
+            "/api/v1/courses/**",
             "/api/v1/dictionary/search",
             "/api/v1/dictionary/signs/**",
             "/api/v1/dictionary/topics",

@@ -1,6 +1,7 @@
 package vn.duy.signlight.platform.seed;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Instant;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,7 @@ import vn.duy.signlight.content.domain.Course;
 import vn.duy.signlight.content.domain.Exercise;
 import vn.duy.signlight.content.domain.ExerciseOption;
 import vn.duy.signlight.content.domain.Lesson;
+import vn.duy.signlight.content.domain.LessonContentBlock;
 import vn.duy.signlight.content.domain.Sign;
 import vn.duy.signlight.content.domain.SignVideo;
 import vn.duy.signlight.content.domain.Unit;
@@ -28,6 +30,7 @@ import vn.duy.signlight.content.repository.ChapterRepository;
 import vn.duy.signlight.content.repository.CourseRepository;
 import vn.duy.signlight.content.repository.ExerciseOptionRepository;
 import vn.duy.signlight.content.repository.ExerciseRepository;
+import vn.duy.signlight.content.repository.LessonContentBlockRepository;
 import vn.duy.signlight.content.repository.LessonRepository;
 import vn.duy.signlight.content.repository.SignRepository;
 import vn.duy.signlight.content.repository.SignVideoRepository;
@@ -61,6 +64,7 @@ public class SeedRunner implements ApplicationRunner {
     private final SignRepository signRepository;
     private final SignVideoRepository signVideoRepository;
     private final AiModelSyncService aiModelSyncService;
+    private final LessonContentBlockRepository lessonContentBlockRepository;
 
     public SeedRunner(ObjectMapper objectMapper,
             CourseRepository courseRepository,
@@ -71,7 +75,8 @@ public class SeedRunner implements ApplicationRunner {
             ExerciseOptionRepository optionRepository,
             SignRepository signRepository,
             SignVideoRepository signVideoRepository,
-            AiModelSyncService aiModelSyncService) {
+            AiModelSyncService aiModelSyncService,
+            LessonContentBlockRepository lessonContentBlockRepository) {
         this.objectMapper = objectMapper;
         this.courseRepository = courseRepository;
         this.unitRepository = unitRepository;
@@ -82,6 +87,7 @@ public class SeedRunner implements ApplicationRunner {
         this.signRepository = signRepository;
         this.signVideoRepository = signVideoRepository;
         this.aiModelSyncService = aiModelSyncService;
+        this.lessonContentBlockRepository = lessonContentBlockRepository;
     }
 
     @Override
@@ -316,6 +322,136 @@ public class SeedRunner implements ApplicationRunner {
             lessonRepository.save(lesson);
 
             upsertExercises(lesson, seedLesson.exercises(), signsByWord);
+            upsertContentBlocksAndAdvancedExercises(lesson, seedLesson.exercises(), signsByWord);
+        }
+    }
+
+    private void upsertContentBlocksAndAdvancedExercises(Lesson lesson, List<SeedExercise> seedExercises,
+            Map<String, Sign> signsByWord) {
+        if (seedExercises == null || seedExercises.isEmpty()) {
+            return;
+        }
+
+        List<Sign> signs = seedExercises.stream()
+                .map(SeedExercise::sign)
+                .filter(java.util.Objects::nonNull)
+                .map(signsByWord::get)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (signs.isEmpty()) {
+            return;
+        }
+
+        int blockIndex = 0;
+        String introKey = (lesson.getStableKey() != null ? lesson.getStableKey() : lesson.getId().toString()) + ".block.intro";
+        if (!lessonContentBlockRepository.existsByLessonIdAndStableKey(lesson.getId(), introKey)) {
+            LessonContentBlock introBlock = LessonContentBlock.builder()
+                    .id(UUID.randomUUID())
+                    .lessonId(lesson.getId())
+                    .stableKey(introKey)
+                    .blockType("INTRO")
+                    .orderIndex(blockIndex++)
+                    .title("Mục tiêu bài học: " + lesson.getTitle())
+                    .bodyText(lesson.getSummary() != null ? lesson.getSummary() : "Trong bài học này, bạn sẽ học và làm chủ các ký hiệu mới qua các bước xem video và thực hành.")
+                    .required(false)
+                    .status("PUBLISHED")
+                    .contentVersion(1)
+                    .seed(true)
+                    .createdAt(Instant.now())
+                    .updatedAt(Instant.now())
+                    .build();
+            lessonContentBlockRepository.save(introBlock);
+        }
+
+        for (Sign sign : signs) {
+            String cardKey = (lesson.getStableKey() != null ? lesson.getStableKey() : lesson.getId().toString()) + ".block." + sign.getWord();
+            if (!lessonContentBlockRepository.existsByLessonIdAndStableKey(lesson.getId(), cardKey)) {
+                LessonContentBlock cardBlock = LessonContentBlock.builder()
+                        .id(UUID.randomUUID())
+                        .lessonId(lesson.getId())
+                        .stableKey(cardKey)
+                        .blockType("SIGN_CARD")
+                        .orderIndex(blockIndex++)
+                        .title(sign.getWord())
+                        .bodyText(sign.getMeaning() != null ? sign.getMeaning() : ("Ký hiệu: " + sign.getWord()))
+                        .signId(sign.getId())
+                        .payload(writeJson(Map.of(
+                                "word", sign.getWord(),
+                                "meaning", sign.getMeaning() != null ? sign.getMeaning() : "",
+                                "topic", sign.getTopic() != null ? sign.getTopic() : "Giao tiếp")))
+                        .required(true)
+                        .status("PUBLISHED")
+                        .contentVersion(1)
+                        .seed(true)
+                        .createdAt(Instant.now())
+                        .updatedAt(Instant.now())
+                        .build();
+                lessonContentBlockRepository.save(cardBlock);
+            }
+        }
+
+        int currentCount = exerciseRepository.findByLessonIdOrderByOrderIndexAsc(lesson.getId()).size();
+
+        // Thêm SIGN_VIDEO_RECALL
+        String recallKey = (lesson.getStableKey() != null ? lesson.getStableKey() : lesson.getId().toString()) + ".recall.1";
+        if (exerciseRepository.findByLessonIdAndStableKey(lesson.getId(), recallKey).isEmpty() && !signs.isEmpty()) {
+            Sign firstSign = signs.get(0);
+            Exercise recallEx = Exercise.builder()
+                    .id(UUID.randomUUID())
+                    .lessonId(lesson.getId())
+                    .orderIndex(currentCount++)
+                    .stableKey(recallKey)
+                    .type("SIGN_VIDEO_RECALL")
+                    .skill("RECALL")
+                    .difficulty("MEDIUM")
+                    .signId(firstSign.getId())
+                    .instructionText("Xem video và nhớ lại ý nghĩa của ký hiệu:")
+                    .promptText("Nhập từ tiếng Việt tương ứng với ký hiệu trong video:")
+                    .correctAnswerText(firstSign.getWord())
+                    .acceptedAnswers(writeJson(List.of(firstSign.getWord())))
+                    .contentVersion(1)
+                    .evaluationVersion(1)
+                    .active(true)
+                    .seed(true)
+                    .build();
+            exerciseRepository.save(recallEx);
+        }
+
+        // Thêm MATCH_SIGN_MEANING nếu có từ 3 ký hiệu
+        if (signs.size() >= 3) {
+            String matchKey = (lesson.getStableKey() != null ? lesson.getStableKey() : lesson.getId().toString()) + ".match.1";
+            if (exerciseRepository.findByLessonIdAndStableKey(lesson.getId(), matchKey).isEmpty()) {
+                Exercise matchEx = Exercise.builder()
+                        .id(UUID.randomUUID())
+                        .lessonId(lesson.getId())
+                        .orderIndex(currentCount++)
+                        .stableKey(matchKey)
+                        .type("MATCH_SIGN_MEANING")
+                        .skill("MATCHING")
+                        .difficulty("MEDIUM")
+                        .instructionText("Ghép đôi các ký hiệu với từ ngữ tương ứng:")
+                        .promptText("Nối đúng các cặp ký hiệu - ý nghĩa")
+                        .contentVersion(1)
+                        .evaluationVersion(1)
+                        .active(true)
+                        .seed(true)
+                        .build();
+                exerciseRepository.save(matchEx);
+
+                for (int i = 0; i < Math.min(4, signs.size()); i++) {
+                    Sign s = signs.get(i);
+                    optionRepository.save(ExerciseOption.builder()
+                            .id(UUID.randomUUID())
+                            .exerciseId(matchEx.getId())
+                            .orderIndex(i)
+                            .correct(true)
+                            .labelText(s.getWord())
+                            .seed(true)
+                            .build());
+                }
+            }
         }
     }
 

@@ -72,6 +72,8 @@ public class LessonService {
     private final AuthService authService;
     private final ObjectMapper objectMapper;
     private final vn.duy.signlight.content.application.LessonContentService lessonContentService;
+    private final vn.duy.signlight.gamification.application.GamificationStoreService gamificationStoreService;
+    private final vn.duy.signlight.gamification.application.QuestService questService;
 
     public LessonService(ContentTreeService contentTree,
             MediaUrlService mediaUrlService,
@@ -83,7 +85,9 @@ public class LessonService {
             StreakService streakService,
             AuthService authService,
             ObjectMapper objectMapper,
-            vn.duy.signlight.content.application.LessonContentService lessonContentService) {
+            vn.duy.signlight.content.application.LessonContentService lessonContentService,
+            vn.duy.signlight.gamification.application.GamificationStoreService gamificationStoreService,
+            vn.duy.signlight.gamification.application.QuestService questService) {
         this.contentTree = contentTree;
         this.mediaUrlService = mediaUrlService;
         this.learningPathService = learningPathService;
@@ -95,6 +99,8 @@ public class LessonService {
         this.authService = authService;
         this.objectMapper = objectMapper;
         this.lessonContentService = lessonContentService;
+        this.gamificationStoreService = gamificationStoreService;
+        this.questService = questService;
     }
 
     // ----------------------------------------------------------- đọc bài học
@@ -134,18 +140,93 @@ public class LessonService {
         }
 
         // Load content blocks
-        List<vn.duy.signlight.learning.web.dto.ContentBlockNode> blocks = lessonContentService.getPublishedBlocks(lessonId).stream()
-                .map(block -> new vn.duy.signlight.learning.web.dto.ContentBlockNode(
-                        block.getId(),
-                        block.getStableKey(),
-                        block.getBlockType(),
-                        block.getTitle(),
-                        block.getBodyText(),
-                        parseJsonPayload(block.getPayload()),
-                        block.getSignId(),
-                        block.getMediaRef(),
-                        block.isRequired()))
-                .toList();
+        List<vn.duy.signlight.learning.web.dto.ContentBlockNode> blocks = new ArrayList<>(
+                lessonContentService.getPublishedBlocks(lessonId).stream()
+                        .map(block -> {
+                            String mediaUrl = block.getMediaRef();
+                            if ((mediaUrl == null || mediaUrl.isBlank()) && block.getSignId() != null) {
+                                SignVideo v = contentTree.primaryVideo(block.getSignId()).orElse(null);
+                                if (v != null) {
+                                    mediaUrl = mediaUrlService.resolveVideoUrl(v);
+                                }
+                            }
+                            return new vn.duy.signlight.learning.web.dto.ContentBlockNode(
+                                    block.getId(),
+                                    block.getStableKey(),
+                                    block.getBlockType(),
+                                    block.getTitle(),
+                                    block.getBodyText(),
+                                    parseJsonPayload(block.getPayload()),
+                                    block.getSignId(),
+                                    mediaUrl,
+                                    block.isRequired());
+                        })
+                        .toList());
+
+        // Tự động tổng hợp các thẻ học từ mới (SIGN_CARD) trước khi làm bài tập nếu chưa có cấu hình block
+        boolean hasSignCards = blocks.stream().anyMatch(b -> "SIGN_CARD".equals(b.blockType()));
+        if (!hasSignCards && !exercises.isEmpty()) {
+            List<UUID> exerciseSignIds = exercises.stream()
+                    .map(Exercise::getSignId)
+                    .filter(java.util.Objects::nonNull)
+                    .distinct()
+                    .toList();
+
+            if (!exerciseSignIds.isEmpty()) {
+                List<vn.duy.signlight.content.domain.Sign> signs = contentTree.publishedSigns(exerciseSignIds);
+                Map<UUID, vn.duy.signlight.content.domain.Sign> signMap = signs.stream()
+                        .collect(java.util.stream.Collectors.toMap(
+                                vn.duy.signlight.content.domain.Sign::getId,
+                                s -> s,
+                                (s1, s2) -> s1));
+
+                List<vn.duy.signlight.learning.web.dto.ContentBlockNode> synthesizedCards = new ArrayList<>();
+                for (UUID signId : exerciseSignIds) {
+                    vn.duy.signlight.content.domain.Sign sign = signMap.get(signId);
+                    if (sign == null) {
+                        continue;
+                    }
+                    SignVideo video = videos.get(signId);
+                    String mediaUrl = video == null ? null : mediaUrlService.resolveVideoUrl(video);
+
+                    String meaningText = sign.getMeaning();
+                    if (meaningText == null || meaningText.isBlank()) {
+                        meaningText = sign.getDescription();
+                    }
+                    if (meaningText == null || meaningText.isBlank()) {
+                        meaningText = "Ký hiệu: " + sign.getWord();
+                    }
+
+                    Map<String, Object> payload = new java.util.LinkedHashMap<>();
+                    if (sign.getWordClass() != null) {
+                        payload.put("wordClass", sign.getWordClass());
+                    }
+                    if (sign.getTopic() != null) {
+                        payload.put("topic", sign.getTopic());
+                    }
+                    if (sign.getCefrLevel() != null) {
+                        payload.put("cefrLevel", sign.getCefrLevel());
+                    }
+
+                    synthesizedCards.add(new vn.duy.signlight.learning.web.dto.ContentBlockNode(
+                            sign.getId(),
+                            "sign-card-" + sign.getId(),
+                            "SIGN_CARD",
+                            sign.getWord(),
+                            meaningText,
+                            payload,
+                            sign.getId(),
+                            mediaUrl,
+                            true));
+                }
+
+                List<vn.duy.signlight.learning.web.dto.ContentBlockNode> mergedBlocks = new ArrayList<>();
+                blocks.stream().filter(b -> "INTRO".equals(b.blockType())).forEach(mergedBlocks::add);
+                mergedBlocks.addAll(synthesizedCards);
+                blocks.stream().filter(b -> !"INTRO".equals(b.blockType())).forEach(mergedBlocks::add);
+                blocks = mergedBlocks;
+            }
+        }
 
         UserLessonState state = touchState(userId, lessonId);
         return new LessonResult(
@@ -400,13 +481,26 @@ public class LessonService {
                 .distinct()
                 .count();
 
+        int earnedExp = countActivity ? (20 + (scorePercent == 100 ? 15 : 0)) : 0;
+        if (earnedExp > 0) {
+            gamificationStoreService.awardExp(userId, earnedExp);
+        }
+
+        if (countActivity) {
+            questService.recordAction(userId, "COMPLETE_LESSON", 1);
+            if (scorePercent == 100) {
+                questService.recordAction(userId, "SCORE_PERFECT", 1);
+            }
+        }
+
         return new CompleteLessonResult(scorePercent,
                 scorePercent == 100,
                 effectiveMinutes,
                 new CompleteLessonResult.StreakSummary(streak.current(), streak.longest(),
                         streak.freezeCount(), streak.goalMetToday()),
                 newSigns,
-                nextLessonId);
+                nextLessonId,
+                earnedExp);
     }
 
     /** Điểm tính theo <b>lần trả lời đầu tiên</b> của mỗi câu (BR-A20). */

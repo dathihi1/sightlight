@@ -9,4 +9,5 @@ import vn.duy.signlight.gamification.domain.StreakId;
 public interface StreakRepository extends JpaRepository<Streak, StreakId> {
 
     Optional<Streak> findByUserIdAndCourseId(UUID userId, UUID courseId);
+    java.util.List<Streak> findByUserId(UUID userId);
 }

@@ -75,6 +75,8 @@ public class AiRecognitionService {
     private final MediaUrlService mediaUrlService;
     private final AuthService authService;
     private final ObjectMapper objectMapper;
+    private final vn.duy.signlight.gamification.application.GamificationStoreService gamificationStoreService;
+    private final vn.duy.signlight.gamification.application.QuestService questService;
 
     public AiRecognitionService(AiInferenceClient aiClient,
             AiModelSyncService modelSyncService,
@@ -84,7 +86,9 @@ public class AiRecognitionService {
             ContentTreeService contentTree,
             MediaUrlService mediaUrlService,
             AuthService authService,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            vn.duy.signlight.gamification.application.GamificationStoreService gamificationStoreService,
+            vn.duy.signlight.gamification.application.QuestService questService) {
         this.aiClient = aiClient;
         this.modelSyncService = modelSyncService;
         this.labelRepository = labelRepository;
@@ -94,6 +98,8 @@ public class AiRecognitionService {
         this.mediaUrlService = mediaUrlService;
         this.authService = authService;
         this.objectMapper = objectMapper;
+        this.gamificationStoreService = gamificationStoreService;
+        this.questService = questService;
     }
 
     // ------------------------------------------------------------ capabilities
@@ -216,8 +222,12 @@ public class AiRecognitionService {
         boolean premium = authService.isPremium(userId);
         String timezone = authService.timezoneOf(userId);
         LocalDate today = LocalDate.now(ZoneId.of(timezone));
+        boolean usedBonus = false;
         if (!premium && usedToday(userId, today) >= FREE_DAILY_QUOTA) {
-            throw new BusinessException(ErrorCode.AI_QUOTA_EXCEEDED);
+            if (!gamificationStoreService.consumeAiBonusQuota(userId)) {
+                throw new BusinessException(ErrorCode.AI_QUOTA_EXCEEDED);
+            }
+            usedBonus = true;
         }
 
         // Từ đây trở xuống mới thật sự gọi mô hình. Lỗi tích hợp ném ra ngoài nguyên vẹn để
@@ -226,7 +236,11 @@ public class AiRecognitionService {
                 aiClient.infer(request.getFeatures(), request.getModelVersion());
 
         Verdict verdict = decide(version, targetLabel, inference);
-        int used = premium ? 0 : incrementQuota(userId, today);
+        int used = (premium || usedBonus) ? 0 : incrementQuota(userId, today);
+        if (verdict.verified()) {
+            gamificationStoreService.awardExp(userId, 5);
+        }
+        questService.recordAction(userId, "PRACTICE_AI", 1);
 
         SignAttempt attempt = SignAttempt.builder()
                 .id(UUID.randomUUID())
@@ -418,8 +432,10 @@ public class AiRecognitionService {
         String timezone = authService.timezoneOf(userId);
         LocalDate today = LocalDate.now(ZoneId.of(timezone));
         int used = usedToday(userId, today);
-        return new AiQuotaResult(used, FREE_DAILY_QUOTA,
-                Math.max(0, FREE_DAILY_QUOTA - used),
+        int bonus = gamificationStoreService.getAiBonusQuota(userId);
+        int remaining = Math.max(0, FREE_DAILY_QUOTA - used) + bonus;
+        return new AiQuotaResult(used, FREE_DAILY_QUOTA + bonus,
+                remaining,
                 today.plusDays(1).atStartOfDay().toString(),
                 false);
     }

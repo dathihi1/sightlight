@@ -18,8 +18,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi">
-      <body className="min-h-screen flex flex-col bg-[#F4EFE6] text-[#1E293B] antialiased selection:bg-[#0d9fa5] selection:text-white">
+    <html lang="vi" suppressHydrationWarning>
+      <body
+        className="min-h-screen flex flex-col bg-[#F4EFE6] text-[#1E293B] antialiased selection:bg-[#0d9fa5] selection:text-white"
+        suppressHydrationWarning
+      >
         {/* Google Identity Services — tai sau khi trang da hien thi */}
         <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
         <Providers>

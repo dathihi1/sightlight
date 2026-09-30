@@ -51,18 +51,21 @@ public class LearningPathService {
     public LearningPathResult path(UUID userId, UUID courseId) {
         Course course = contentCatalog.requirePublishedCourse(courseId);
         ContentTreeService.CourseTree tree = contentTree.tree(courseId);
-        boolean premium = authService.isPremium(userId);
+        boolean premium = userId != null && authService.isPremium(userId);
 
-        Map<UUID, UserLessonState> progress = lessonStateRepository.findByUserId(userId).stream()
-                .collect(Collectors.toMap(UserLessonState::getLessonId, Function.identity()));
+        Map<UUID, UserLessonState> progress = userId == null
+                ? Map.of()
+                : lessonStateRepository.findByUserId(userId).stream()
+                        .collect(Collectors.toMap(UserLessonState::getLessonId, Function.identity()));
 
         List<LearningPathResult.UnitNode> unitNodes = new ArrayList<>();
         UUID nextLessonId = null;
         boolean previousCompleted = true;   // bài đầu tiên của khoá luôn mở
 
         for (Unit unit : tree.units()) {
-            boolean premiumLocked = !unit.isFree() && !premium;
+            boolean premiumLocked = false;   // Toàn bộ 17 Units mở miễn phí cho mọi người học
             List<LearningPathResult.ChapterNode> chapterNodes = new ArrayList<>();
+            boolean unitLessonPreviousCompleted = true; // Mở bài đầu tiên của mỗi Unit để học tự do
 
             for (Chapter chapter : tree.chaptersByUnit().getOrDefault(unit.getId(), List.of())) {
                 List<LearningPathResult.LessonNode> lessonNodes = new ArrayList<>();
@@ -71,7 +74,7 @@ public class LearningPathService {
                     UserLessonState state = progress.get(lesson.getId());
                     String status = state == null ? UserLessonState.NOT_STARTED : state.getStatus();
                     boolean completed = UserLessonState.COMPLETED.equals(status);
-                    boolean locked = !previousCompleted;
+                    boolean locked = !unitLessonPreviousCompleted;
 
                     lessonNodes.add(new LearningPathResult.LessonNode(
                             lesson.getId(), lesson.getTitle(), status, locked, premiumLocked,
@@ -80,13 +83,13 @@ public class LearningPathService {
                     if (nextLessonId == null && !completed && !locked && !premiumLocked) {
                         nextLessonId = lesson.getId();
                     }
-                    previousCompleted = completed;
+                    unitLessonPreviousCompleted = completed;
                 }
                 chapterNodes.add(new LearningPathResult.ChapterNode(
                         chapter.getId(), chapter.getTitle(), false, lessonNodes));
             }
             unitNodes.add(new LearningPathResult.UnitNode(
-                    unit.getId(), unit.getTitle(), unit.isFree(), 0, chapterNodes));
+                    unit.getId(), unit.getTitle(), true, 0, chapterNodes));
         }
 
         return new LearningPathResult(course.getId(), course.getName(), nextLessonId, unitNodes);

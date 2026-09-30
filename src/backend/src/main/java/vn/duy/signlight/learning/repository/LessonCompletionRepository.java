@@ -8,4 +8,6 @@ import vn.duy.signlight.learning.domain.LessonCompletion;
 public interface LessonCompletionRepository extends JpaRepository<LessonCompletion, UUID> {
 
     Optional<LessonCompletion> findByUserIdAndIdempotencyKey(UUID userId, UUID idempotencyKey);
+
+    long countByUserId(UUID userId);
 }

@@ -15,4 +15,7 @@ public interface DailyActivityRepository extends JpaRepository<DailyActivity, Da
 
     List<DailyActivity> findByUserIdAndCourseIdAndActivityDateLocalGreaterThanEqualOrderByActivityDateLocalAsc(
             UUID userId, UUID courseId, LocalDate from);
+
+    @org.springframework.data.jpa.repository.Query("SELECT count(distinct d.id.userId) FROM DailyActivity d WHERE d.id.activityDateLocal = :date")
+    long countDistinctActiveUsersByDate(@org.springframework.data.repository.query.Param("date") LocalDate date);
 }

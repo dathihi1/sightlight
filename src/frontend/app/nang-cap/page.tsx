@@ -41,23 +41,23 @@ export default function UpgradePage() {
     {
       id: "PREMIUM_1M",
       name: "SignLight Premium 1 Tháng",
-      description: "Mở khoá toàn bộ 17 Units, 400 ký hiệu VSL và luyện AI không giới hạn trong 30 ngày.",
+      description: "Luyện AI không giới hạn, 100% Ad-Free, trình phát chậm 0.5x-0.75x, và huy hiệu Đại sứ Vàng.",
       durationDays: 30,
-      priceVnd: 99000,
+      priceVnd: 29000,
     },
     {
       id: "PREMIUM_6M",
       name: "SignLight Premium 6 Tháng",
-      description: "Tiết kiệm 16%, mở khoá toàn bộ giáo trình VSL và luyện AI không giới hạn trong 180 ngày.",
+      description: "Tiết kiệm lớn: Luyện tập AI vô hạn, xem video tua chậm, góc quay đa chiều, chứng chỉ hoàn thành, không quảng cáo.",
       durationDays: 180,
-      priceVnd: 499000,
+      priceVnd: 100000,
     },
     {
-      id: "PREMIUM_1Y",
-      name: "SignLight Premium 1 Năm",
-      description: "Gói tiết kiệm nhất (-24%), trọn vẹn 365 ngày học và luyện tập VSL chuyên sâu.",
-      durationDays: 365,
-      priceVnd: 899000,
+      id: "PREMIUM_LIFETIME",
+      name: "SignLight Premium Vĩnh Viễn",
+      description: "Trọn đời không lo hết hạn: toàn bộ tính năng Premium, luyện AI không giới hạn, 100% Ad-Free, huy hiệu đặc biệt.",
+      durationDays: 36500,
+      priceVnd: 350000,
     },
   ];
 
@@ -117,6 +117,7 @@ export default function UpgradePage() {
         {plans.map((p) => {
           const isSelected = selectedPlanId === p.id;
           const isPopular = p.id === "PREMIUM_6M";
+          const isPremiumDefault = p.id === "PREMIUM_6M";
 
           return (
             <div
@@ -163,19 +164,23 @@ export default function UpgradePage() {
                 <ul className="space-y-2.5 text-xs text-[#334155]">
                   <li className="flex items-center gap-2">
                     <span className="text-[#0d9fa5] font-bold">✓</span>
-                    <span>17 Chủ đề VSL chuyên sâu (400 từ)</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#0d9fa5] font-bold">✓</span>
                     <span>Luyện AI qua camera không giới hạn</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="text-[#0d9fa5] font-bold">✓</span>
-                    <span>Video chuẩn hóa chất lượng cao Google Drive</span>
+                    <span>100% không quảng cáo & tài trợ</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="text-[#0d9fa5] font-bold">✓</span>
-                    <span>Huy hiệu Premium & tiến độ học tập chi tiết</span>
+                    <span>Phát lại chậm 0.5x &amp; 0.75x</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-[#0d9fa5] font-bold">✓</span>
+                    <span>Góc quay đa chiều &amp; huy hiệu Đại sứ</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-[#0d9fa5] font-bold">✓</span>
+                    <span>Chứng chỉ hoàn thành PDF</span>
                   </li>
                 </ul>
               </div>

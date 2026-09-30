@@ -165,14 +165,25 @@ export async function apiCall<T>(path: string, options: CallOptions = {}): Promi
     if (token) headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers,
-    signal,
-    credentials: "include",
-    // Request nào cũng mang requestId + version theo BaseRequest.
-    body: body ? JSON.stringify({ requestId, version: "1.0", ...body }) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method,
+      headers,
+      signal,
+      credentials: "include",
+      // Request nào cũng mang requestId + version theo BaseRequest.
+      body: body ? JSON.stringify({ requestId, version: "1.0", ...body }) : undefined,
+    });
+  } catch (err: any) {
+    if (err instanceof ApiError) throw err;
+    if (err?.name === "AbortError") throw err;
+    throw new ApiError(
+      "00503",
+      "Không thể kết nối tới máy chủ Backend (Port 8080). Vui lòng kiểm tra lại dịch vụ.",
+      503
+    );
+  }
 
   let payload: TransactionResponse<T> | null = null;
   try {

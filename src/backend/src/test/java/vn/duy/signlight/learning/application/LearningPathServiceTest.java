@@ -89,23 +89,24 @@ class LearningPathServiceTest {
     }
 
     @Test
-    void locksPremiumUnitForFreeUser() {
+    void allUnitsAreFreeAndUnlockedForFreeUser() {
         when(authService.isPremium(userId)).thenReturn(false);
-
-        LearningPathResult.LessonNode lesson = service.path(userId, courseId)
-                .units().get(0).chapters().get(0).lessons().get(0);
-
-        assertTrue(lesson.premiumLocked());
-    }
-
-    @Test
-    void unlocksPremiumUnitForPremiumUser() {
-        when(authService.isPremium(userId)).thenReturn(true);
 
         LearningPathResult.LessonNode lesson = service.path(userId, courseId)
                 .units().get(0).chapters().get(0).lessons().get(0);
 
         assertFalse(lesson.premiumLocked());
         assertFalse(lesson.locked());
+    }
+
+    @Test
+    void firstLessonOfUnitIsAlwaysUnlocked() {
+        when(authService.isPremium(userId)).thenReturn(false);
+
+        LearningPathResult result = service.path(userId, courseId);
+        LearningPathResult.LessonNode lesson = result.units().get(0).chapters().get(0).lessons().get(0);
+
+        assertFalse(lesson.locked());
+        assertFalse(lesson.premiumLocked());
     }
 }

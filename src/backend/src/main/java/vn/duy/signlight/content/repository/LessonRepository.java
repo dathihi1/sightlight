@@ -17,4 +17,6 @@ public interface LessonRepository extends JpaRepository<Lesson, UUID> {
     List<Lesson> findByChapterIdAndStatus(UUID chapterId, String status);
 
     boolean existsByChapterIdAndStableKey(UUID chapterId, String stableKey);
+
+    List<Lesson> findByChapterIdOrderByOrderIndexAsc(UUID chapterId);
 }

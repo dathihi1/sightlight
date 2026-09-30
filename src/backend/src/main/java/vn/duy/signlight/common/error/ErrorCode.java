@@ -53,6 +53,10 @@ public enum ErrorCode {
     PREMIUM_REQUIRED("06203"),
     AI_QUOTA_EXCEEDED("06204"),
 
+    // ---------------------------------------------------------- gamification (07)
+    EXP_INSUFFICIENT("07201"),
+    ITEM_ALREADY_OWNED("07202"),
+
     // --------------------------------------------------------- airecognition (10)
     AI_MODEL_VERSION_UNSUPPORTED("10101"),
     AI_FEATURES_INVALID("10102"),

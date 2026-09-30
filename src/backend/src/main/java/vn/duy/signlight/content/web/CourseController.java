@@ -49,7 +49,7 @@ public class CourseController {
     public ResponseEntity<TransactionResponse<LearningPathResult>> path(
             @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId,
             @PathVariable UUID courseId) {
-        LearningPathResult result = learningPathService.path(CurrentUser.id(), courseId);
+        LearningPathResult result = learningPathService.path(CurrentUser.findId().orElse(null), courseId);
         return ResponseEntity.ok(ApiResponses.ok(requestId, result));
     }
 

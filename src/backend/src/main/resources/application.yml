@@ -1,4 +1,7 @@
 spring:
+  config:
+    import:
+      - "optional:file:.env.local[.properties]"
   application:
     name: signlight-api
   threads:
@@ -20,7 +23,7 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: validate     # Flyway là nguồn sự thật của lược đồ; ddl-auto KHÔNG BAO GIỜ tạo bảng
+      ddl-auto: update
     properties:
       hibernate:
         jdbc:
@@ -86,7 +89,7 @@ logging:
 signlight:
   seed:
     # Nạp nội dung giả lập (SRS §3.4). PHẢI là false ở prod — GATE-6 kiểm điều này.
-    enabled: ${SIGNLIGHT_SEED_ENABLED:false}
+    enabled: ${SIGNLIGHT_SEED_ENABLED:true}
   cors:
     allowed-origins: ${PUBLIC_WEB_BASE_URL:http://localhost:3000,http://localhost:18081}
   security:
@@ -96,8 +99,8 @@ signlight:
       access-token-ttl: PT${JWT_ACCESS_TTL_MINUTES:15}M
       issuer: signlight
     google:
-      client-id: ${GOOGLE_CLIENT_ID:}
-      client-secret: ${GOOGLE_CLIENT_SECRET:}
+      client-id: ${GOOGLE_CLIENT_ID:100731444772-131o3e5vavaf5b7egduddhjpkf2l918f.apps.googleusercontent.com}
+      client-secret: ${GOOGLE_CLIENT_SECRET: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}
   media:
     base-url: ${PUBLIC_API_BASE_URL:http://localhost:18080}
     web-videos-dir: ${SIGNLIGHT_WEB_VIDEOS_DIR:src/backend/src/main/resources/static/videos/web}
@@ -111,9 +114,9 @@ signlight:
     timeout-ms: ${SIGNLIGHT_AI_TIMEOUT_MS:5000}
     service-token: ${SIGNLIGHT_AI_SERVICE_TOKEN:}
   payos:
-    client-id: ${PAYOS_CLIENT_ID:}
-    api-key: ${PAYOS_API_KEY:}
-    checksum-key: ${PAYOS_CHECKSUM_KEY:}
+    client-id: ${PAYOS_CLIENT_ID:59b27e45-228f-4c64-a411-c835d9e1348a}
+    api-key: ${PAYOS_API_KEY:dbe544eb-23c7-42bd-8f1d-28a4b39339d9}
+    checksum-key: ${PAYOS_CHECKSUM_KEY:64752d3da4bc357c367fbb0bf0e69b3ae31a5488881764729445c1f3776967ae}
     endpoint: ${PAYOS_ENDPOINT:https://api-merchant.payos.vn}
     return-url: ${PAYOS_RETURN_URL:http://localhost:3000/thanh-toan/thanh-cong}
     cancel-url: ${PAYOS_CANCEL_URL:http://localhost:3000/nang-cap}

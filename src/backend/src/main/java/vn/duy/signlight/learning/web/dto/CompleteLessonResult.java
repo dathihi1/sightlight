@@ -10,7 +10,8 @@ public record CompleteLessonResult(
         BigDecimal effectiveMinutes,
         StreakSummary streak,
         int newSignsLearned,
-        UUID nextLessonId) {
+        UUID nextLessonId,
+        int earnedExp) {
 
     public record StreakSummary(int current, int longest, int freezeCount, boolean goalMetToday) {
     }

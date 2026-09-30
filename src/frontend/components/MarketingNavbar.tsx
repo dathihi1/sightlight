@@ -116,10 +116,12 @@ export function MarketingNavbar() {
             className="flex items-center p-1 rounded-full bg-white border border-[#E2DBD0] shadow-2xs"
             role="group"
             aria-label={t("Chọn ngôn ngữ", "Select language")}
+            suppressHydrationWarning
           >
             <button
               type="button"
               onClick={() => setLang("vi")}
+              suppressHydrationWarning
               className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold transition-all ${
                 lang === "vi"
                   ? "bg-[#0d9fa5] text-white shadow-xs"
@@ -132,6 +134,7 @@ export function MarketingNavbar() {
             <button
               type="button"
               onClick={() => setLang("en")}
+              suppressHydrationWarning
               className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold transition-all ${
                 lang === "en"
                   ? "bg-[#0d9fa5] text-white shadow-xs"
@@ -182,10 +185,11 @@ export function MarketingNavbar() {
         {/* Mobile Hamburger Button */}
         <div className="flex items-center gap-2 md:hidden">
           {/* Mobile Language Switcher Quick Pill */}
-          <div className="flex items-center p-0.5 rounded-full bg-white border border-[#E2DBD0]">
+          <div className="flex items-center p-0.5 rounded-full bg-white border border-[#E2DBD0]" suppressHydrationWarning>
             <button
               type="button"
               onClick={() => setLang("vi")}
+              suppressHydrationWarning
               className={`px-2.5 py-1 rounded-full text-xs font-bold ${
                 lang === "vi" ? "bg-[#0d9fa5] text-white" : "text-[#64748B]"
               }`}
@@ -195,6 +199,7 @@ export function MarketingNavbar() {
             <button
               type="button"
               onClick={() => setLang("en")}
+              suppressHydrationWarning
               className={`px-2.5 py-1 rounded-full text-xs font-bold ${
                 lang === "en" ? "bg-[#0d9fa5] text-white" : "text-[#64748B]"
               }`}
@@ -233,14 +238,15 @@ export function MarketingNavbar() {
           className="md:hidden border-b border-[#E2DBD0] bg-[#F4EFE6]/98 backdrop-blur-md px-4 pt-3 pb-6 space-y-4 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200"
         >
           {/* Language Selector inside Drawer */}
-          <div className="bg-white rounded-2xl p-2 border border-[#E2DBD0] flex items-center justify-between">
-            <span className="text-xs font-bold text-[#64748B] pl-2">
+          <div className="bg-white rounded-2xl p-2 border border-[#E2DBD0] flex items-center justify-between" suppressHydrationWarning>
+            <span className="text-xs font-bold text-[#64748B] pl-2" suppressHydrationWarning>
               {t("Ngôn ngữ hiển thị:", "Display Language:")}
             </span>
-            <div className="flex gap-1.5">
+            <div className="flex gap-1.5" suppressHydrationWarning>
               <button
                 type="button"
                 onClick={() => setLang("vi")}
+                suppressHydrationWarning
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                   lang === "vi"
                     ? "bg-[#0d9fa5] text-white shadow-xs"
@@ -252,6 +258,7 @@ export function MarketingNavbar() {
               <button
                 type="button"
                 onClick={() => setLang("en")}
+                suppressHydrationWarning
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                   lang === "en"
                     ? "bg-[#0d9fa5] text-white shadow-xs"

@@ -13,11 +13,15 @@ public final class CurrentUser {
     }
 
     public static UUID id() {
+        return findId().orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHENTICATED));
+    }
+
+    public static java.util.Optional<UUID> findId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !(authentication.getPrincipal() instanceof UUID userId)) {
-            throw new BusinessException(ErrorCode.UNAUTHENTICATED);
+        if (authentication != null && authentication.getPrincipal() instanceof UUID userId) {
+            return java.util.Optional.of(userId);
         }
-        return userId;
+        return java.util.Optional.empty();
     }
 
     public static boolean hasRole(String role) {

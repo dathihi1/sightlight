@@ -121,7 +121,7 @@ export default function LearningPathPage() {
 
           {data.nextLessonId && (
             <Link
-              href={`/hoc/bai/${data.nextLessonId}`}
+              href={`/hoc/bai-moi/${data.nextLessonId}`}
               className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0d9fa5] hover:bg-[#0a8287] px-6 py-3.5 font-bold text-white shadow-xs transition-all hover:scale-102 cursor-pointer"
             >
               <span>Tiếp tục học</span>
@@ -137,15 +137,9 @@ export default function LearningPathPage() {
         <section key={unit.id} className="bg-white rounded-3xl p-6 sm:p-8 border border-[#E2DBD0] shadow-sm space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-[#E2DBD0]">
             <h2 className="text-xl font-bold text-[#0F172A]">{unit.title}</h2>
-            {unit.isFree ? (
-              <span className="rounded-full bg-[#e6f7f8] border border-[#b2e7e9] px-3 py-1 text-xs font-bold text-[#08757a]">
-                ✓ Miễn phí
-              </span>
-            ) : (
-              <span className="rounded-full bg-[#FEF3C7] border border-[#FDE68A] px-3 py-1 text-xs font-bold text-[#B45309]">
-                ★ Premium
-              </span>
-            )}
+            <span className="rounded-full bg-[#e6f7f8] border border-[#b2e7e9] px-3 py-1 text-xs font-bold text-[#08757a]">
+              ✓ Miễn phí
+            </span>
           </div>
 
           {unit.chapters.map((chapter) => (
@@ -221,5 +215,5 @@ function LessonRow({ lesson }: { lesson: LessonNode }) {
       </div>
     );
   }
-  return <Link href={`/hoc/bai/${lesson.id}`}>{content}</Link>;
+  return <Link href={`/hoc/bai-moi/${lesson.id}`}>{content}</Link>;
 }

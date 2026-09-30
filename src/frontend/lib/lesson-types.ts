@@ -68,4 +68,10 @@ export interface CompleteResult {
   };
   newSignsLearned: number;
   nextLessonId: string | null;
+  earnedExp: number;
+}
+
+export interface MatchPair {
+  promptId: string;
+  optionId: string;
 }

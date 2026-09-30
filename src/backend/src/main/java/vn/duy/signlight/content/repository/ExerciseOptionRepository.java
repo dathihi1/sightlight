@@ -11,4 +11,6 @@ public interface ExerciseOptionRepository extends JpaRepository<ExerciseOption, 
     List<ExerciseOption> findByExerciseIdInOrderByOrderIndexAsc(Collection<UUID> exerciseIds);
 
     List<ExerciseOption> findByExerciseIdOrderByOrderIndexAsc(UUID exerciseId);
+
+    void deleteByExerciseId(UUID exerciseId);
 }
