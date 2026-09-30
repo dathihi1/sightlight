@@ -33,23 +33,13 @@
   --color-warning-700: #b45309;
 }
 
-/* Chế độ tối là bắt buộc: người học hay học buổi tối (design.md §2.2). */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --color-bg-default: #0b1120;
-    --color-bg-subtle: #111827;
-    --color-bg-video: #000000;
-    --color-ink-900: #f1f5f9;
-    --color-ink-600: #cbd5e1;
-    --color-brand-600: #818cf8;
-    --color-brand-050: #1e1b4b;
-    --color-border-default: #1f2937;
-    --color-border-strong: #334155;
-    --color-success-700: #4ade80;
-    --color-success-050: #052e16;
-    --color-danger-700: #fca5a5;
-    --color-danger-050: #450a0a;
-  }
+/*
+ * Chế độ tối (design.md §2.2) KHÔNG tự bật theo hệ điều hành: component vẫn hard-code nền sáng
+ * (bg-white, #F4EFE6…) nên đảo token chữ sang màu sáng sẽ ra chữ trắng trên nền trắng.
+ * ponytail: chỉ bật qua data-theme="dark" sau khi component chuyển hết sang token màu.
+ */
+:root {
+  color-scheme: light;
 }
 
 :root[data-theme="dark"] {
