@@ -432,7 +432,7 @@ function AiPracticeContent() {
               ref={videoRef}
               muted
               playsInline
-              className="h-full w-full scale-x-[-1] object-cover"
+              className="h-full w-full scale-x-[-1] rounded-3xl object-cover"
             />
             {phase === "idle" && (
               <div className="absolute inset-0 grid place-items-center">
