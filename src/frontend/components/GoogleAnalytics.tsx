@@ -1,23 +1,7 @@
-"use client";
-
-import { useEffect, Suspense } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
 import Script from "next/script";
-import { GA_MEASUREMENT_ID, pageview } from "@/lib/analytics";
 
-function AnalyticsTracker() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    if (!GA_MEASUREMENT_ID) return;
-    const queryString = searchParams?.toString();
-    const url = pathname + (queryString ? `?${queryString}` : "");
-    pageview(url);
-  }, [pathname, searchParams]);
-
-  return null;
-}
+const GA_MEASUREMENT_ID =
+  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-J3JSWSBN6T";
 
 export function GoogleAnalytics() {
   if (!GA_MEASUREMENT_ID) {
@@ -27,6 +11,7 @@ export function GoogleAnalytics() {
   return (
     <>
       <Script
+        id="google-analytics-tag"
         strategy="afterInteractive"
         src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
       />
@@ -38,15 +23,11 @@ export function GoogleAnalytics() {
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}', {
-              page_path: window.location.pathname,
-            });
+            gtag('config', '${GA_MEASUREMENT_ID}');
           `,
         }}
       />
-      <Suspense fallback={null}>
-        <AnalyticsTracker />
-      </Suspense>
     </>
   );
 }
+
