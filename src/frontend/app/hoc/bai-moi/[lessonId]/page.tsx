@@ -15,6 +15,7 @@ import { ExerciseRenderer } from "@/components/lesson/ExerciseRenderer";
 import { SignVideoPlayer } from "@/components/SignVideoPlayer";
 import { ApiError, apiCall } from "@/lib/api";
 import { LessonResult, AnswerResult, CompleteResult, MatchPair } from "@/lib/lesson-types";
+import { trackEvent, AnalyticsEvents } from "@/lib/analytics";
 
 /** Lời khen / động viên luân phiên theo số câu đã làm — thay đổi để phản hồi không nhàm. */
 const PRAISE = ["Chính xác!", "Tuyệt vời!", "Làm tốt lắm!", "Quá chuẩn!", "Xuất sắc!"];
@@ -334,6 +335,11 @@ export default function NewLessonPage() {
         body: { idempotencyKey: crypto.randomUUID() },
       });
       setSummary(result);
+      trackEvent(AnalyticsEvents.LESSON_COMPLETE, {
+        lesson_id: lessonId,
+        score_percent: result.scorePercent,
+        earned_exp: result.earnedExp,
+      });
     } catch (err) {
       setError(err instanceof ApiError ? err.errorMessage : "Không lưu được kết quả bài học. Thử lại nhé.");
     } finally {

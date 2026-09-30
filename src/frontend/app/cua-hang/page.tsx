@@ -5,6 +5,7 @@ import { apiCall } from "@/lib/api";
 import Link from "next/link";
 import { IconShop, IconCrown } from "@/components/ui/Icons";
 import { useAuthSession } from "@/lib/useAuthSession";
+import { trackEvent, AnalyticsEvents } from "@/lib/analytics";
 
 interface StoreItem {
   itemKey: string;
@@ -82,6 +83,11 @@ export default function ShopPage() {
       if (res) {
         setSuccessResult(res);
         setConfirmItem(null);
+        trackEvent(AnalyticsEvents.STORE_REDEEM, {
+          item_key: confirmItem.itemKey,
+          cost_exp: confirmItem.costExp,
+          item_type: confirmItem.itemType,
+        });
         // Update local catalog stats smoothly
         if (catalog) {
           setCatalog({
