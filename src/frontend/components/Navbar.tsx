@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { SignLightLogo } from "./SignLightLogo";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuthSession } from "@/lib/useAuthSession";
-import { IconArticle, IconMenu } from "@/components/ui/Icons";
+import { IconArticle, IconMenu, IconShop } from "@/components/ui/Icons";
 
 import { NotificationDropdown } from "./NotificationDropdown";
 
@@ -48,6 +48,7 @@ export function Navbar() {
 
   const links = [
     { href: "/#our-web", label: t("Tính năng", "Features"), active: false },
+    { href: "/cua-hang", label: t("Cửa hàng", "Shop"), active: pathname.startsWith("/cua-hang"), Icon: IconShop },
     { href: "/about", label: t("Về chúng tôi", "About"), active: pathname === "/about" },
     { href: "/blog", label: t("Bài viết", "Blog"), active: pathname.startsWith("/blog"), Icon: IconArticle },
     { href: "/#businesses", label: t("Tổ chức", "Organizations"), active: false },
@@ -56,6 +57,13 @@ export function Navbar() {
   const actions =
     isClient && isLoggedIn ? (
       <div className="flex items-center gap-2.5">
+        <Link
+          href="/cua-hang"
+          className="hidden sm:inline-flex items-center gap-1 rounded-full border border-sun-200 bg-sun-50 px-3 py-1.5 text-xs font-bold text-sun-800 hover:bg-sun-100 transition"
+        >
+          <span>🎁</span>
+          <span>{t("Cửa hàng", "Shop")}</span>
+        </Link>
         <NotificationDropdown />
         <Link href="/hoc" className="btn btn-primary btn-sm">
           {t("Vào học", "Go to app")}

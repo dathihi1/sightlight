@@ -87,6 +87,7 @@ function AiPracticeContent() {
   const [result, setResult] = useState<AttemptResult | null>(null);
   const [localInference, setLocalInference] = useState<LocalInferenceResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [videoRatio, setVideoRatio] = useState<number>(16 / 9);
 
   const capabilities = useQuery({
     queryKey: ["ai-capabilities"],
@@ -398,6 +399,7 @@ function AiPracticeContent() {
             videoUrl={item.videoUrl}
             placeholderVideo={item.placeholderVideo}
             title={`Video mẫu — ${item.label}`}
+            onRatioChange={setVideoRatio}
           />
         </section>
 
@@ -415,7 +417,7 @@ function AiPracticeContent() {
             )}
           </div>
           <div
-            className={`relative overflow-hidden rounded-2xl bg-ink-950 ring-4 transition-colors ${
+            className={`relative mx-auto w-full overflow-hidden rounded-3xl bg-ink-950 ring-4 transition-all ${
               phase === "recording"
                 ? "ring-danger-400"
                 : result
@@ -424,8 +426,14 @@ function AiPracticeContent() {
                     : "ring-danger-300"
                   : "ring-transparent"
             }`}
+            style={{ aspectRatio: videoRatio, maxHeight: "70vh" }}
           >
-            <video ref={videoRef} muted playsInline className="aspect-video w-full scale-x-[-1] object-cover" />
+            <video
+              ref={videoRef}
+              muted
+              playsInline
+              className="h-full w-full scale-x-[-1] object-cover"
+            />
             {phase === "idle" && (
               <div className="absolute inset-0 grid place-items-center">
                 <Mascot className="w-24" mood="wow" />

@@ -12,6 +12,7 @@ export interface SignVideoPlayerProps {
   autoPlay?: boolean;
   loop?: boolean;
   muted?: boolean;
+  onRatioChange?: (ratio: number) => void;
 }
 
 /**
@@ -56,6 +57,7 @@ export function SignVideoPlayer({
   autoPlay = true,
   loop = true,
   muted = true,
+  onRatioChange,
 }: SignVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -104,7 +106,10 @@ export function SignVideoPlayer({
 
   if (useIframeFallback && resolvedDriveId) {
     return (
-      <div className={`relative aspect-video w-full overflow-hidden rounded-3xl bg-black ${className}`}>
+      <div
+        className={`relative mx-auto w-full overflow-hidden rounded-3xl bg-black ${className}`}
+        style={{ aspectRatio: ratio, maxHeight: "70vh" }}
+      >
         <iframe
           src={`https://drive.google.com/file/d/${resolvedDriveId}/preview`}
           className="h-full w-full border-0"
@@ -147,7 +152,11 @@ export function SignVideoPlayer({
           v.playbackRate = rate;
           setDuration(v.duration || 0);
           // Giữ khung trong khoảng 3:4 (dọc) → 16:9 (ngang) để video không quá cao hay quá dẹt.
-          if (v.videoWidth && v.videoHeight) setRatio(Math.min(16 / 9, Math.max(3 / 4, v.videoWidth / v.videoHeight)));
+          if (v.videoWidth && v.videoHeight) {
+            const calculated = Math.min(16 / 9, Math.max(3 / 4, v.videoWidth / v.videoHeight));
+            setRatio(calculated);
+            onRatioChange?.(calculated);
+          }
         }}
         onError={() => resolvedDriveId && setUseIframeFallback(true)}
         className="h-full w-full cursor-pointer object-contain"

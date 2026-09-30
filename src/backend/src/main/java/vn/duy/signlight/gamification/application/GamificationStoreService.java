@@ -62,14 +62,14 @@ public class GamificationStoreService {
 
     @Transactional(readOnly = true)
     public StoreCatalogResult catalog(UUID userId) {
-        UserProfile profile = userProfileRepository.findById(userId).orElse(null);
+        UserProfile profile = userId != null ? userProfileRepository.findById(userId).orElse(null) : null;
         int expBalance = profile != null ? profile.getExpBalance() : 0;
         int aiBonusQuota = profile != null ? profile.getAiBonusQuota() : 0;
 
-        List<Streak> streaks = streakRepository.findByUserId(userId);
+        List<Streak> streaks = userId != null ? streakRepository.findByUserId(userId) : List.of();
         int freezeCount = streaks.isEmpty() ? 0 : streaks.get(0).getFreezeCount();
 
-        List<UserInventory> ownedItems = userInventoryRepository.findByUserId(userId);
+        List<UserInventory> ownedItems = userId != null ? userInventoryRepository.findByUserId(userId) : List.of();
         List<String> ownedBadges = ownedItems.stream()
                 .filter(i -> "BADGE".equals(i.getItemType()))
                 .map(UserInventory::getItemKey)

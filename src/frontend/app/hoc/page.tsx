@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { ErrorNotice } from "@/components/ErrorNotice";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { IconArrowRight, IconCheck, IconCrown, IconFlame, IconLock, IconStar, IconTarget } from "@/components/ui/Icons";
+import { IconArrowRight, IconCheck, IconCrown, IconFlame, IconLock, IconStar, IconTarget, IconShop } from "@/components/ui/Icons";
 import { useAuthSession } from "@/lib/useAuthSession";
 import { apiCall } from "@/lib/api";
 
@@ -337,24 +337,46 @@ function ProfileCard({ name, coursePct, summary }: { name: string; coursePct: nu
           <p className="truncate text-lg font-semibold text-ink-900">{name}</p>
           <p className="text-sm text-ink-600">Hoàn thành {coursePct}% khoá học</p>
           {summary && (
-            <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-ink-800">
-              <IconStar className="h-4 w-4" /> {summary.expBalance} XP
-            </p>
+            <div className="mt-1 flex items-center gap-2">
+              <span className="flex items-center gap-1 text-sm font-bold text-sun-900">
+                <IconStar className="h-4 w-4 text-sun-500" /> {summary.expBalance} XP
+              </span>
+              <Link
+                href="/cua-hang"
+                className="text-xs font-bold text-brand-600 hover:text-brand-700 hover:underline inline-flex items-center gap-0.5"
+              >
+                Đổi quà &rarr;
+              </Link>
+            </div>
           )}
         </div>
       </div>
       {summary && (
-        <ul className="mt-5 grid grid-cols-3 gap-2 rounded-2xl bg-ink-50 p-3 text-center">
-          {stats.map((s) => (
-            <li key={s.label}>
-              <p className="flex items-center justify-center gap-1 text-xl font-bold text-ink-900">
-                {s.icon}
-                {s.value}
-              </p>
-              <p className="mt-0.5 text-xs text-ink-600">{s.label}</p>
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="mt-5 grid grid-cols-3 gap-2 rounded-2xl bg-ink-50 p-3 text-center">
+            {stats.map((s) => (
+              <li key={s.label}>
+                <p className="flex items-center justify-center gap-1 text-xl font-bold text-ink-900">
+                  {s.icon}
+                  {s.value}
+                </p>
+                <p className="mt-0.5 text-xs text-ink-600">{s.label}</p>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-4 border-t border-ink-100 pt-3">
+            <Link
+              href="/cua-hang"
+              className="flex items-center justify-between rounded-2xl bg-gradient-to-r from-sun-50 to-brand-50 hover:from-sun-100 hover:to-brand-100 p-3 transition text-xs font-bold text-ink-900 border border-sun-200 shadow-xs"
+            >
+              <span className="flex items-center gap-2">
+                <span className="text-lg">🎁</span>
+                <span>Cửa hàng đổi thưởng EXP</span>
+              </span>
+              <span className="text-brand-600 font-extrabold">&rarr;</span>
+            </Link>
+          </div>
+        </>
       )}
     </section>
   );

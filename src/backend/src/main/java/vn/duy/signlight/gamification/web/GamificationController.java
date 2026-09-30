@@ -52,7 +52,7 @@ public class GamificationController {
     @Operation(summary = "Xem danh mục vật phẩm và số dư EXP đổi thưởng")
     public ResponseEntity<TransactionResponse<StoreCatalogResult>> store(
             @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId) {
-        StoreCatalogResult result = gamificationStoreService.catalog(CurrentUser.id());
+        StoreCatalogResult result = gamificationStoreService.catalog(CurrentUser.findId().orElse(null));
         return ResponseEntity.ok(ApiResponses.ok(requestId, result));
     }
 

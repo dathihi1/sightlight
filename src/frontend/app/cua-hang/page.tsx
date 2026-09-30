@@ -62,10 +62,8 @@ export default function ShopPage() {
   };
 
   useEffect(() => {
-    if (isClient && isLoggedIn) {
+    if (isClient) {
       fetchCatalog();
-    } else {
-      setLoading(false);
     }
   }, [isClient, isLoggedIn]);
 
@@ -135,25 +133,7 @@ export default function ShopPage() {
     return <div className="p-16 text-center text-sm text-ink-500 animate-pulse">Đang tải cửa hàng...</div>;
   }
 
-  if (!isLoggedIn) {
-    return (
-      <div className="mx-auto max-w-xl p-8 my-12 text-center card">
-        <span className="text-4xl block mb-3">🛍️</span>
-        <h2 className="text-xl font-bold text-ink-900">Đăng nhập để vào Cửa hàng EXP</h2>
-        <p className="text-sm text-ink-600 mt-2">
-          Bạn cần đăng nhập để xem số dư điểm kinh nghiệm EXP, đổi lượt sử dụng AI và mở khóa các bài học đặc biệt.
-        </p>
-        <div className="mt-6 flex justify-center gap-3">
-          <Link href="/dang-nhap?next=/cua-hang" className="btn btn-primary btn-sm">
-            Đăng nhập ngay
-          </Link>
-          <Link href="/dang-ky" className="btn btn-secondary btn-sm">
-            Tạo tài khoản mới
-          </Link>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="mx-auto max-w-6xl p-4 sm:p-6 space-y-6">
@@ -177,51 +157,62 @@ export default function ShopPage() {
           </div>
 
           {/* User Balances Box */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 text-center shrink-0">
-            {/* EXP */}
-            <div className="p-2.5 rounded-xl bg-white/10">
-              <span className="text-xs text-brand-200 block font-medium">Số dư EXP</span>
-              <div className="flex items-center justify-center gap-1.5 mt-1">
-                <span className="text-lg">⭐</span>
-                <span className="text-xl sm:text-2xl font-black text-sun-300">
-                  {catalog?.expBalance ?? 0}
-                </span>
+          {isLoggedIn ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 text-center shrink-0">
+              {/* EXP */}
+              <div className="p-2.5 rounded-xl bg-white/10">
+                <span className="text-xs text-brand-200 block font-medium">Số dư EXP</span>
+                <div className="flex items-center justify-center gap-1.5 mt-1">
+                  <span className="text-lg">⭐</span>
+                  <span className="text-xl sm:text-2xl font-black text-sun-300">
+                    {catalog?.expBalance ?? 0}
+                  </span>
+                </div>
               </div>
-            </div>
 
-            {/* AI Quota */}
-            <div className="p-2.5 rounded-xl bg-white/10">
-              <span className="text-xs text-brand-200 block font-medium">Lượt AI cộng thêm</span>
-              <div className="flex items-center justify-center gap-1.5 mt-1">
-                <span className="text-lg">🤖</span>
-                <span className="text-xl sm:text-2xl font-black text-sky-300">
-                  {catalog?.aiBonusQuota ?? 0}
-                </span>
+              {/* AI Quota */}
+              <div className="p-2.5 rounded-xl bg-white/10">
+                <span className="text-xs text-brand-200 block font-medium">Lượt AI cộng thêm</span>
+                <div className="flex items-center justify-center gap-1.5 mt-1">
+                  <span className="text-lg">🤖</span>
+                  <span className="text-xl sm:text-2xl font-black text-sky-300">
+                    {catalog?.aiBonusQuota ?? 0}
+                  </span>
+                </div>
               </div>
-            </div>
 
-            {/* Lesson Passes */}
-            <div className="p-2.5 rounded-xl bg-white/10">
-              <span className="text-xs text-brand-200 block font-medium">Vé mở bài học</span>
-              <div className="flex items-center justify-center gap-1.5 mt-1">
-                <span className="text-lg">🗝️</span>
-                <span className="text-xl sm:text-2xl font-black text-emerald-300">
-                  {catalog?.lessonPassCount ?? 0}
-                </span>
+              {/* Lesson Passes */}
+              <div className="p-2.5 rounded-xl bg-white/10">
+                <span className="text-xs text-brand-200 block font-medium">Vé mở bài học</span>
+                <div className="flex items-center justify-center gap-1.5 mt-1">
+                  <span className="text-lg">🗝️</span>
+                  <span className="text-xl sm:text-2xl font-black text-emerald-300">
+                    {catalog?.lessonPassCount ?? 0}
+                  </span>
+                </div>
               </div>
-            </div>
 
-            {/* Streak Freeze */}
-            <div className="p-2.5 rounded-xl bg-white/10">
-              <span className="text-xs text-brand-200 block font-medium">Băng bảo vệ</span>
-              <div className="flex items-center justify-center gap-1.5 mt-1">
-                <span className="text-lg">🧊</span>
-                <span className="text-xl sm:text-2xl font-black text-cyan-300">
-                  {catalog?.freezeCount ?? 0}
-                </span>
+              {/* Streak Freeze */}
+              <div className="p-2.5 rounded-xl bg-white/10">
+                <span className="text-xs text-brand-200 block font-medium">Băng bảo vệ</span>
+                <div className="flex items-center justify-center gap-1.5 mt-1">
+                  <span className="text-lg">🧊</span>
+                  <span className="text-xl sm:text-2xl font-black text-cyan-300">
+                    {catalog?.freezeCount ?? 0}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/15 text-center shrink-0 max-w-xs flex flex-col items-center justify-center">
+              <span className="text-3xl mb-1">🎁</span>
+              <p className="text-sm font-bold text-white">Đăng nhập để xem số dư EXP</p>
+              <p className="text-xs text-brand-100 mt-1">Học và tích lũy EXP để đổi lượt AI và vé mở khóa bài học!</p>
+              <Link href="/dang-nhap?next=/cua-hang" className="btn btn-sm bg-white text-brand-700 hover:bg-brand-50 font-bold mt-3 w-full">
+                Đăng nhập ngay
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 
@@ -303,7 +294,14 @@ export default function ShopPage() {
 
                 {/* Bottom Action Button */}
                 <div className="mt-5 pt-3 border-t border-ink-100">
-                  {item.isOwned ? (
+                  {!isLoggedIn ? (
+                    <Link
+                      href="/dang-nhap?next=/cua-hang"
+                      className="w-full py-2.5 rounded-xl bg-brand-50 text-brand-700 hover:bg-brand-100 font-bold text-xs flex items-center justify-center gap-1 transition"
+                    >
+                      Đăng nhập để đổi ({item.costExp} EXP)
+                    </Link>
+                  ) : item.isOwned ? (
                     <button
                       type="button"
                       disabled

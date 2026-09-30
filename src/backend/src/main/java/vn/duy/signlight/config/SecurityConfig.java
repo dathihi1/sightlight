@@ -60,6 +60,7 @@ public class SecurityConfig {
             "/api/v1/business-inquiries",
             "/api/v1/articles",
             "/api/v1/articles/**",
+            "/api/v1/gamification/store",
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html"
