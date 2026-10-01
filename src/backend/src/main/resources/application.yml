@@ -99,8 +99,8 @@ signlight:
       access-token-ttl: PT${JWT_ACCESS_TTL_MINUTES:15}M
       issuer: signlight
     google:
-      client-id: ${GOOGLE_CLIENT_ID:100731444772-131o3e5vavaf5b7egduddhjpkf2l918f.apps.googleusercontent.com}
-      client-secret: ${GOOGLE_CLIENT_SECRET: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}
+      client-id: ${GOOGLE_CLIENT_ID:701794322092-f9k658h8vgrftuv8t4mfk50ctnk7vc50.apps.googleusercontent.com}
+      client-secret: ${GOOGLE_CLIENT_SECRET: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b}
   media:
     base-url: ${PUBLIC_API_BASE_URL:http://localhost:18080}
     web-videos-dir: ${SIGNLIGHT_WEB_VIDEOS_DIR:src/backend/src/main/resources/static/videos/web}
