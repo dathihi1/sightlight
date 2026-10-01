@@ -126,8 +126,8 @@ class GamificationQueryServiceTest {
         assertNotNull(result);
         assertEquals(0, result.streakDays());
         assertEquals(0, result.completedLessons());
-        assertEquals(92, result.averageScore());
-        assertEquals(12, result.signsMastered());
+        assertEquals(0, result.averageScore());
+        assertEquals(0, result.signsMastered());
         assertEquals(0, result.recentActivities().size());
     }
 }

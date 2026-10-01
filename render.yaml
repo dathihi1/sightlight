@@ -89,7 +89,7 @@ services:
       - key: PAYOS_CANCEL_URL
         sync: false
       - key: MAIL_ENABLED
-        value: "false"
+        value: "true"
       - key: MAIL_HOST
         value: smtp.gmail.com
       - key: MAIL_PORT
@@ -99,7 +99,7 @@ services:
       - key: MAIL_PASSWORD
         sync: false
       - key: MAIL_FROM
-        sync: false
+        value: "SignLight <signlight.forwork@gmail.com>"
       - key: IP_HASH_SALT
         sync: false
       - key: JWT_REFRESH_TTL_DAYS
