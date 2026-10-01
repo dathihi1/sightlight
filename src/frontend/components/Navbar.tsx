@@ -8,7 +8,6 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useAuthSession } from "@/lib/useAuthSession";
 import { IconArticle, IconMenu } from "@/components/ui/Icons";
 
-import { NotificationDropdown } from "./NotificationDropdown";
 
 export function LangSwitch() {
   const { lang, setLang, t } = useLanguage();
@@ -56,14 +55,6 @@ export function Navbar() {
   const actions =
     isClient && isLoggedIn ? (
       <div className="flex items-center gap-2.5">
-        <Link
-          href="/cua-hang"
-          className="hidden sm:inline-flex items-center gap-1 rounded-full border border-sun-200 bg-sun-50 px-3 py-1.5 text-xs font-bold text-sun-800 hover:bg-sun-100 transition"
-        >
-          <span>🎁</span>
-          <span>{t("Cửa hàng", "Shop")}</span>
-        </Link>
-        <NotificationDropdown />
         <Link href="/hoc" className="btn btn-primary btn-sm">
           {t("Vào học", "Go to app")}
         </Link>
@@ -109,7 +100,6 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-2 lg:hidden">
-          {isClient && isLoggedIn && <NotificationDropdown />}
           <LangSwitch />
           <button
             type="button"
