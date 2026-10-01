@@ -47,4 +47,7 @@ public class RegisterRequest extends BaseRequest {
     /** R-07: thu năm sinh ở onboarding để chặn góp dữ liệu khi dưới 16 tuổi (BR-A137). */
     @Schema(example = "2004", nullable = true)
     private Short birthYear;
+
+    @Schema(description = "Mã giới thiệu từ bạn bè", example = "A1B2C3D4", nullable = true)
+    private String referralCode;
 }

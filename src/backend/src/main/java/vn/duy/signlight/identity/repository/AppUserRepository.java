@@ -18,4 +18,10 @@ public interface AppUserRepository extends JpaRepository<AppUser, UUID> {
 
     org.springframework.data.domain.Page<AppUser> findByStatus(
             String status, org.springframework.data.domain.Pageable pageable);
+
+    Optional<AppUser> findByReferralCode(String referralCode);
+
+    long countByReferredByUserId(UUID referredByUserId);
+
+    java.util.List<AppUser> findByReferredByUserId(UUID referredByUserId);
 }

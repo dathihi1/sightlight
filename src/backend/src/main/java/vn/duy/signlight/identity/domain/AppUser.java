@@ -58,6 +58,16 @@ public class AppUser {
     @Column(name = "birth_year")
     private Short birthYear;
 
+    @Column(name = "referral_code", length = 20)
+    private String referralCode;
+
+    @Column(name = "referred_by_user_id")
+    private UUID referredByUserId;
+
+    @Column(name = "referral_reward_claimed", nullable = false)
+    @Builder.Default
+    private boolean referralRewardClaimed = false;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 

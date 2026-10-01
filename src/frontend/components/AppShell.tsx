@@ -11,7 +11,7 @@ export interface ShellNavItem {
   label: string;
   Icon: (p: { className?: string }) => React.ReactElement;
   active: boolean;
-  badge?: number;
+  badge?: number | string;
 }
 
 /**

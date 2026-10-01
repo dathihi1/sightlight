@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { Mascot } from "@/components/ui/Mascot";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { ErrorNotice } from "@/components/ErrorNotice";
 import { ApiError, apiCall, tokenStore } from "@/lib/api";
 import { dispatchAuthChange } from "@/lib/useAuthSession";
@@ -33,13 +33,24 @@ interface GoogleLoginResult {
   pendingDeletion: boolean;
 }
 
-/** SCR-06 — dang ky (FR-01). Mat khau 10-128 ky tu, phai co ca chu va so. */
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[400px] flex items-center justify-center">Đang tải...</div>}>
+      <RegisterContent />
+    </Suspense>
+  );
+}
+
+function RegisterContent() {
   const { t } = useLanguage();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialRef = searchParams.get("ref") || "";
+
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState(initialRef);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -91,6 +102,7 @@ export default function RegisterPage() {
           email,
           password,
           acceptedTerms,
+          referralCode: referralCode.trim() ? referralCode.trim() : undefined,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         },
       });
@@ -181,6 +193,27 @@ export default function RegisterPage() {
             <p id="password-hint" className="text-sm text-ink-600">
               {t("Ít nhất 10 ký tự, gồm cả chữ và số.", "At least 10 characters, including letters and numbers.")}
             </p>
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label htmlFor="referralCode" className="block text-sm font-semibold text-ink-800">
+                {t("Mã giới thiệu (nếu có)", "Referral code (optional)")}
+              </label>
+              {referralCode && (
+                <span className="text-xs font-semibold text-emerald-600">
+                  {t("✓ Đã áp dụng", "✓ Applied")}
+                </span>
+              )}
+            </div>
+            <input
+              id="referralCode"
+              value={referralCode}
+              onChange={(event) => setReferralCode(event.target.value.toUpperCase())}
+              placeholder="VD: SL8X9A2K"
+              maxLength={20}
+              className="input font-mono uppercase tracking-wider text-sm"
+            />
           </div>
 
           <label className="flex items-start gap-2 text-sm text-ink-700">

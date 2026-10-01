@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { ErrorNotice } from "@/components/ErrorNotice";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { IconArrowRight, IconCheck, IconCrown, IconFlame, IconLock, IconStar, IconTarget, IconShop } from "@/components/ui/Icons";
+import { UnlockLessonModal } from "@/components/UnlockLessonModal";
 import { useAuthSession } from "@/lib/useAuthSession";
 import { apiCall } from "@/lib/api";
 
@@ -76,6 +77,7 @@ function currentWeek(activities: Summary["recentActivities"]) {
 export default function LearningPathPage() {
   const { isClient, isLoggedIn, isLoading, user } = useAuthSession();
   const courseId = user?.preferences.activeCourseId ?? null;
+  const [unlockModalLesson, setUnlockModalLesson] = useState<LessonNode | null>(null);
 
   const path = useQuery({
     queryKey: ["path", courseId],
@@ -174,9 +176,21 @@ export default function LearningPathPage() {
               index={idx}
               nextLessonId={data.nextLessonId}
               defaultOpen={lessonsOf(unit).some((l) => l.id === data.nextLessonId) || (idx === 0 && !data.nextLessonId)}
+              onSelectLockedLesson={setUnlockModalLesson}
             />
           ))}
         </div>
+
+        <UnlockLessonModal
+          isOpen={Boolean(unlockModalLesson)}
+          onClose={() => setUnlockModalLesson(null)}
+          lesson={unlockModalLesson}
+          userExpBalance={summary.data?.expBalance ?? 0}
+          onUnlocked={() => {
+            path.refetch();
+            summary.refetch();
+          }}
+        />
       </div>
 
       <aside className="space-y-5" aria-label="Thống kê cá nhân">
@@ -232,7 +246,19 @@ function ContinueCard({ unit, index, nextLessonId }: { unit: UnitNode; index: nu
   );
 }
 
-function UnitSection({ unit, index, nextLessonId, defaultOpen }: { unit: UnitNode; index: number; nextLessonId: string | null; defaultOpen: boolean }) {
+function UnitSection({
+  unit,
+  index,
+  nextLessonId,
+  defaultOpen,
+  onSelectLockedLesson,
+}: {
+  unit: UnitNode;
+  index: number;
+  nextLessonId: string | null;
+  defaultOpen: boolean;
+  onSelectLockedLesson: (lesson: LessonNode) => void;
+}) {
   const ls = lessonsOf(unit);
   const done = ls.filter((l) => l.status === "COMPLETED").length;
   return (
@@ -260,7 +286,13 @@ function UnitSection({ unit, index, nextLessonId, defaultOpen }: { unit: UnitNod
             <h3 className="mb-2 text-sm font-semibold text-ink-500">{chapter.title}</h3>
             <ol>
               {chapter.lessons.map((lesson, i) => (
-                <LessonRow key={lesson.id} lesson={lesson} isNext={lesson.id === nextLessonId} isLast={i === chapter.lessons.length - 1} />
+                <LessonRow
+                  key={lesson.id}
+                  lesson={lesson}
+                  isNext={lesson.id === nextLessonId}
+                  isLast={i === chapter.lessons.length - 1}
+                  onSelectLockedLesson={onSelectLockedLesson}
+                />
               ))}
             </ol>
           </div>
@@ -270,7 +302,17 @@ function UnitSection({ unit, index, nextLessonId, defaultOpen }: { unit: UnitNod
   );
 }
 
-function LessonRow({ lesson, isNext, isLast }: { lesson: LessonNode; isNext: boolean; isLast: boolean }) {
+function LessonRow({
+  lesson,
+  isNext,
+  isLast,
+  onSelectLockedLesson,
+}: {
+  lesson: LessonNode;
+  isNext: boolean;
+  isLast: boolean;
+  onSelectLockedLesson: (lesson: LessonNode) => void;
+}) {
   // Hai loại khoá cần hai thông điệp khác nhau (BR-A12 vs BR-A14) — gộp lại là người học hiểu sai.
   const reason = lesson.premiumLocked ? "Cần gói Premium" : lesson.locked ? "Học xong bài trước để mở" : null;
   const done = lesson.status === "COMPLETED";
@@ -292,15 +334,20 @@ function LessonRow({ lesson, isNext, isLast }: { lesson: LessonNode; isNext: boo
   );
 
   const body = (
-    <div className={`flex flex-1 items-center justify-between gap-3 rounded-2xl px-4 py-3 transition-colors ${current ? "bg-brand-50" : reason ? "" : "group-hover:bg-ink-50"}`}>
+    <div className={`flex flex-1 items-center justify-between gap-3 rounded-2xl px-4 py-3 transition-colors ${current ? "bg-brand-50" : reason ? "group-hover:bg-amber-50/60" : "group-hover:bg-ink-50"}`}>
       <div className="min-w-0">
-        <p className={`truncate text-base font-medium ${reason ? "text-ink-500" : "text-ink-900"}`}>{lesson.title}</p>
+        <p className={`truncate text-base font-medium ${reason ? "text-ink-700" : "text-ink-900"}`}>{lesson.title}</p>
         <p className="text-sm text-ink-600">
           {status}
           {lesson.bestScorePercent != null && ` · điểm cao nhất ${lesson.bestScorePercent}%`}
         </p>
       </div>
       {current && <span className="btn btn-primary btn-sm pointer-events-none">{lesson.status === "IN_PROGRESS" ? "Tiếp tục" : "Bắt đầu"}</span>}
+      {reason && (
+        <span className="inline-flex items-center gap-1 rounded-xl bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 border border-amber-200">
+          Mở khóa &rarr;
+        </span>
+      )}
     </div>
   );
 
@@ -309,9 +356,14 @@ function LessonRow({ lesson, isNext, isLast }: { lesson: LessonNode; isNext: boo
       {!isLast && <span className="absolute bottom-0 left-4 top-11 w-px -translate-x-1/2 bg-ink-200" aria-hidden="true" />}
       <div className="pt-3.5">{dot}</div>
       {reason ? (
-        <div aria-disabled="true" className="flex flex-1 cursor-not-allowed pb-1">
+        <button
+          type="button"
+          onClick={() => onSelectLockedLesson(lesson)}
+          className="group flex flex-1 text-left rounded-2xl pb-1 cursor-pointer"
+          title="Nhấn để mở khóa bài học này bằng 5k/25k VND hoặc 5k/25k EXP"
+        >
           {body}
-        </div>
+        </button>
       ) : (
         <Link href={`/hoc/bai-moi/${lesson.id}`} className="group flex flex-1 rounded-2xl pb-1" aria-label={`${lesson.title} — ${status}`}>
           {body}

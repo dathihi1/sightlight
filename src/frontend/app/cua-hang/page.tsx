@@ -6,6 +6,7 @@ import Link from "next/link";
 import { IconShop, IconCrown } from "@/components/ui/Icons";
 import { useAuthSession } from "@/lib/useAuthSession";
 import { trackEvent, AnalyticsEvents } from "@/lib/analytics";
+import { RewardedAdModal } from "@/components/RewardedAdModal";
 
 interface StoreItem {
   itemKey: string;
@@ -45,6 +46,8 @@ export default function ShopPage() {
   const [redeeming, setRedeeming] = useState(false);
   const [successResult, setSuccessResult] = useState<RedeemResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [adModalOpen, setAdModalOpen] = useState(false);
+  const [adRewardType, setAdRewardType] = useState<"AI_QUOTA" | "EXP">("AI_QUOTA");
 
   const fetchCatalog = async () => {
     setLoading(true);
@@ -225,6 +228,99 @@ export default function ShopPage() {
           </button>
         </div>
       )}
+
+      {/* Trạm Nhận Quà Miễn Phí: Xem Video & Giới Thiệu Bạn Bè */}
+      <section className="rounded-3xl border border-amber-200/80 bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-amber-50/80 p-5 sm:p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+          <div className="flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-amber-500 text-white text-sm shadow-sm">
+              🎁
+            </span>
+            <h2 className="text-base sm:text-lg font-extrabold text-ink-900">
+              Trạm Quà Tặng Miễn Phí
+            </h2>
+          </div>
+          <span className="text-xs font-semibold text-amber-800 bg-amber-100/80 px-2.5 py-1 rounded-full self-start sm:self-auto">
+            Không tốn tiền · Không trừ EXP
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Card 1: Xem video nhận +1 lượt AI */}
+          <div className="card p-4 bg-white/95 border-amber-200/60 hover:border-amber-400 transition-all flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-2xl">🤖</span>
+                <span className="text-[11px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
+                  +1 Lượt Camera
+                </span>
+              </div>
+              <h3 className="text-sm font-bold text-ink-900">Xem video nhận lượt AI</h3>
+              <p className="text-xs text-ink-600 mt-1">
+                Xem 1 video ngắn 15s để cộng ngay 1 lượt AI nhận diện cử chỉ qua camera.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setAdRewardType("AI_QUOTA");
+                setAdModalOpen(true);
+              }}
+              className="mt-4 w-full py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs shadow-sm transition cursor-pointer"
+            >
+              Xem nhận ngay (+1 AI)
+            </button>
+          </div>
+
+          {/* Card 2: Xem video nhận +30 EXP */}
+          <div className="card p-4 bg-white/95 border-amber-200/60 hover:border-amber-400 transition-all flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-2xl">⭐</span>
+                <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                  +30 EXP & Nhiệm vụ
+                </span>
+              </div>
+              <h3 className="text-sm font-bold text-ink-900">Xem video nhận EXP</h3>
+              <p className="text-xs text-ink-600 mt-1">
+                Nhận ngay 30 điểm kinh nghiệm và hoàn thành nhiệm vụ xem quảng cáo trong ngày.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setAdRewardType("EXP");
+                setAdModalOpen(true);
+              }}
+              className="mt-4 w-full py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm transition cursor-pointer"
+            >
+              Xem nhận ngay (+30 EXP)
+            </button>
+          </div>
+
+          {/* Card 3: Mời 5 bạn nhận Premium 1 tháng */}
+          <div className="card p-4 bg-gradient-to-br from-indigo-50/70 to-purple-50/70 border-indigo-200 hover:border-indigo-400 transition-all flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-2xl">👑</span>
+                <span className="text-[11px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">
+                  1 Tháng Premium Free
+                </span>
+              </div>
+              <h3 className="text-sm font-bold text-ink-900">Mời 5 bạn bè tham gia</h3>
+              <p className="text-xs text-ink-600 mt-1">
+                Giới thiệu 5 người bạn tạo tài khoản để nhận ngay 30 ngày dùng gói Premium hoàn toàn miễn phí.
+              </p>
+            </div>
+            <Link
+              href="/gioi-thieu"
+              className="mt-4 w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs text-center shadow-sm transition block"
+            >
+              Lấy link mời bạn bè &rarr;
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* Category Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
@@ -451,6 +547,17 @@ export default function ShopPage() {
           </div>
         </div>
       )}
+
+      {/* Rewarded Ad Modal */}
+      <RewardedAdModal
+        isOpen={adModalOpen}
+        onClose={() => setAdModalOpen(false)}
+        rewardType={adRewardType}
+        placement="SHOP_FREE_STATION"
+        onSuccess={() => {
+          fetchCatalog();
+        }}
+      />
     </div>
   );
 }

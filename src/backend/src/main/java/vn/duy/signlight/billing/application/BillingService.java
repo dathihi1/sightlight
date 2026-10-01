@@ -39,6 +39,7 @@ public class BillingService {
     private final PayOsClient payOsClient;
     private final AuthService authService;
     private final ObjectMapper objectMapper;
+    private vn.duy.signlight.learning.application.LessonUnlockService lessonUnlockService;
 
     public BillingService(
             PlanRepository planRepository,
@@ -55,6 +56,11 @@ public class BillingService {
         this.payOsClient = payOsClient;
         this.authService = authService;
         this.objectMapper = objectMapper;
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setLessonUnlockService(vn.duy.signlight.learning.application.LessonUnlockService lessonUnlockService) {
+        this.lessonUnlockService = lessonUnlockService;
     }
 
     @Transactional(readOnly = true)
@@ -250,7 +256,11 @@ public class BillingService {
             return true;
         }
 
-        activateSubscriptionForTransaction(tx, payload.signature());
+        if (tx.getPlanId() != null && tx.getPlanId().startsWith("LESSON_")) {
+            activateLessonUnlockForTransaction(tx, payload.signature());
+        } else {
+            activateSubscriptionForTransaction(tx, payload.signature());
+        }
 
         webhookLog.setProcessed(true);
         webhookLogRepository.save(webhookLog);
@@ -262,6 +272,31 @@ public class BillingService {
     @Transactional(readOnly = true)
     public Optional<PaymentTransaction> getTransactionStatus(long orderCode) {
         return transactionRepository.findByOrderCode(orderCode);
+    }
+
+    private void activateLessonUnlockForTransaction(PaymentTransaction tx, String webhookSignature) {
+        Instant now = Instant.now();
+        tx.setStatus("PAID");
+        tx.setPaidAt(now);
+        if (webhookSignature != null) {
+            tx.setWebhookSignature(webhookSignature);
+        }
+        tx.setUpdatedAt(now);
+        transactionRepository.save(tx);
+
+        try {
+            String desc = tx.getDescription();
+            if (desc != null && desc.contains(":")) {
+                String[] parts = desc.split(":");
+                UUID lessonId = UUID.fromString(parts[0]);
+                String unlockType = parts[1];
+                if (lessonUnlockService != null) {
+                    lessonUnlockService.recordPaidUnlock(tx.getUserId(), lessonId, unlockType, tx.getAmount(), "VND");
+                }
+            }
+        } catch (Exception e) {
+            log.error("failed_to_activate_lesson_unlock orderCode={}", tx.getOrderCode(), e);
+        }
     }
 
     private void activateSubscriptionForTransaction(PaymentTransaction tx, String webhookSignature) {
@@ -302,6 +337,36 @@ public class BillingService {
 
         log.info("subscription_activated_and_role_upgraded userId={} orderCode={} planId={} expiresAt={}",
                 tx.getUserId(), tx.getOrderCode(), plan.getId(), newExpiresAt);
+    }
+
+    @Transactional
+    public void grantFreePremium(UUID userId, int durationDays, String reason) {
+        Instant now = Instant.now();
+        Optional<Subscription> activeSub = subscriptionRepository
+                .findFirstByUserIdAndStatusOrderByExpiresAtDesc(userId, "ACTIVE");
+
+        Instant baseTime = now;
+        if (activeSub.isPresent() && activeSub.get().getExpiresAt().isAfter(now)) {
+            baseTime = activeSub.get().getExpiresAt();
+        }
+        Instant newExpiresAt = baseTime.plus(Duration.ofDays(durationDays));
+
+        Subscription subscription = Subscription.builder()
+                .id(UUID.randomUUID())
+                .userId(userId)
+                .planId("PREMIUM_1M")
+                .status("ACTIVE")
+                .activatedAt(now)
+                .expiresAt(newExpiresAt)
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+        subscriptionRepository.save(subscription);
+
+        authService.upgradeToPremium(userId);
+
+        log.info("free_premium_granted userId={} days={} expiresAt={} reason={}",
+                userId, durationDays, newExpiresAt, reason);
     }
 
     private Long extractOrderCode(Map<String, Object> data) {

@@ -121,6 +121,17 @@ public class AuthService {
 
         Instant now = Instant.now();
         UUID userId = UUID.randomUUID();
+        UUID referredByUserId = null;
+        if (request.getReferralCode() != null && !request.getReferralCode().isBlank()) {
+            String refCode = request.getReferralCode().trim().toUpperCase();
+            Optional<AppUser> referrer = userRepository.findByReferralCode(refCode);
+            if (referrer.isPresent() && !referrer.get().getEmail().equalsIgnoreCase(email)) {
+                referredByUserId = referrer.get().getId();
+                log.info("registration_referred_by userId={} referrerId={}", userId, referredByUserId);
+            }
+        }
+        String myReferralCode = "SL" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+
         AppUser user = AppUser.builder()
                 .id(userId)
                 .email(email)
@@ -128,6 +139,8 @@ public class AuthService {
                 .status(UserStatus.PENDING_VERIFICATION.value())
                 .failedLoginCount((short) 0)
                 .birthYear(request.getBirthYear())
+                .referralCode(myReferralCode)
+                .referredByUserId(referredByUserId)
                 .createdAt(now)
                 .updatedAt(now)
                 .roles(new java.util.LinkedHashSet<>(List.of(ROLE_LEARNER_FREE)))

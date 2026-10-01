@@ -11,6 +11,7 @@ import { Confetti } from "@/components/ui/Celebrate";
 import { Mascot } from "@/components/ui/Mascot";
 import { IconCheck, IconShield } from "@/components/ui/Icons";
 import { ApiError, apiCall } from "@/lib/api";
+import { RewardedAdModal } from "@/components/RewardedAdModal";
 import {
   MAX_RECORDING_MS,
   MIN_USEFUL_FRAMES,
@@ -88,6 +89,7 @@ function AiPracticeContent() {
   const [localInference, setLocalInference] = useState<LocalInferenceResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [videoRatio, setVideoRatio] = useState<number>(16 / 9);
+  const [showAdModal, setShowAdModal] = useState(false);
 
   const capabilities = useQuery({
     queryKey: ["ai-capabilities"],
@@ -474,6 +476,30 @@ function AiPracticeContent() {
                 gửi một dãy số mô tả chuyển động.
               </span>
             </p>
+
+            {/* Banner xem video quảng cáo nhận lượt AI */}
+            <div className="mt-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 p-4 border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-500/10 text-xl text-amber-700">
+                  🎁
+                </span>
+                <div>
+                  <p className="text-sm font-bold text-amber-950">
+                    Cần thêm lượt luyện Camera AI?
+                  </p>
+                  <p className="text-xs text-amber-800">
+                    Xem video ngắn 15s để nhận ngay +1 lượt luyện tập hoàn toàn miễn phí.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAdModal(true)}
+                className="btn btn-primary btn-sm whitespace-nowrap bg-amber-600 hover:bg-amber-700 border-none text-white self-stretch sm:self-auto cursor-pointer"
+              >
+                Xem video (+1 lượt)
+              </button>
+            </div>
           </div>
         </section>
       </div>
@@ -483,17 +509,32 @@ function AiPracticeContent() {
           <ErrorNotice message={error} />
         </div>
       )}
-      {result && <AttemptFeedback result={result} targetLabel={item.label} />}
+      {result && <AttemptFeedback result={result} targetLabel={item.label} onOpenAd={() => setShowAdModal(true)} />}
 
       <div className="mt-8 space-y-1 text-sm text-ink-600">
         {capabilities.data?.disclaimerText && <p>{capabilities.data.disclaimerText}</p>}
         {capabilities.data?.attributionText && <p>{capabilities.data.attributionText}</p>}
       </div>
+
+      <RewardedAdModal
+        isOpen={showAdModal}
+        onClose={() => setShowAdModal(false)}
+        rewardType="AI_QUOTA"
+        placement="CAMERA_PAGE"
+      />
     </div>
   );
 }
 
-function AttemptFeedback({ result, targetLabel }: { result: AttemptResult; targetLabel: string }) {
+function AttemptFeedback({
+  result,
+  targetLabel,
+  onOpenAd,
+}: {
+  result: AttemptResult;
+  targetLabel: string;
+  onOpenAd?: () => void;
+}) {
   const confidencePercent = result.confidence ? Math.round(result.confidence * 100) : null;
   const ok = result.verified;
 
@@ -577,13 +618,26 @@ function AttemptFeedback({ result, targetLabel }: { result: AttemptResult; targe
         </p>
       )}
 
-      <p className="mt-4 text-sm font-bold text-ink-600">
-        {result.countedAgainstQuota
-          ? result.quotaRemaining != null
-            ? `Còn ${result.quotaRemaining} lượt luyện AI hôm nay.`
-            : "Bạn đang dùng gói không giới hạn."
-          : "Lượt này không tính vào hạn mức."}
-      </p>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm font-bold text-ink-600">
+        <p>
+          {result.countedAgainstQuota
+            ? result.quotaRemaining != null
+              ? `Còn ${result.quotaRemaining} lượt luyện AI hôm nay.`
+              : "Bạn đang dùng gói không giới hạn."
+            : "Lượt này không tính vào hạn mức."}
+        </p>
+
+        {onOpenAd && (
+          <button
+            type="button"
+            onClick={onOpenAd}
+            className="text-xs font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-full transition inline-flex items-center gap-1 cursor-pointer"
+          >
+            <span>🎁</span>
+            <span>Xem video nhận thêm +1 lượt</span>
+          </button>
+        )}
+      </div>
     </section>
   );
 }
