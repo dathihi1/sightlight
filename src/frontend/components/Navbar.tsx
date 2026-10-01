@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { SignLightLogo } from "./SignLightLogo";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuthSession } from "@/lib/useAuthSession";
-import { IconArticle, IconMenu, IconShop } from "@/components/ui/Icons";
+import { IconArticle, IconMenu } from "@/components/ui/Icons";
 
 import { NotificationDropdown } from "./NotificationDropdown";
 
@@ -48,7 +48,6 @@ export function Navbar() {
 
   const links = [
     { href: "/#our-web", label: t("Tính năng", "Features"), active: false },
-    { href: "/cua-hang", label: t("Cửa hàng", "Shop"), active: pathname.startsWith("/cua-hang"), Icon: IconShop },
     { href: "/about", label: t("Về chúng tôi", "About"), active: pathname === "/about" },
     { href: "/blog", label: t("Bài viết", "Blog"), active: pathname.startsWith("/blog"), Icon: IconArticle },
     { href: "/#businesses", label: t("Tổ chức", "Organizations"), active: false },
