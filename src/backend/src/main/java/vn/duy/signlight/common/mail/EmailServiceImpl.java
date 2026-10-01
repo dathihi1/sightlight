@@ -1,7 +1,16 @@
 package vn.duy.signlight.common.mail;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.mail.internet.MimeMessage;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,7 +19,8 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 /**
- * Implementation gửi email giao dịch qua JavaMailSender (SMTP) với giao diện HTML chuẩn thương hiệu SignLight.
+ * Implementation gửi email giao dịch qua Resend REST API (HTTPS) hoặc JavaMailSender (SMTP)
+ * với giao diện HTML chuẩn thương hiệu SignLight.
  */
 @Service
 public class EmailServiceImpl implements EmailService {
@@ -18,6 +28,8 @@ public class EmailServiceImpl implements EmailService {
     private static final Logger log = LoggerFactory.getLogger(EmailServiceImpl.class);
 
     private final JavaMailSender mailSender;
+    private final ObjectMapper objectMapper;
+    private final HttpClient httpClient;
 
     @Value("${signlight.mail.from:SignLight <signlight.forwork@gmail.com>}")
     private String fromAddress;
@@ -28,8 +40,21 @@ public class EmailServiceImpl implements EmailService {
     @Value("${signlight.mail.frontend-base-url:https://signlight.id.vn}")
     private String frontendBaseUrl;
 
-    public EmailServiceImpl(JavaMailSender mailSender) {
+    @Value("${signlight.mail.resend.api-key:}")
+    private String resendApiKey;
+
+    @Value("${signlight.mail.resend.from:}")
+    private String resendFrom;
+
+    @Value("${signlight.mail.resend.reply-to:signlight.forwork@gmail.com}")
+    private String resendReplyTo;
+
+    public EmailServiceImpl(JavaMailSender mailSender, ObjectMapper objectMapper) {
         this.mailSender = mailSender;
+        this.objectMapper = objectMapper;
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
     }
 
     @Override
@@ -51,6 +76,58 @@ public class EmailServiceImpl implements EmailService {
             log.info("email_skipped_dev_mode to_domain={} subject={}", maskDomain(to), subject);
             return;
         }
+
+        if (resendApiKey != null && !resendApiKey.isBlank()) {
+            sendViaResend(to, subject, htmlContent);
+            return;
+        }
+
+        sendViaSmtp(to, subject, htmlContent);
+    }
+
+    private void sendViaResend(String to, String subject, String htmlContent) {
+        try {
+            String sender = (resendFrom != null && !resendFrom.isBlank())
+                    ? resendFrom
+                    : (fromAddress != null && !fromAddress.contains("@gmail.com")
+                            ? fromAddress
+                            : "SignLight <onboarding@resend.dev>");
+
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("from", sender);
+            payload.put("to", List.of(to));
+            payload.put("subject", subject);
+            payload.put("html", htmlContent);
+            if (resendReplyTo != null && !resendReplyTo.isBlank()) {
+                payload.put("reply_to", resendReplyTo);
+            }
+
+            String bodyJson = objectMapper.writeValueAsString(payload);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.resend.com/emails"))
+                    .header("Authorization", "Bearer " + resendApiKey.trim())
+                    .header("Content-Type", "application/json")
+                    .header("User-Agent", "SignLight/1.0")
+                    .timeout(Duration.ofSeconds(10))
+                    .POST(HttpRequest.BodyPublishers.ofString(bodyJson, StandardCharsets.UTF_8))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                log.info("email_sent_resend to_domain={} subject={} status={}", maskDomain(to), subject, response.statusCode());
+            } else {
+                log.error("email_resend_failed to_domain={} subject={} status={} response={}",
+                        maskDomain(to), subject, response.statusCode(), response.body());
+            }
+        } catch (Exception ex) {
+            log.error("email_send_failed_resend to_domain={} subject={} error={}",
+                    maskDomain(to), subject, ex.getMessage(), ex);
+        }
+    }
+
+    private void sendViaSmtp(String to, String subject, String htmlContent) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(
@@ -64,9 +141,9 @@ public class EmailServiceImpl implements EmailService {
             helper.setText(htmlContent, true);
 
             mailSender.send(message);
-            log.info("email_sent to_domain={} subject={}", maskDomain(to), subject);
+            log.info("email_sent_smtp to_domain={} subject={}", maskDomain(to), subject);
         } catch (Exception ex) {
-            log.error("email_send_failed to_domain={} subject={} error={}",
+            log.error("email_send_failed_smtp to_domain={} subject={} error={}",
                     maskDomain(to), subject, ex.getMessage(), ex);
         }
     }

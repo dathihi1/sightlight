@@ -124,3 +124,8 @@ signlight:
     from: ${MAIL_FROM:SignLight <signlight.forwork@gmail.com>}
     enabled: ${MAIL_ENABLED:true}
     frontend-base-url: ${NEXT_PUBLIC_APP_URL:https://signlight.id.vn}
+    resend:
+      api-key: ${RESEND_API_KEY:re_hFY5oTam_PNczZoFXTjSn5c96hs2jhVWC}
+      from: ${RESEND_MAIL_FROM:SignLight <onboarding@resend.dev>}
+      reply-to: ${RESEND_REPLY_TO:signlight.forwork@gmail.com}
+
