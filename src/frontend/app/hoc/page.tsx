@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { ErrorNotice } from "@/components/ErrorNotice";
@@ -86,6 +87,14 @@ export default function LearningPathPage() {
     enabled: Boolean(isLoggedIn && courseId),
     queryFn: () => apiCall<Summary>(`/api/v1/gamification/summary?courseId=${courseId}`),
   });
+
+  useEffect(() => {
+    const handleBalanceUpdate = () => {
+      summary.refetch();
+    };
+    window.addEventListener("signlight:balance-update", handleBalanceUpdate);
+    return () => window.removeEventListener("signlight:balance-update", handleBalanceUpdate);
+  }, [summary]);
 
   if (isClient && !isLoading && !isLoggedIn) {
     return (

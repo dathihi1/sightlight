@@ -104,6 +104,8 @@ export interface GamificationSummaryResponse {
   completedLessons: number;
   signsMastered: number;
   averageScore: number;
+  expBalance: number;
+  aiBonusQuota: number;
 }
 
 export type StoreItemType = "CONSUMABLE" | "BADGE";

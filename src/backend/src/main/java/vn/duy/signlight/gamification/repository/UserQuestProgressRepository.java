@@ -9,5 +9,6 @@ import vn.duy.signlight.gamification.domain.UserQuestProgress;
 
 public interface UserQuestProgressRepository extends JpaRepository<UserQuestProgress, UUID> {
     List<UserQuestProgress> findByUserIdAndResetDate(UUID userId, LocalDate resetDate);
+    List<UserQuestProgress> findByUserId(UUID userId);
     Optional<UserQuestProgress> findByUserIdAndQuestIdAndResetDate(UUID userId, UUID questId, LocalDate resetDate);
 }

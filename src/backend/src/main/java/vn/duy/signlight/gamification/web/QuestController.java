@@ -29,6 +29,14 @@ public class QuestController {
         this.questService = questService;
     }
 
+    @GetMapping
+    @Operation(summary = "Lấy tất cả nhiệm vụ (ngày, tuần, cột mốc) và tiến độ của người học")
+    public ResponseEntity<TransactionResponse<List<QuestProgressDto>>> getAllQuests(
+            @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId) {
+        List<QuestProgressDto> result = questService.getAllQuests(CurrentUser.id());
+        return ResponseEntity.ok(ApiResponses.ok(requestId, result));
+    }
+
     @GetMapping("/daily")
     @Operation(summary = "Lấy danh sách nhiệm vụ ngày và tiến độ của người học")
     public ResponseEntity<TransactionResponse<List<QuestProgressDto>>> getDailyQuests(

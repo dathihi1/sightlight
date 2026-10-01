@@ -11,6 +11,7 @@ import {
   LearnerStats,
   BadgeItem,
   MissionItem,
+  MissionPeriod,
   GamificationSummaryResponse,
 } from "./types";
 import {
@@ -72,28 +73,10 @@ export default function LearningJourneyPage() {
 
   const [activeTab, setActiveTab] = useState<JourneyTab>("review");
   const [selectedBadgeForModal, setSelectedBadgeForModal] = useState<BadgeItem | null>(null);
-  const [claimedMissionIds, setClaimedMissionIds] = useState<string[]>([]);
-  const [userExp, setUserExp] = useState<number>(320);
   const [copied, setCopied] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [selectedPresetId, setSelectedPresetId] = useState<string>("empathy");
   const [customQuote, setCustomQuote] = useState<string>("");
-
-  // Load claimed missions and user exp from localStorage
-  useEffect(() => {
-    try {
-      const savedClaimed = localStorage.getItem("signlight_claimed_missions");
-      if (savedClaimed) {
-        setClaimedMissionIds(JSON.parse(savedClaimed));
-      }
-      const savedExp = localStorage.getItem("signlight_user_exp");
-      if (savedExp) {
-        setUserExp(parseInt(savedExp, 10));
-      }
-    } catch {
-      // Ignore localStorage errors
-    }
-  }, []);
 
   const meQuery = useQuery({
     queryKey: ["me"],
@@ -120,7 +103,37 @@ export default function LearningJourneyPage() {
       ),
   });
 
-  // Calculate learner stats from gamification summary or path data
+  interface BackendQuestProgress {
+    questId: string;
+    title: string;
+    description: string;
+    questType: string;
+    targetAction: string;
+    targetCount: number;
+    currentCount: number;
+    rewardExp: number;
+    rewardAiBonus: number;
+    completed: boolean;
+    claimed: boolean;
+  }
+
+  const questsQuery = useQuery({
+    queryKey: ["quests-all"],
+    enabled: Boolean(isClient && isLoggedIn),
+    queryFn: () => apiCall<BackendQuestProgress[]>("/api/v1/quests"),
+  });
+
+  // Listen to balance updates across the app (quests claimed, store purchases, etc.)
+  useEffect(() => {
+    const handleBalanceUpdate = () => {
+      gamificationQuery.refetch();
+      questsQuery.refetch();
+    };
+    window.addEventListener("signlight:balance-update", handleBalanceUpdate);
+    return () => window.removeEventListener("signlight:balance-update", handleBalanceUpdate);
+  }, [gamificationQuery, questsQuery]);
+
+  // Calculate learner stats from real gamification summary or path data
   const stats: LearnerStats = useMemo(() => {
     let completed = 0;
     let total = 0;
@@ -146,26 +159,27 @@ export default function LearningJourneyPage() {
 
     const gSummary = gamificationQuery.data;
 
-    const streak = gSummary?.streakDays ?? 7;
-    const longest = gSummary?.longestStreak ?? Math.max(streak, 10);
+    const streak = gSummary?.streakDays ?? 0;
+    const longest = gSummary?.longestStreak ?? 0;
     const avg =
       gSummary?.averageScore ??
-      (scoredLessons > 0 ? Math.round(scoreSum / scoredLessons) : 94);
-    const completedCount = gSummary?.completedLessons ?? (completed > 0 ? completed : 6);
-    const signs = gSummary?.signsMastered ?? Math.max(completedCount * 6, 12);
-    const totalMins = gSummary?.totalMinutesLearned ?? 45;
+      (scoredLessons > 0 ? Math.round(scoreSum / scoredLessons) : 0);
+    const completedCount = gSummary?.completedLessons ?? completed;
+    const signs = gSummary?.signsMastered ?? (completedCount * 6);
+    const totalMins = Math.round(Number(gSummary?.totalMinutesLearned ?? 0));
+    const realExp = gSummary?.expBalance ?? 0;
 
     return {
       completedLessons: completedCount,
-      totalLessons: Math.max(total, 24),
+      totalLessons: Math.max(total, 1),
       averageScore: avg,
       signsMastered: signs,
       streakDays: streak,
       longestStreak: longest,
       totalMinutes: totalMins,
-      userExp,
+      userExp: realExp,
     };
-  }, [pathQuery.data, gamificationQuery.data, userExp]);
+  }, [pathQuery.data, gamificationQuery.data]);
 
   const learnerName =
     meQuery.data?.profile?.displayName ??
@@ -196,27 +210,63 @@ export default function LearningJourneyPage() {
   }, [sharePresets, selectedPresetId, customQuote, lang]);
 
   const badges = useMemo(() => getInitialBadges(stats), [stats]);
-  const missions = useMemo(() => getInitialMissions(stats, claimedMissionIds), [stats, claimedMissionIds]);
+
+  const missions = useMemo<MissionItem[]>(() => {
+    if (questsQuery.data && questsQuery.data.length > 0) {
+      return questsQuery.data.map((q) => {
+        let period: MissionPeriod = "DAILY";
+        if (q.questType === "WEEKLY") period = "WEEKLY";
+        else if (q.questType === "MILESTONE") period = "MILESTONE";
+
+        let iconType: MissionItem["iconType"] = "target";
+        if (q.targetAction === "PRACTICE_AI") iconType = "camera";
+        else if (q.targetAction === "COMPLETE_LESSON") iconType = "book";
+        else if (q.targetAction === "SCORE_PERFECT") iconType = "trophy";
+
+        let status: MissionItem["status"] = "IN_PROGRESS";
+        if (q.claimed) status = "CLAIMED";
+        else if (q.completed) status = "COMPLETED";
+
+        return {
+          id: q.questId,
+          titleVi: q.title,
+          titleEn: q.title,
+          descriptionVi: q.description || "",
+          descriptionEn: q.description || "",
+          period,
+          target: q.targetCount,
+          current: q.currentCount,
+          unitVi: "lần",
+          unitEn: "times",
+          rewardExp: q.rewardExp,
+          iconType,
+          status,
+        };
+      });
+    }
+    return getInitialMissions(stats, []);
+  }, [questsQuery.data, stats]);
+
   const milestones = useMemo(() => getInitialMilestones(stats), [stats]);
 
-  const handleClaimReward = (mission: MissionItem) => {
-    const updatedClaimed = [...claimedMissionIds, mission.id];
-    setClaimedMissionIds(updatedClaimed);
-    const newExp = userExp + mission.rewardExp;
-    setUserExp(newExp);
-
+  const handleClaimReward = async (mission: MissionItem) => {
     try {
-      localStorage.setItem("signlight_claimed_missions", JSON.stringify(updatedClaimed));
-      localStorage.setItem("signlight_user_exp", newExp.toString());
+      await apiCall(`/api/v1/quests/${mission.id}/claim`, { method: "POST" });
+      questsQuery.refetch();
+      gamificationQuery.refetch();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("signlight:balance-update"));
+      }
+      setToastMessage(
+        `+${mission.rewardExp} EXP! ${t("Đã nhận thưởng nhiệm vụ thành công.", "Reward claimed successfully.")}`
+      );
+      setTimeout(() => setToastMessage(null), 3500);
     } catch {
-      // Ignore
+      setToastMessage(t("Không thể nhận thưởng hoặc nhiệm vụ chưa hoàn thành.", "Failed to claim reward."));
+      setTimeout(() => setToastMessage(null), 3500);
     }
-
-    setToastMessage(
-      `+${mission.rewardExp} EXP! ${t("Đã nhận thưởng nhiệm vụ thành công.", "Reward claimed successfully.")}`
-    );
-    setTimeout(() => setToastMessage(null), 3500);
   };
+
 
   const handleCopyAll = () => {
     const fullText = `${customQuote}\n\n👉 Khám phá tại: ${shareUrl}`;

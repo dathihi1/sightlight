@@ -106,8 +106,8 @@ public class GamificationQueryService {
             }
         }
 
-        int avgScore = scoredCount > 0 ? Math.round((float) scoreSum / scoredCount) : 92;
-        int signsMastered = Math.max(completedLessons * 6, 12);
+        int avgScore = scoredCount > 0 ? Math.round((float) scoreSum / scoredCount) : 0;
+        int signsMastered = completedLessons * 6;
 
         UserProfile profile = userProfileRepository.findById(userId).orElse(null);
         int expBalance = profile != null ? profile.getExpBalance() : 0;

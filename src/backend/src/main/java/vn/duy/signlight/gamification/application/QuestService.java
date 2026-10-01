@@ -1,8 +1,10 @@
 package vn.duy.signlight.gamification.application;
 
+import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.Instant;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,7 @@ import vn.duy.signlight.notification.application.NotificationService;
 public class QuestService {
 
     private static final Logger log = LoggerFactory.getLogger(QuestService.class);
+    private static final LocalDate EPOCH_DATE = LocalDate.of(1970, 1, 1);
 
     private final QuestRepository questRepository;
     private final UserQuestProgressRepository progressRepository;
@@ -45,6 +48,16 @@ public class QuestService {
         this.storeService = storeService;
         this.userProfileRepository = userProfileRepository;
         this.notificationService = notificationService;
+    }
+
+    private LocalDate resolveResetDate(String questType, LocalDate today) {
+        if ("MILESTONE".equalsIgnoreCase(questType)) {
+            return EPOCH_DATE;
+        }
+        if ("WEEKLY".equalsIgnoreCase(questType)) {
+            return today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        }
+        return today;
     }
 
     @Transactional(readOnly = true)
@@ -79,6 +92,41 @@ public class QuestService {
         return results;
     }
 
+    @Transactional(readOnly = true)
+    public List<QuestProgressDto> getAllQuests(UUID userId) {
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        List<Quest> activeQuests = questRepository.findByActiveOrderByOrderIndexAsc(true);
+        List<UserQuestProgress> progressList = progressRepository.findByUserId(userId);
+
+        List<QuestProgressDto> results = new ArrayList<>();
+        for (Quest q : activeQuests) {
+            LocalDate resetDate = resolveResetDate(q.getQuestType(), today);
+            UserQuestProgress p = progressList.stream()
+                    .filter(pr -> pr.getQuestId().equals(q.getId()) && resetDate.equals(pr.getResetDate()))
+                    .findFirst()
+                    .orElse(null);
+
+            int currentCount = p != null ? p.getCurrentCount() : 0;
+            boolean completed = p != null && p.isCompleted();
+            boolean claimed = p != null && p.isClaimed();
+
+            results.add(new QuestProgressDto(
+                    q.getId(),
+                    q.getTitle(),
+                    q.getDescription(),
+                    q.getQuestType(),
+                    q.getTargetAction(),
+                    q.getTargetCount(),
+                    Math.min(currentCount, q.getTargetCount()),
+                    q.getRewardExp(),
+                    q.getRewardAiBonus(),
+                    completed,
+                    claimed
+            ));
+        }
+        return results;
+    }
+
     @Transactional
     public void recordAction(UUID userId, String targetAction, int count) {
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
@@ -87,8 +135,9 @@ public class QuestService {
                 .toList();
 
         for (Quest q : matchedQuests) {
+            LocalDate resetDate = resolveResetDate(q.getQuestType(), today);
             UserQuestProgress progress = progressRepository
-                    .findByUserIdAndQuestIdAndResetDate(userId, q.getId(), today)
+                    .findByUserIdAndQuestIdAndResetDate(userId, q.getId(), resetDate)
                     .orElseGet(() -> UserQuestProgress.builder()
                             .id(UUID.randomUUID())
                             .userId(userId)
@@ -96,7 +145,7 @@ public class QuestService {
                             .currentCount(0)
                             .completed(false)
                             .claimed(false)
-                            .resetDate(today)
+                            .resetDate(resetDate)
                             .updatedAt(Instant.now())
                             .build());
 
@@ -105,7 +154,6 @@ public class QuestService {
                 if (progress.getCurrentCount() >= q.getTargetCount()) {
                     progress.setCompleted(true);
                     log.info("quest_completed user_id={} quest_id={}", userId, q.getId());
-                    // Bắn in-app notification cho user
                     notificationService.sendNotification(
                             userId,
                             "Nhiệm vụ hoàn thành: " + q.getTitle(),
@@ -126,8 +174,9 @@ public class QuestService {
         Quest quest = questRepository.findById(questId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
 
+        LocalDate resetDate = resolveResetDate(quest.getQuestType(), today);
         UserQuestProgress progress = progressRepository
-                .findByUserIdAndQuestIdAndResetDate(userId, questId, today)
+                .findByUserIdAndQuestIdAndResetDate(userId, questId, resetDate)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
 
         if (!progress.isCompleted()) {
@@ -171,3 +220,4 @@ public class QuestService {
         );
     }
 }
+
