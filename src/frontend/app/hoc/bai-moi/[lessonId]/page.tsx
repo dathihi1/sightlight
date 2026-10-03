@@ -88,6 +88,7 @@ export default function NewLessonPage() {
   const [combo, setCombo] = useState(0);
   const [answered, setAnswered] = useState(0);
   const feedbackRef = useRef<HTMLDivElement>(null);
+  const startTimeRef = useRef<number>(Date.now());
 
   // Sau mỗi lần chấm, đưa thẻ phản hồi vào tầm nhìn (tránh bị thanh nút dưới che mất).
   useEffect(() => {
@@ -329,10 +330,14 @@ export default function NewLessonPage() {
 
   const completeLesson = async () => {
     setBusy(true);
+    const elapsedSeconds = Math.max(15, Math.min(1800, Math.round((Date.now() - startTimeRef.current) / 1000)));
     try {
       const result = await apiCall<CompleteResult>(`/api/v1/lessons/${lessonId}/complete`, {
         method: "POST",
-        body: { idempotencyKey: crypto.randomUUID() },
+        body: {
+          idempotencyKey: crypto.randomUUID(),
+          activeSeconds: elapsedSeconds,
+        },
       });
       setSummary(result);
       trackEvent(AnalyticsEvents.LESSON_COMPLETE, {

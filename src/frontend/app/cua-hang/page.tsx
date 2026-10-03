@@ -3,10 +3,22 @@
 import { useState, useEffect } from "react";
 import { apiCall } from "@/lib/api";
 import Link from "next/link";
-import { IconShop, IconCrown } from "@/components/ui/Icons";
+import {
+  IconShop,
+  IconCrown,
+  IconWebcam,
+  IconUnlock,
+  IconShield,
+  IconLightning,
+  IconTrophy,
+  IconBook,
+  IconFlame,
+  IconSparkles,
+  IconStar,
+  IconCheck,
+} from "@/components/ui/Icons";
 import { useAuthSession } from "@/lib/useAuthSession";
 import { trackEvent, AnalyticsEvents } from "@/lib/analytics";
-import { RewardedAdModal } from "@/components/RewardedAdModal";
 
 interface StoreItem {
   itemKey: string;
@@ -46,8 +58,6 @@ export default function ShopPage() {
   const [redeeming, setRedeeming] = useState(false);
   const [successResult, setSuccessResult] = useState<RedeemResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [adModalOpen, setAdModalOpen] = useState(false);
-  const [adRewardType, setAdRewardType] = useState<"AI_QUOTA" | "EXP">("AI_QUOTA");
 
   const fetchCatalog = async () => {
     setLoading(true);
@@ -112,15 +122,15 @@ export default function ShopPage() {
   };
 
   const getItemVisual = (item: StoreItem) => {
-    if (item.itemKey.includes("AI_BONUS_10")) return { icon: "🤖✨", bg: "bg-purple-50 text-purple-600 border-purple-200" };
-    if (item.itemKey.includes("AI_BONUS")) return { icon: "🤖", bg: "bg-sky-50 text-sky-600 border-sky-200" };
-    if (item.itemKey.includes("LESSON_UNLOCK_UNIT")) return { icon: "🗺️", bg: "bg-emerald-50 text-emerald-600 border-emerald-200" };
-    if (item.itemKey.includes("LESSON_UNLOCK")) return { icon: "🗝️", bg: "bg-amber-50 text-amber-600 border-amber-200" };
-    if (item.itemKey.includes("STREAK")) return { icon: "🧊", bg: "bg-cyan-50 text-cyan-600 border-cyan-200" };
-    if (item.itemKey.includes("BOOSTER")) return { icon: "⚡", bg: "bg-yellow-50 text-yellow-600 border-yellow-200" };
-    if (item.itemKey.includes("AMBASSADOR")) return { icon: "🎗️", bg: "bg-rose-50 text-rose-600 border-rose-200" };
-    if (item.itemKey.includes("PERSISTENCE")) return { icon: "💪", bg: "bg-indigo-50 text-indigo-600 border-indigo-200" };
-    return { icon: "🏆", bg: "bg-brand-50 text-brand-600 border-brand-200" };
+    if (item.itemKey.includes("AI_BONUS_10")) return { Icon: IconWebcam, bg: "bg-sky-50 text-sky-600 border-sky-200" };
+    if (item.itemKey.includes("AI_BONUS")) return { Icon: IconWebcam, bg: "bg-sky-50 text-sky-600 border-sky-200" };
+    if (item.itemKey.includes("LESSON_UNLOCK_UNIT")) return { Icon: IconBook, bg: "bg-emerald-50 text-emerald-600 border-emerald-200" };
+    if (item.itemKey.includes("LESSON_UNLOCK")) return { Icon: IconUnlock, bg: "bg-amber-50 text-amber-600 border-amber-200" };
+    if (item.itemKey.includes("STREAK")) return { Icon: IconShield, bg: "bg-cyan-50 text-cyan-600 border-cyan-200" };
+    if (item.itemKey.includes("BOOSTER")) return { Icon: IconLightning, bg: "bg-yellow-50 text-yellow-600 border-yellow-200" };
+    if (item.itemKey.includes("AMBASSADOR")) return { Icon: IconCrown, bg: "bg-rose-50 text-rose-600 border-rose-200" };
+    if (item.itemKey.includes("PERSISTENCE")) return { Icon: IconFlame, bg: "bg-orange-50 text-orange-600 border-orange-200" };
+    return { Icon: IconTrophy, bg: "bg-brand-50 text-brand-600 border-brand-200" };
   };
 
   const filteredItems = catalog?.items.filter((item) => {
@@ -151,67 +161,55 @@ export default function ShopPage() {
               <span className="grid h-8 w-8 place-items-center rounded-xl bg-white/15 text-white backdrop-blur-xs">
                 <IconShop className="h-4 w-4" />
               </span>
-              <span className="text-xs font-bold uppercase tracking-wider text-brand-200">Khu đổi thưởng học viên</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-brand-200">Vật phẩm học tập</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Cửa Hàng Đổi Thưởng EXP</h1>
-            <p className="mt-2 text-sm text-brand-100 leading-relaxed">
-              Dùng điểm kinh nghiệm (EXP) bạn tích lũy được sau mỗi bài học để nhận thêm <strong>lượt chấm camera AI</strong>, <strong>vé mở khóa bài học</strong> và các phần thưởng độc quyền!
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Cửa Hàng</h1>
+            <p className="mt-1.5 text-sm text-brand-100">
+              Dùng EXP mở khóa bài học, lượt camera và các vật phẩm bổ trợ.
             </p>
           </div>
 
           {/* User Balances Box */}
           {isLoggedIn ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 text-center shrink-0">
-              {/* EXP */}
               <div className="p-2.5 rounded-xl bg-white/10">
-                <span className="text-xs text-brand-200 block font-medium">Số dư EXP</span>
+                <span className="text-xs text-brand-200 block font-medium">EXP</span>
                 <div className="flex items-center justify-center gap-1.5 mt-1">
-                  <span className="text-lg">⭐</span>
-                  <span className="text-xl sm:text-2xl font-black text-sun-300">
-                    {catalog?.expBalance ?? 0}
-                  </span>
+                  <IconStar className="h-5 w-5 text-sun-300" />
+                  <span className="text-xl sm:text-2xl font-bold text-sun-300">{catalog?.expBalance ?? 0}</span>
                 </div>
               </div>
 
-              {/* AI Quota */}
               <div className="p-2.5 rounded-xl bg-white/10">
-                <span className="text-xs text-brand-200 block font-medium">Lượt AI cộng thêm</span>
+                <span className="text-xs text-brand-200 block font-medium">Camera</span>
                 <div className="flex items-center justify-center gap-1.5 mt-1">
-                  <span className="text-lg">🤖</span>
-                  <span className="text-xl sm:text-2xl font-black text-sky-300">
-                    {catalog?.aiBonusQuota ?? 0}
-                  </span>
+                  <IconWebcam className="h-5 w-5 text-sky-300" />
+                  <span className="text-xl sm:text-2xl font-bold text-sky-300">{catalog?.aiBonusQuota ?? 0}</span>
                 </div>
               </div>
 
-              {/* Lesson Passes */}
               <div className="p-2.5 rounded-xl bg-white/10">
-                <span className="text-xs text-brand-200 block font-medium">Vé mở bài học</span>
+                <span className="text-xs text-brand-200 block font-medium">Vé bài học</span>
                 <div className="flex items-center justify-center gap-1.5 mt-1">
-                  <span className="text-lg">🗝️</span>
-                  <span className="text-xl sm:text-2xl font-black text-emerald-300">
-                    {catalog?.lessonPassCount ?? 0}
-                  </span>
+                  <IconUnlock className="h-5 w-5 text-emerald-300" />
+                  <span className="text-xl sm:text-2xl font-bold text-emerald-300">{catalog?.lessonPassCount ?? 0}</span>
                 </div>
               </div>
 
-              {/* Streak Freeze */}
               <div className="p-2.5 rounded-xl bg-white/10">
-                <span className="text-xs text-brand-200 block font-medium">Băng bảo vệ</span>
+                <span className="text-xs text-brand-200 block font-medium">Băng streak</span>
                 <div className="flex items-center justify-center gap-1.5 mt-1">
-                  <span className="text-lg">🧊</span>
-                  <span className="text-xl sm:text-2xl font-black text-cyan-300">
-                    {catalog?.freezeCount ?? 0}
-                  </span>
+                  <IconShield className="h-5 w-5 text-cyan-300" />
+                  <span className="text-xl sm:text-2xl font-bold text-cyan-300">{catalog?.freezeCount ?? 0}</span>
                 </div>
               </div>
             </div>
           ) : (
             <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/15 text-center shrink-0 max-w-xs flex flex-col items-center justify-center">
-              <span className="text-3xl mb-1">🎁</span>
-              <p className="text-sm font-bold text-white">Đăng nhập để xem số dư EXP</p>
-              <p className="text-xs text-brand-100 mt-1">Học và tích lũy EXP để đổi lượt AI và vé mở khóa bài học!</p>
-              <Link href="/dang-nhap?next=/cua-hang" className="btn btn-sm bg-white text-brand-700 hover:bg-brand-50 font-bold mt-3 w-full">
+              <IconShop className="h-8 w-8 text-white/80 mb-2" />
+              <p className="text-sm font-bold text-white">Đăng nhập để xem số dư</p>
+              <p className="text-xs text-brand-100 mt-1">Tích lũy EXP để đổi lượt camera và vé mở bài học.</p>
+              <Link href="/dang-nhap?next=/cua-hang" className="btn btn-sm bg-white text-brand-700 hover:bg-brand-50 font-semibold mt-3 w-full">
                 Đăng nhập ngay
               </Link>
             </div>
@@ -229,119 +227,26 @@ export default function ShopPage() {
         </div>
       )}
 
-      {/* Trạm Nhận Quà Miễn Phí: Xem Video & Giới Thiệu Bạn Bè */}
-      <section className="rounded-3xl border border-amber-200/80 bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-amber-50/80 p-5 sm:p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-          <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-amber-500 text-white text-sm shadow-sm">
-              🎁
-            </span>
-            <h2 className="text-base sm:text-lg font-extrabold text-ink-900">
-              Trạm Quà Tặng Miễn Phí
-            </h2>
-          </div>
-          <span className="text-xs font-semibold text-amber-800 bg-amber-100/80 px-2.5 py-1 rounded-full self-start sm:self-auto">
-            Không tốn tiền · Không trừ EXP
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Card 1: Xem video nhận +1 lượt AI */}
-          <div className="card p-4 bg-white/95 border-amber-200/60 hover:border-amber-400 transition-all flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl">🤖</span>
-                <span className="text-[11px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
-                  +1 Lượt Camera
-                </span>
-              </div>
-              <h3 className="text-sm font-bold text-ink-900">Xem video nhận lượt AI</h3>
-              <p className="text-xs text-ink-600 mt-1">
-                Xem 1 video ngắn 15s để cộng ngay 1 lượt AI nhận diện cử chỉ qua camera.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setAdRewardType("AI_QUOTA");
-                setAdModalOpen(true);
-              }}
-              className="mt-4 w-full py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs shadow-sm transition cursor-pointer"
-            >
-              Xem nhận ngay (+1 AI)
-            </button>
-          </div>
-
-          {/* Card 2: Xem video nhận +30 EXP */}
-          <div className="card p-4 bg-white/95 border-amber-200/60 hover:border-amber-400 transition-all flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl">⭐</span>
-                <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                  +30 EXP & Nhiệm vụ
-                </span>
-              </div>
-              <h3 className="text-sm font-bold text-ink-900">Xem video nhận EXP</h3>
-              <p className="text-xs text-ink-600 mt-1">
-                Nhận ngay 30 điểm kinh nghiệm và hoàn thành nhiệm vụ xem quảng cáo trong ngày.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setAdRewardType("EXP");
-                setAdModalOpen(true);
-              }}
-              className="mt-4 w-full py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm transition cursor-pointer"
-            >
-              Xem nhận ngay (+30 EXP)
-            </button>
-          </div>
-
-          {/* Card 3: Mời 5 bạn nhận Premium 1 tháng */}
-          <div className="card p-4 bg-gradient-to-br from-indigo-50/70 to-purple-50/70 border-indigo-200 hover:border-indigo-400 transition-all flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl">👑</span>
-                <span className="text-[11px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">
-                  1 Tháng Premium Free
-                </span>
-              </div>
-              <h3 className="text-sm font-bold text-ink-900">Mời 5 bạn bè tham gia</h3>
-              <p className="text-xs text-ink-600 mt-1">
-                Giới thiệu 5 người bạn tạo tài khoản để nhận ngay 30 ngày dùng gói Premium hoàn toàn miễn phí.
-              </p>
-            </div>
-            <Link
-              href="/gioi-thieu"
-              className="mt-4 w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs text-center shadow-sm transition block"
-            >
-              Lấy link mời bạn bè &rarr;
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* Category Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
         {[
-          { key: "ALL", label: "Tất cả", icon: "✨" },
-          { key: "AI_QUOTA", label: "Lượt AI Camera", icon: "🤖" },
-          { key: "LESSON_UNLOCK", label: "Mở khóa bài học", icon: "🔓" },
-          { key: "STREAK", label: "Bảo vệ Streak & Booster", icon: "⚡" },
-          { key: "BADGE", label: "Huy hiệu vinh danh", icon: "🏅" },
+          { key: "ALL", label: "Tất cả", Icon: IconSparkles },
+          { key: "AI_QUOTA", label: "Lượt Camera", Icon: IconWebcam },
+          { key: "LESSON_UNLOCK", label: "Mở khóa bài học", Icon: IconUnlock },
+          { key: "STREAK", label: "Streak & Booster", Icon: IconLightning },
+          { key: "BADGE", label: "Huy hiệu", Icon: IconTrophy },
         ].map((tab) => (
           <button
             key={tab.key}
             type="button"
             onClick={() => setActiveCategory(tab.key)}
-            className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap transition-all cursor-pointer ${
+            className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap transition-all cursor-pointer ${
               activeCategory === tab.key
                 ? "bg-brand-600 text-white shadow-md shadow-brand-500/20"
                 : "bg-white text-ink-700 border border-ink-200 hover:bg-ink-50 hover:text-ink-900"
             }`}
           >
-            <span>{tab.icon}</span>
+            <tab.Icon className="h-4 w-4" />
             <span>{tab.label}</span>
           </button>
         ))}
@@ -356,8 +261,8 @@ export default function ShopPage() {
         </div>
       ) : filteredItems.length === 0 ? (
         <div className="card p-12 text-center border-dashed border-ink-300">
-          <span className="text-3xl block mb-2">🎁</span>
-          <p className="text-sm font-bold text-ink-700">Không có vật phẩm nào trong mục này</p>
+          <IconShop className="h-10 w-10 text-ink-300 mx-auto mb-2" />
+          <p className="text-sm font-semibold text-ink-700">Không có vật phẩm nào trong mục này</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -373,18 +278,18 @@ export default function ShopPage() {
                 <div>
                   {/* Top: Icon & Price */}
                   <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className={`w-12 h-12 rounded-2xl grid place-items-center text-2xl border ${visual.bg}`}>
-                      {visual.icon}
+                    <div className={`w-12 h-12 rounded-2xl grid place-items-center border ${visual.bg}`}>
+                      <visual.Icon className="h-6 w-6" />
                     </div>
 
-                    <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-sun-50 border border-sun-200">
-                      <span className="text-sm">⭐</span>
-                      <span className="text-sm font-bold text-sun-900">{item.costExp} EXP</span>
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-sun-50 border border-sun-200">
+                      <IconStar className="h-3.5 w-3.5 text-sun-600" />
+                      <span className="text-xs font-bold text-sun-900">{item.costExp} EXP</span>
                     </div>
                   </div>
 
                   {/* Title & Description */}
-                  <h3 className="text-base font-bold text-ink-900">{item.title}</h3>
+                  <h3 className="text-base font-semibold text-ink-900">{item.title}</h3>
                   <p className="text-xs text-ink-600 mt-1.5 leading-relaxed">{item.description}</p>
                 </div>
 
@@ -438,8 +343,8 @@ export default function ShopPage() {
       {/* Earn EXP Guide Card */}
       <div className="card p-6 border-brand-200 bg-brand-50/40 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-brand-100 grid place-items-center text-2xl shrink-0">
-            💡
+          <div className="w-12 h-12 rounded-2xl bg-brand-100 grid place-items-center text-brand-600 shrink-0">
+            <IconSparkles className="h-6 w-6" />
           </div>
           <div>
             <h4 className="text-sm font-bold text-ink-900">Làm thế nào để kiếm thêm EXP?</h4>
@@ -459,8 +364,11 @@ export default function ShopPage() {
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="card max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-150">
             <div className="text-center">
-              <div className="w-14 h-14 rounded-2xl mx-auto mb-3 grid place-items-center text-3xl bg-brand-50 border border-brand-200">
-                {getItemVisual(confirmItem).icon}
+              <div className={`w-14 h-14 rounded-2xl mx-auto mb-3 grid place-items-center border ${getItemVisual(confirmItem).bg}`}>
+                {(() => {
+                  const ItemIcon = getItemVisual(confirmItem).Icon;
+                  return <ItemIcon className="h-7 w-7" />;
+                })()}
               </div>
               <h3 className="text-lg font-bold text-ink-900">Xác nhận đổi vật phẩm</h3>
               <p className="text-xs text-ink-500 mt-1">
@@ -473,7 +381,10 @@ export default function ShopPage() {
 
               <div className="mt-4 flex items-center justify-between px-4 py-2.5 rounded-xl bg-sun-50 border border-sun-200 text-xs font-semibold">
                 <span className="text-ink-700">Chi phí:</span>
-                <span className="font-bold text-sun-900">{confirmItem.costExp} EXP</span>
+                <span className="flex items-center gap-1 font-bold text-sun-900">
+                  <IconStar className="h-3.5 w-3.5 text-sun-600" />
+                  {confirmItem.costExp} EXP
+                </span>
               </div>
               <div className="mt-1 flex items-center justify-between px-4 py-2 text-[11px] text-ink-500">
                 <span>Số dư sau khi đổi:</span>
@@ -509,7 +420,9 @@ export default function ShopPage() {
       {successResult && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="card max-w-md w-full p-6 shadow-2xl text-center animate-in zoom-in-95 duration-150">
-            <span className="text-5xl block mb-3">🎉</span>
+            <div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 mx-auto mb-3 grid place-items-center border border-emerald-200">
+              <IconCheck className="h-7 w-7" />
+            </div>
             <h3 className="text-xl font-bold text-ink-900">Đổi thưởng thành công!</h3>
             <p className="text-sm text-brand-600 font-semibold mt-2">{successResult.message}</p>
 
@@ -547,17 +460,6 @@ export default function ShopPage() {
           </div>
         </div>
       )}
-
-      {/* Rewarded Ad Modal */}
-      <RewardedAdModal
-        isOpen={adModalOpen}
-        onClose={() => setAdModalOpen(false)}
-        rewardType={adRewardType}
-        placement="SHOP_FREE_STATION"
-        onSuccess={() => {
-          fetchCatalog();
-        }}
-      />
     </div>
   );
 }

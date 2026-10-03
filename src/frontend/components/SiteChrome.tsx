@@ -148,6 +148,13 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
       </main>
     );
   }
+  if (pathname.startsWith("/dang-ky")) {
+    return (
+      <main id="noi-dung-chinh" className="min-h-screen w-full flex flex-col">
+        {children}
+      </main>
+    );
+  }
   if (pathname.startsWith("/admin")) return <>{children}</>;
   if (APP_PREFIXES.some((p) => pathname.startsWith(p))) return <LearnerShell>{children}</LearnerShell>;
 

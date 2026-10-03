@@ -456,8 +456,11 @@ public class LessonService {
         int scorePercent = scoreFromFirstAttempts(userId, exercises);
         boolean firstTryPerfect = scorePercent == 100;
 
+        int activeSec = (request.getActiveSeconds() != null && request.getActiveSeconds() > 0)
+                ? request.getActiveSeconds()
+                : 180;
         BigDecimal effectiveMinutes = BigDecimal
-                .valueOf(Math.min(request.getActiveSeconds(), MAX_EFFECTIVE_SECONDS))
+                .valueOf(Math.min(activeSec, MAX_EFFECTIVE_SECONDS))
                 .divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
 
         completionRepository.save(LessonCompletion.builder()

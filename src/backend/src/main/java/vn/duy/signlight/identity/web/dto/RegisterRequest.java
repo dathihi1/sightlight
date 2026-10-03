@@ -50,4 +50,7 @@ public class RegisterRequest extends BaseRequest {
 
     @Schema(description = "Mã giới thiệu từ bạn bè", example = "A1B2C3D4", nullable = true)
     private String referralCode;
+
+    @Schema(description = "Mục tiêu phút học mỗi ngày (onboarding survey)", example = "10", nullable = true)
+    private Short dailyGoalMinutes;
 }

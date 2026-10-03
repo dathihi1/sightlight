@@ -18,9 +18,8 @@ public class CompleteLessonRequest extends BaseRequest {
     @Schema(example = "5c2f1a90-3b7e-4f21-9a11-8d0c2e4b7f33")
     private UUID idempotencyKey;
 
-    @NotNull(message = "00101")
     @Min(value = 0, message = "00101")
     @Max(value = 3600, message = "00101")
     @Schema(example = "265", description = "Giây có tương tác; server áp trần 15 phút (BR-A46)")
-    private Integer activeSeconds;
+    private Integer activeSeconds = 180;
 }

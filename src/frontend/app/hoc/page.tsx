@@ -344,8 +344,8 @@ function LessonRow({
       </div>
       {current && <span className="btn btn-primary btn-sm pointer-events-none">{lesson.status === "IN_PROGRESS" ? "Tiếp tục" : "Bắt đầu"}</span>}
       {reason && (
-        <span className="inline-flex items-center gap-1 rounded-xl bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 border border-amber-200">
-          Mở khóa &rarr;
+        <span className="inline-flex items-center rounded-xl bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 border border-amber-200">
+          Mở khóa
         </span>
       )}
     </div>
@@ -404,9 +404,9 @@ function ProfileCard({ name, coursePct, summary }: { name: string; coursePct: nu
               </span>
               <Link
                 href="/cua-hang"
-                className="text-xs font-bold text-brand-600 hover:text-brand-700 hover:underline inline-flex items-center gap-0.5"
+                className="text-xs font-semibold text-brand-600 hover:text-brand-700 hover:underline"
               >
-                Đổi quà &rarr;
+                Đổi quà
               </Link>
             </div>
           )}
@@ -428,13 +428,12 @@ function ProfileCard({ name, coursePct, summary }: { name: string; coursePct: nu
           <div className="mt-4 border-t border-ink-100 pt-3">
             <Link
               href="/cua-hang"
-              className="flex items-center justify-between rounded-2xl bg-gradient-to-r from-sun-50 to-brand-50 hover:from-sun-100 hover:to-brand-100 p-3 transition text-xs font-bold text-ink-900 border border-sun-200 shadow-xs"
+              className="flex items-center justify-center rounded-2xl bg-gradient-to-r from-sun-50 to-brand-50 hover:from-sun-100 hover:to-brand-100 p-2.5 transition text-xs font-semibold text-ink-900 border border-sun-200"
             >
               <span className="flex items-center gap-2">
-                <span className="text-lg">🎁</span>
+                <IconShop className="h-4 w-4 text-brand-600" />
                 <span>Cửa hàng đổi thưởng EXP</span>
               </span>
-              <span className="text-brand-600 font-extrabold">&rarr;</span>
             </Link>
           </div>
         </>

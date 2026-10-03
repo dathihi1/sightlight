@@ -87,10 +87,12 @@ public class AuthController {
     }
 
     @PostMapping("/google")
-    @Operation(summary = "Dang nhap hoac dang ky bang Google OAuth2/OIDC (FR-03)")
     public ResponseEntity<TransactionResponse<LoginResult>> loginWithGoogle(
             @Valid @RequestBody GoogleLoginRequest request) {
-        LoginResult result = authService.loginWithGoogle(request.getIdToken());
+        LoginResult result = authService.loginWithGoogle(
+                request.getIdToken(),
+                request.getReferralCode(),
+                request.getDailyGoalMinutes());
         var responseBuilder = ResponseEntity.ok();
         if (result.refreshToken() != null && !result.refreshToken().isBlank()) {
             responseBuilder.header(HttpHeaders.SET_COOKIE,

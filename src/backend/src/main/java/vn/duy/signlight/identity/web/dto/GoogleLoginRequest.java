@@ -17,4 +17,10 @@ public class GoogleLoginRequest {
     @NotBlank
     @Schema(description = "Google ID Token trả về từ Google Identity Services", example = "eyJhbGciOiJSUzI1NiIsIm...")
     private String idToken;
+
+    @Schema(description = "Mã giới thiệu từ bạn bè", example = "A1B2C3D4", nullable = true)
+    private String referralCode;
+
+    @Schema(description = "Mục tiêu phút học mỗi ngày (onboarding survey)", example = "10", nullable = true)
+    private Short dailyGoalMinutes;
 }

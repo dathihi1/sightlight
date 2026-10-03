@@ -153,10 +153,13 @@ public class AuthService {
                 .timezone(timezoneOrDefault(request.getTimezone()))
                 .build());
 
+        short goalMinutes = (request.getDailyGoalMinutes() != null && request.getDailyGoalMinutes() > 0)
+                ? request.getDailyGoalMinutes()
+                : (short) 10;
         preferenceRepository.save(UserPreference.builder()
                 .userId(userId)
                 .activeCourseId(activeCourseId)
-                .dailyGoalMinutes((short) 10)
+                .dailyGoalMinutes(goalMinutes)
                 .uiLocale("vi")
                 .videoSpeed(new BigDecimal("1.00"))
                 .marketingEmailOptIn(false)
@@ -234,6 +237,11 @@ public class AuthService {
 
     @Transactional
     public LoginResult loginWithGoogle(String idToken) {
+        return loginWithGoogle(idToken, null, null);
+    }
+
+    @Transactional
+    public LoginResult loginWithGoogle(String idToken, String referralCode, Short dailyGoalMinutes) {
         GoogleTokenVerifier.GoogleUserPayload payload = googleTokenVerifier.verify(idToken);
         Instant now = Instant.now();
 
@@ -253,12 +261,25 @@ public class AuthService {
                 }
             } else {
                 UUID userId = UUID.randomUUID();
+                UUID referredByUserId = null;
+                if (referralCode != null && !referralCode.isBlank()) {
+                    String refCode = referralCode.trim().toUpperCase();
+                    Optional<AppUser> referrer = userRepository.findByReferralCode(refCode);
+                    if (referrer.isPresent() && !referrer.get().getEmail().equalsIgnoreCase(payload.email())) {
+                        referredByUserId = referrer.get().getId();
+                        log.info("google_registration_referred_by userId={} referrerId={}", userId, referredByUserId);
+                    }
+                }
+                String myReferralCode = "SL" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+
                 user = AppUser.builder()
                         .id(userId)
                         .email(payload.email())
                         .status(UserStatus.ACTIVE.value())
                         .emailVerifiedAt(payload.emailVerified() ? now : null)
                         .failedLoginCount((short) 0)
+                        .referralCode(myReferralCode)
+                        .referredByUserId(referredByUserId)
                         .createdAt(now)
                         .updatedAt(now)
                         .roles(new java.util.LinkedHashSet<>(List.of(ROLE_LEARNER_FREE)))
@@ -273,10 +294,11 @@ public class AuthService {
                         .build());
 
                 UUID activeCourseId = contentCatalog.defaultCourseId().orElse(null);
+                short goal = (dailyGoalMinutes != null && dailyGoalMinutes > 0) ? dailyGoalMinutes : (short) 10;
                 preferenceRepository.save(UserPreference.builder()
                         .userId(userId)
                         .activeCourseId(activeCourseId)
-                        .dailyGoalMinutes((short) 10)
+                        .dailyGoalMinutes(goal)
                         .uiLocale("vi")
                         .videoSpeed(new BigDecimal("1.00"))
                         .marketingEmailOptIn(false)
