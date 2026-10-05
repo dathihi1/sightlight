@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,6 +78,8 @@ public class AiRecognitionService {
     private final ObjectMapper objectMapper;
     private final vn.duy.signlight.gamification.application.GamificationStoreService gamificationStoreService;
     private final vn.duy.signlight.gamification.application.QuestService questService;
+    private final String freeModelVersion;
+    private final String premiumModelVersion;
 
     public AiRecognitionService(AiInferenceClient aiClient,
             AiModelSyncService modelSyncService,
@@ -88,7 +91,11 @@ public class AiRecognitionService {
             AuthService authService,
             ObjectMapper objectMapper,
             vn.duy.signlight.gamification.application.GamificationStoreService gamificationStoreService,
-            vn.duy.signlight.gamification.application.QuestService questService) {
+            vn.duy.signlight.gamification.application.QuestService questService,
+            @Value("${signlight.ai.free-model-version:vsl-mvp30-v2-lite-transformer}")
+            String freeModelVersion,
+            @Value("${signlight.ai.premium-model-version:vsl-mvp400-v2-lite-transformer}")
+            String premiumModelVersion) {
         this.aiClient = aiClient;
         this.modelSyncService = modelSyncService;
         this.labelRepository = labelRepository;
@@ -100,13 +107,15 @@ public class AiRecognitionService {
         this.objectMapper = objectMapper;
         this.gamificationStoreService = gamificationStoreService;
         this.questService = questService;
+        this.freeModelVersion = freeModelVersion;
+        this.premiumModelVersion = premiumModelVersion;
     }
 
     // ------------------------------------------------------------ capabilities
 
     @Transactional(readOnly = true)
-    public AiCapabilitiesResult capabilities() {
-        AiModelVersion version = modelSyncService.activeVersion();
+    public AiCapabilitiesResult capabilities(UUID userId) {
+        AiModelVersion version = versionForUser(userId);
         List<UUID> recognizable = modelSyncService.enabledLabels(version.getId()).stream()
                 .map(AiSignLabel::getSignId)
                 .filter(java.util.Objects::nonNull)
@@ -128,14 +137,14 @@ public class AiRecognitionService {
     }
 
     @Transactional(readOnly = true)
-    public AiPracticeSessionResult practiceSession(int size) {
-        return practiceSession(null, size);
+    public AiPracticeSessionResult practiceSession(UUID userId, int size) {
+        return practiceSession(userId, null, size);
     }
 
     @Transactional(readOnly = true)
-    public AiPracticeSessionResult practiceSession(UUID preferredSignId, int size) {
-        AiModelVersion version = modelSyncService.activeVersion();
-        List<AiSignLabel> enabledLabels = labelRepository.findByModelVersionIdAndEnabledTrue(version.getId());
+    public AiPracticeSessionResult practiceSession(UUID userId, UUID preferredSignId, int size) {
+        AiModelVersion version = versionForUser(userId);
+        List<AiSignLabel> enabledLabels = modelSyncService.enabledLabels(version.getId());
 
         List<UUID> recognizableSignIds = enabledLabels.stream()
                 .map(AiSignLabel::getSignId)
@@ -147,17 +156,18 @@ public class AiRecognitionService {
             orderedSignIds.add(preferredSignId);
         }
 
-        // Ưu tiên các ký hiệu có video web cục bộ sẵn sàng (web/*.mp4) để người học luôn có video mẫu chuẩn
+        // Ưu tiên ký hiệu đã có object R2 thật để người học luôn có video mẫu nhanh và ổn định.
         Map<UUID, SignVideo> videos = contentTree.primaryVideos(recognizableSignIds);
 
-        List<UUID> withLocalWebVideos = recognizableSignIds.stream()
+        List<UUID> withR2Videos = recognizableSignIds.stream()
                 .filter(id -> !orderedSignIds.contains(id))
                 .filter(id -> {
                     SignVideo v = videos.get(id);
-                    return v != null && v.getObjectKey() != null && v.getObjectKey().startsWith("web/");
+                    return v != null && v.getObjectKey() != null
+                            && !v.getObjectKey().startsWith("seed/placeholder/");
                 })
                 .toList();
-        orderedSignIds.addAll(withLocalWebVideos);
+        orderedSignIds.addAll(withR2Videos);
 
         for (UUID id : recognizableSignIds) {
             if (!orderedSignIds.contains(id)) {
@@ -200,7 +210,8 @@ public class AiRecognitionService {
             throw new BusinessException(ErrorCode.AI_MEDIA_NOT_ALLOWED);
         }
 
-        AiModelVersion version = modelSyncService.activeVersion();
+        boolean premium = authService.isPremium(userId);
+        AiModelVersion version = versionForPlan(premium);
         if (!version.getVersionCode().equals(request.getModelVersion())) {
             throw new BusinessException(ErrorCode.AI_MODEL_VERSION_UNSUPPORTED);
         }
@@ -219,7 +230,6 @@ public class AiRecognitionService {
             return recordNonCountingAttempt(userId, request, version, STATUS_NO_HAND);
         }
 
-        boolean premium = authService.isPremium(userId);
         String timezone = authService.timezoneOf(userId);
         LocalDate today = LocalDate.now(ZoneId.of(timezone));
         boolean usedBonus = false;
@@ -458,6 +468,17 @@ public class AiRecognitionService {
         return quota.getUsedCount();
     }
 
+    /** Free chạy model 30 thật; Premium chạy model 400 thật. */
+    private AiModelVersion versionForUser(UUID userId) {
+        return versionForPlan(authService.isPremium(userId));
+    }
+
+    private AiModelVersion versionForPlan(boolean premium) {
+        String versionCode = premium ? premiumModelVersion : freeModelVersion;
+        return modelSyncService.versionByCode(versionCode)
+                .orElseThrow(() -> new BusinessException(ErrorCode.AI_SERVICE_UNAVAILABLE));
+    }
+
     /** Ba lần liên tiếp chưa đạt thì giao diện chủ động đề nghị lối thoát (BR-A122). */
     private int consecutiveFailures(UUID userId, UUID targetSignId) {
         List<SignAttempt> recent = attemptRepository
@@ -499,7 +520,7 @@ public class AiRecognitionService {
     @Transactional(readOnly = true)
     public boolean isRecognizable(UUID signId) {
         try {
-            AiModelVersion version = modelSyncService.activeVersion();
+            AiModelVersion version = versionForPlan(true);
             return labelRepository
                     .findByModelVersionIdAndSignIdAndEnabledTrue(version.getId(), signId)
                     .isPresent();
@@ -512,7 +533,7 @@ public class AiRecognitionService {
     @Transactional(readOnly = true)
     public java.util.Set<UUID> recognizableSignIds() {
         try {
-            AiModelVersion version = modelSyncService.activeVersion();
+            AiModelVersion version = versionForPlan(true);
             return modelSyncService.enabledLabels(version.getId()).stream()
                     .map(AiSignLabel::getSignId)
                     .filter(java.util.Objects::nonNull)

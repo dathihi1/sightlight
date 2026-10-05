@@ -4,7 +4,7 @@ FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    MODEL_DIR=/app/runs/vsl_mvp30_v2_lite_transformer \
+    MODEL_DIR=/app/runs/vsl_mvp400_v2_lite_transformer \
     ONNX_INTRA_OP_THREADS=2
 
 WORKDIR /app

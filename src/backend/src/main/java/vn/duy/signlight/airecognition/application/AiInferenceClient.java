@@ -51,9 +51,20 @@ public class AiInferenceClient {
 
     /** Đọc vốn nhãn của mô hình đang nạp. Trả rỗng khi dịch vụ chưa sẵn sàng. */
     public Optional<LabelCatalog> labels() {
+        return labels(null);
+    }
+
+    /** Đọc vốn nhãn của một model cụ thể trong AI service đa model. */
+    public Optional<LabelCatalog> labels(String modelVersion) {
         try {
             return Optional.ofNullable(restClient.get()
-                    .uri("/api/labels")
+                    .uri(builder -> {
+                        builder.path("/api/labels");
+                        if (StringUtils.hasText(modelVersion)) {
+                            builder.queryParam("modelVersion", modelVersion);
+                        }
+                        return builder.build();
+                    })
                     .retrieve()
                     .body(LabelCatalog.class));
         } catch (ResourceAccessException | org.springframework.web.client.RestClientResponseException ex) {

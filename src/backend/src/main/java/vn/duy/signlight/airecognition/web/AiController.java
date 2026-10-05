@@ -41,7 +41,7 @@ public class AiController {
     public ResponseEntity<TransactionResponse<AiCapabilitiesResult>> capabilities(
             @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId) {
         return ResponseEntity.ok(
-                ApiResponses.ok(requestId, recognitionService.capabilities()));
+                ApiResponses.ok(requestId, recognitionService.capabilities(CurrentUser.id())));
     }
 
     @PostMapping("/attempts")
@@ -66,8 +66,10 @@ public class AiController {
             @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId,
             @RequestParam(required = false) java.util.UUID signId,
             @RequestParam(defaultValue = "" + DEFAULT_SESSION_SIZE) int size) {
-        int bounded = Math.clamp(size, 1, 50);
+        // Tối đa 400 để màn luyện có thể hiển thị toàn bộ vốn từ và cho người dùng tự chọn.
+        int bounded = Math.clamp(size, 1, 400);
         return ResponseEntity.ok(
-                ApiResponses.ok(requestId, recognitionService.practiceSession(signId, bounded)));
+                ApiResponses.ok(requestId,
+                        recognitionService.practiceSession(CurrentUser.id(), signId, bounded)));
     }
 }

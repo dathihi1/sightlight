@@ -9,6 +9,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.duy.signlight.airecognition.domain.AiModelVersion;
@@ -37,15 +38,23 @@ public class AiModelSyncService {
     private final AiModelVersionRepository modelVersionRepository;
     private final AiSignLabelRepository labelRepository;
     private final SignRepository signRepository;
+    private final String freeModelVersion;
+    private final String premiumModelVersion;
 
     public AiModelSyncService(AiInferenceClient aiClient,
             AiModelVersionRepository modelVersionRepository,
             AiSignLabelRepository labelRepository,
-            SignRepository signRepository) {
+            SignRepository signRepository,
+            @Value("${signlight.ai.free-model-version:vsl-mvp30-v2-lite-transformer}")
+            String freeModelVersion,
+            @Value("${signlight.ai.premium-model-version:vsl-mvp400-v2-lite-transformer}")
+            String premiumModelVersion) {
         this.aiClient = aiClient;
         this.modelVersionRepository = modelVersionRepository;
         this.labelRepository = labelRepository;
         this.signRepository = signRepository;
+        this.freeModelVersion = freeModelVersion;
+        this.premiumModelVersion = premiumModelVersion;
     }
 
     /**
@@ -55,7 +64,14 @@ public class AiModelSyncService {
      */
     @Transactional
     public Optional<SyncSummary> sync() {
-        Optional<AiInferenceClient.LabelCatalog> catalog = aiClient.labels();
+        // Đồng bộ Free trước, Premium sau để model 400 vẫn là bản active cho API công khai cũ.
+        Optional<SyncSummary> free = syncVersion(freeModelVersion);
+        Optional<SyncSummary> premium = syncVersion(premiumModelVersion);
+        return premium.isPresent() ? premium : free;
+    }
+
+    private Optional<SyncSummary> syncVersion(String requestedVersion) {
+        Optional<AiInferenceClient.LabelCatalog> catalog = aiClient.labels(requestedVersion);
         if (catalog.isEmpty()) {
             log.warn("ai_sync_skipped reason=service_unavailable");
             return Optional.empty();
@@ -135,6 +151,11 @@ public class AiModelSyncService {
     public AiModelVersion activeVersion() {
         return modelVersionRepository.findByActiveTrue()
                 .orElseThrow(() -> new BusinessException(ErrorCode.AI_SERVICE_UNAVAILABLE));
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<AiModelVersion> versionByCode(String versionCode) {
+        return modelVersionRepository.findByVersionCode(versionCode);
     }
 
     @Transactional(readOnly = true)

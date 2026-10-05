@@ -39,8 +39,8 @@ spring:
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:signlight.forwork@gmail.com}
-    password: ${MAIL_PASSWORD:zvgemrbhymirmqie}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
@@ -99,8 +99,8 @@ signlight:
       access-token-ttl: PT${JWT_ACCESS_TTL_MINUTES:15}M
       issuer: signlight
     google:
-      client-id: ${GOOGLE_CLIENT_ID:701794322092-f9k658h8vgrftuv8t4mfk50ctnk7vc50.apps.googleusercontent.com}
-      client-secret: ${GOOGLE_CLIENT_SECRET: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b}
+      client-id: ${GOOGLE_CLIENT_ID:}
+      client-secret: ${GOOGLE_CLIENT_SECRET:}
   media:
     base-url: ${PUBLIC_API_BASE_URL:http://localhost:18080}
     web-videos-dir: ${SIGNLIGHT_WEB_VIDEOS_DIR:src/backend/src/main/resources/static/videos/web}
@@ -108,15 +108,18 @@ signlight:
     signing-key: ${MEDIA_SIGNING_KEY:doi-khoa-ky-url-media-o-moi-truong-that}
     # Base URL công khai của bucket Cloudflare R2 (r2.dev hoặc custom domain), không có dấu / ở cuối.
     # Bỏ trống để quay về phát luồng qua backend (/api/v1/media/stream).
-    r2-public-base-url: ${R2_PUBLIC_BASE_URL:https://pub-8c6d1cfd8dcf4247a3c8b412746b506f.r2.dev}
+    r2-public-base-url: ${R2_PUBLIC_BASE_URL:}
   ai:
     base-url: ${SIGNLIGHT_AI_BASE_URL:http://localhost:7860}
     timeout-ms: ${SIGNLIGHT_AI_TIMEOUT_MS:5000}
     service-token: ${SIGNLIGHT_AI_SERVICE_TOKEN:}
+    # Mỗi gói dùng đúng artifact ONNX tương ứng; AI service nạp đồng thời cả hai model.
+    free-model-version: ${SIGNLIGHT_AI_FREE_MODEL_VERSION:vsl-mvp30-v2-lite-transformer}
+    premium-model-version: ${SIGNLIGHT_AI_PREMIUM_MODEL_VERSION:vsl-mvp400-v2-lite-transformer}
   payos:
-    client-id: ${PAYOS_CLIENT_ID:59b27e45-228f-4c64-a411-c835d9e1348a}
-    api-key: ${PAYOS_API_KEY:dbe544eb-23c7-42bd-8f1d-28a4b39339d9}
-    checksum-key: ${PAYOS_CHECKSUM_KEY:64752d3da4bc357c367fbb0bf0e69b3ae31a5488881764729445c1f3776967ae}
+    client-id: ${PAYOS_CLIENT_ID:}
+    api-key: ${PAYOS_API_KEY:}
+    checksum-key: ${PAYOS_CHECKSUM_KEY:}
     endpoint: ${PAYOS_ENDPOINT:https://api-merchant.payos.vn}
     return-url: ${PAYOS_RETURN_URL:http://localhost:3000/thanh-toan/thanh-cong}
     cancel-url: ${PAYOS_CANCEL_URL:http://localhost:3000/nang-cap}
@@ -125,7 +128,7 @@ signlight:
     enabled: ${MAIL_ENABLED:true}
     frontend-base-url: ${NEXT_PUBLIC_APP_URL:https://signlight.id.vn}
     resend:
-      api-key: ${RESEND_API_KEY:re_hFY5oTam_PNczZoFXTjSn5c96hs2jhVWC}
+      api-key: ${RESEND_API_KEY:}
       from: ${RESEND_MAIL_FROM:SignLight <onboarding@resend.dev>}
       reply-to: ${RESEND_REPLY_TO:signlight.forwork@gmail.com}
 

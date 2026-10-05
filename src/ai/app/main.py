@@ -30,17 +30,18 @@ logging.basicConfig(
 )
 log = logging.getLogger("signlight.ai")
 
-env_dir = os.getenv("MODEL_DIR")
-if env_dir and Path(env_dir).exists():
-    MODEL_DIR = Path(env_dir)
-else:
-    local_runs = Path(__file__).resolve().parent.parent / "runs"
-    if (local_runs / "vsl_mvp400_v2_lite_transformer").exists():
-        MODEL_DIR = local_runs / "vsl_mvp400_v2_lite_transformer"
-    else:
-        MODEL_DIR = local_runs / "vsl_mvp30_v2_lite_transformer"
+MODEL_NAMES = (
+    "vsl_mvp30_v2_lite_transformer",
+    "vsl_mvp400_v2_lite_transformer",
+)
+DEFAULT_MODEL_VERSION = os.getenv(
+    "DEFAULT_MODEL_VERSION", "vsl-mvp400-v2-lite-transformer"
+)
+env_dir = Path(os.getenv("MODEL_DIR", "")) if os.getenv("MODEL_DIR") else None
+runs_dir = env_dir.parent if env_dir and env_dir.exists() else Path(__file__).resolve().parent.parent / "runs"
+MODEL_DIRS = [runs_dir / name for name in MODEL_NAMES if (runs_dir / name).exists()]
 
-recognizer: Recognizer | None = None
+recognizers: dict[str, Recognizer] = {}
 SERVICE_TOKEN = os.getenv("SIGNLIGHT_AI_SERVICE_TOKEN", "")
 REQUIRE_SERVICE_TOKEN = os.getenv("SIGNLIGHT_AI_REQUIRE_TOKEN", "false").lower() == "true"
 
@@ -58,13 +59,22 @@ def _authorize(authorization: str | None) -> JSONResponse | None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    global recognizer
+    global recognizers
     _assert_disabled_integrations()
     if REQUIRE_SERVICE_TOKEN and not SERVICE_TOKEN:
         raise RuntimeError("SIGNLIGHT_AI_SERVICE_TOKEN is required when SIGNLIGHT_AI_REQUIRE_TOKEN=true")
-    recognizer = Recognizer(MODEL_DIR)
-    if recognizer.stub_mode:
-        log.warning("Dịch vụ AI khởi động ở CHẾ ĐỘ STUB — kết quả nhận dạng là giả lập")
+    recognizers = {}
+    for model_dir in MODEL_DIRS:
+        loaded = Recognizer(model_dir)
+        recognizers[loaded.version_code] = loaded
+        if loaded.stub_mode:
+            log.warning(
+                "Mô hình %s khởi động ở CHẾ ĐỘ STUB — kết quả nhận dạng là giả lập",
+                loaded.version_code,
+            )
+    if not recognizers:
+        raise RuntimeError(f"Không tìm thấy model trong {runs_dir}")
+    log.info("Đã nạp %d mô hình: %s", len(recognizers), ", ".join(recognizers))
     yield
 
 
@@ -115,23 +125,41 @@ def _reject_media(payload: InferFeaturesRequest) -> str | None:
 
 @app.get("/health")
 def health() -> dict[str, Any]:
-    if recognizer is None:
+    if not recognizers:
         return JSONResponse(status_code=503, content={"status": "DOWN", "reason": "model_loading"})
+    default = recognizers.get(DEFAULT_MODEL_VERSION) or next(iter(recognizers.values()))
     return {
         "status": "UP",
-        "modelVersion": recognizer.version_code,
-        "numClasses": recognizer.num_classes,
-        "stubMode": recognizer.stub_mode,
+        "modelVersion": default.version_code,
+        "numClasses": default.num_classes,
+        "stubMode": default.stub_mode,
+        "models": [
+            {
+                "modelVersion": model.version_code,
+                "numClasses": model.num_classes,
+                "stubMode": model.stub_mode,
+            }
+            for model in recognizers.values()
+        ],
     }
 
 
 @app.get("/api/labels", response_model=None)
-def labels(authorization: str | None = Header(default=None)) -> dict[str, Any] | JSONResponse:
+def labels(
+    modelVersion: str | None = None,
+    authorization: str | None = Header(default=None),
+) -> dict[str, Any] | JSONResponse:
     unauthorized = _authorize(authorization)
     if unauthorized is not None:
         return unauthorized
-    if recognizer is None:
+    if not recognizers:
         return JSONResponse(status_code=503, content={"error": "model_loading"})
+    recognizer = recognizers.get(modelVersion or DEFAULT_MODEL_VERSION)
+    if recognizer is None:
+        return JSONResponse(
+            status_code=404,
+            content={"error": "model_not_found", "available": list(recognizers)},
+        )
     return {
         "modelVersion": recognizer.version_code,
         "schemaVersion": recognizer.schema_version,
@@ -153,7 +181,7 @@ def infer_features(
     unauthorized = _authorize(authorization)
     if unauthorized is not None:
         return unauthorized
-    if recognizer is None:
+    if not recognizers:
         return JSONResponse(status_code=503, content={"error": "model_loading"})
 
     media_key = _reject_media(payload)
@@ -161,10 +189,11 @@ def infer_features(
         log.warning("Từ chối payload chứa trường media: %s", media_key)
         return JSONResponse(status_code=400, content={"error": "media_not_allowed", "field": media_key})
 
-    if payload.modelVersion and payload.modelVersion != recognizer.version_code:
+    recognizer = recognizers.get(payload.modelVersion or DEFAULT_MODEL_VERSION)
+    if recognizer is None:
         return JSONResponse(
             status_code=409,
-            content={"error": "model_version_mismatch", "active": recognizer.version_code},
+            content={"error": "model_version_mismatch", "available": list(recognizers)},
         )
 
     features, problem = _as_tensor(payload.features)
