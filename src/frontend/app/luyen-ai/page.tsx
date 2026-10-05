@@ -100,8 +100,8 @@ function AiPracticeContent() {
     queryKey: ["ai-practice-session", requestedSignId],
     queryFn: () => {
       const url = requestedSignId
-        ? `/api/v1/ai/practice/session?size=10&signId=${encodeURIComponent(requestedSignId)}`
-        : "/api/v1/ai/practice/session?size=10";
+        ? `/api/v1/ai/practice/session?size=400&signId=${encodeURIComponent(requestedSignId)}`
+        : "/api/v1/ai/practice/session?size=400";
       return apiCall<PracticeSession>(url);
     },
   });
@@ -356,6 +356,7 @@ function AiPracticeContent() {
   }
 
   const total = session.data?.items.length ?? 1;
+  const isPremiumModel = capabilities.data?.modelVersion?.includes("400") ?? false;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
@@ -380,6 +381,48 @@ function AiPracticeContent() {
           Bỏ qua
         </button>
       </header>
+
+      <section className="mt-5 rounded-3xl border border-grape-200 bg-grape-50 p-4 sm:flex sm:items-end sm:justify-between sm:gap-5">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <label htmlFor="practice-sign" className="text-sm font-bold text-grape-800">
+              Chọn từ muốn luyện
+            </label>
+            <span className="chip bg-white text-grape-700">
+              {isPremiumModel ? "Premium · model 400 từ" : "Free · model 30 từ"}
+            </span>
+          </div>
+          <select
+            id="practice-sign"
+            value={item.signId}
+            disabled={phase === "recording" || phase === "scoring"}
+            onChange={(event) => {
+              const nextIndex = session.data?.items.findIndex((candidate) => candidate.signId === event.target.value) ?? -1;
+              if (nextIndex >= 0) {
+                setItemIndex(nextIndex);
+                setResult(null);
+                setLocalInference(null);
+                setError(null);
+              }
+            }}
+            className="input mt-2 h-12 w-full bg-white sm:max-w-xl"
+          >
+            {session.data?.items.map((candidate) => (
+              <option key={candidate.signId} value={candidate.signId}>
+                {candidate.label}{candidate.topic ? ` · ${candidate.topic}` : ""}
+              </option>
+            ))}
+          </select>
+          <p className="mt-2 text-xs font-semibold text-grape-700">
+            Bạn đang có {session.data?.items.length ?? 0} từ khả dụng với gói hiện tại.
+          </p>
+        </div>
+        {!isPremiumModel && (
+          <Link href="/nang-cap" className="btn btn-secondary btn-sm mt-3 shrink-0 sm:mt-0">
+            Mở khóa 400 từ
+          </Link>
+        )}
+      </section>
 
       {capabilities.data?.stubMode && (
         // Không để ai nhầm kết quả giả lập với độ chính xác thật của mô hình.

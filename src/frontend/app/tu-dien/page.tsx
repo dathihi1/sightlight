@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Mascot } from "@/components/ui/Mascot";
 import { IconPlay } from "@/components/ui/Icons";
 import { SignVideoPlayer } from "@/components/SignVideoPlayer";
-import { apiCall } from "@/lib/api";
+import { apiCall, tokenStore } from "@/lib/api";
 
 interface SearchResult {
   items: SignItem[];
@@ -47,12 +47,31 @@ interface SignDetail {
   variants: VariantItem[];
 }
 
+interface AiCapabilities {
+  modelVersion: string;
+  recognizableSignIds: string[];
+}
+
 /** SCR-17 — từ điển ký hiệu (FR-21, FR-22). Hỗ trợ tìm kiếm và phát video mẫu trực tiếp. */
 export default function DictionaryPage() {
   const [input, setInput] = useState("");
   const [query, setQuery] = useState("");
   const [selectedSignId, setSelectedSignId] = useState<string | null>(null);
   const [activeVariantIndex, setActiveVariantIndex] = useState(0);
+  const [hasSession, setHasSession] = useState(false);
+
+  useEffect(() => {
+    const syncAuth = () => setHasSession(Boolean(tokenStore.get()));
+    syncAuth();
+    window.addEventListener("signlight:auth-change", syncAuth);
+    return () => window.removeEventListener("signlight:auth-change", syncAuth);
+  }, []);
+
+  const aiCapabilities = useQuery({
+    queryKey: ["dictionary-ai-capabilities", hasSession],
+    enabled: hasSession,
+    queryFn: () => apiCall<AiCapabilities>("/api/v1/ai/capabilities"),
+  });
 
   const search = useQuery({
     queryKey: ["dictionary", query],
@@ -98,6 +117,9 @@ export default function DictionaryPage() {
 
   const variants = signDetail.data?.variants ?? [];
   const activeVariant = variants[activeVariantIndex] ?? variants[0];
+  const recognizableSignIds = new Set(aiCapabilities.data?.recognizableSignIds ?? []);
+  const canPracticeWithAi = (signId: string) => recognizableSignIds.has(signId);
+  const usesPremiumModel = aiCapabilities.data?.modelVersion?.includes("400") ?? false;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 space-y-8">
@@ -109,6 +131,11 @@ export default function DictionaryPage() {
           <p className="mt-1 text-base text-ink-600">
             400 ký hiệu kèm video mẫu theo vùng miền. Gõ có dấu hay không dấu đều được.
           </p>
+          {hasSession && aiCapabilities.data && (
+            <p className="mt-2 text-sm font-bold text-grape-700">
+              Camera AI: {usesPremiumModel ? "Premium · 400 từ" : "Free · 30 từ"}
+            </p>
+          )}
         </div>
       </header>
 
@@ -180,9 +207,14 @@ export default function DictionaryPage() {
                     <h3 className="text-xl font-bold text-ink-900">
                       {sign.word}
                     </h3>
-                    {sign.aiRecognizable && (
+                    {canPracticeWithAi(sign.id) && (
                       <span className="chip shrink-0 bg-grape-100 text-grape-700">
                         Chấm AI
+                      </span>
+                    )}
+                    {hasSession && !canPracticeWithAi(sign.id) && sign.aiRecognizable && (
+                      <span className="chip shrink-0 bg-sun-100 text-sun-800">
+                        Premium AI
                       </span>
                     )}
                   </div>
@@ -309,12 +341,25 @@ export default function DictionaryPage() {
 
                 {/* Nút hành động */}
                 <div className="flex items-center justify-end gap-3 pt-2">
-                  {signDetail.data.aiRecognizable && (
+                  {canPracticeWithAi(signDetail.data.id) && (
                     <Link
                       href={`/luyen-ai?signId=${signDetail.data.id}`}
                       className="btn btn-grape btn-sm"
                     >
                       Luyện với AI
+                    </Link>
+                  )}
+                  {hasSession && !canPracticeWithAi(signDetail.data.id) && signDetail.data.aiRecognizable && (
+                    <Link href="/nang-cap" className="btn btn-primary btn-sm">
+                      Premium để luyện từ này
+                    </Link>
+                  )}
+                  {!hasSession && signDetail.data.aiRecognizable && (
+                    <Link
+                      href={`/dang-nhap?next=${encodeURIComponent(`/luyen-ai?signId=${signDetail.data.id}`)}`}
+                      className="btn btn-grape btn-sm"
+                    >
+                      Đăng nhập để luyện AI
                     </Link>
                   )}
                   <button
