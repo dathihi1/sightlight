@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiCall } from "@/lib/api";
+import { normalizeListPage } from "@/lib/paginated-list";
 
 interface QuestItem {
   id: string;
@@ -19,6 +20,8 @@ interface QuestItem {
 
 export default function AdminQuestsPage() {
   const [quests, setQuests] = useState<QuestItem[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -33,25 +36,25 @@ export default function AdminQuestsPage() {
   const [rewardExp, setRewardExp] = useState(20);
   const [rewardAiBonus, setRewardAiBonus] = useState(0);
 
-  const fetchQuests = async () => {
+  const fetchQuests = useCallback(async (targetPage = page) => {
     setLoading(true);
     setErrorMessage(null);
     try {
-      const res = await apiCall<QuestItem[]>("/api/v1/admin/quests");
-      if (res) {
-        setQuests(res);
-      }
+      const res = await apiCall<unknown>(`/api/v1/admin/quests?page=${targetPage}&size=20`);
+      const result = normalizeListPage<QuestItem>(res, targetPage);
+      setQuests(result.items);
+      setTotalPages(result.totalPages);
     } catch (err: any) {
       console.error("Failed to load quests", err);
       setErrorMessage(err?.errorMessage || "Không thể tải danh sách nhiệm vụ.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
 
   useEffect(() => {
-    fetchQuests();
-  }, []);
+    fetchQuests(page);
+  }, [fetchQuests, page]);
 
   const handleToggleActive = async (id: string) => {
     try {
@@ -59,7 +62,9 @@ export default function AdminQuestsPage() {
         method: "PATCH",
       });
       setQuests((prev) =>
-        prev.map((q) => (q.id === id ? { ...q, active: res.active } : q))
+        Array.isArray(prev)
+          ? prev.map((q) => (q.id === id ? { ...q, active: res.active } : q))
+          : []
       );
     } catch (err: any) {
       alert("Lỗi khi đổi trạng thái: " + (err?.errorMessage || "Có lỗi xảy ra"));
@@ -70,7 +75,7 @@ export default function AdminQuestsPage() {
     if (!confirm("Bạn có chắc chắn muốn xóa nhiệm vụ này?")) return;
     try {
       await apiCall(`/api/v1/admin/quests/${id}`, { method: "DELETE" });
-      setQuests((prev) => prev.filter((q) => q.id !== id));
+      setQuests((prev) => (Array.isArray(prev) ? prev.filter((q) => q.id !== id) : []));
     } catch (err: any) {
       alert("Lỗi khi xóa: " + (err?.errorMessage || "Có lỗi xảy ra"));
     }
@@ -111,7 +116,7 @@ export default function AdminQuestsPage() {
       rewardExp,
       rewardAiBonus,
       active: editingQuest ? editingQuest.active : true,
-      orderIndex: editingQuest ? editingQuest.orderIndex : quests.length + 1,
+      orderIndex: editingQuest ? editingQuest.orderIndex : (Array.isArray(quests) ? quests.length : 0) + 1,
     };
 
     try {
@@ -159,7 +164,7 @@ export default function AdminQuestsPage() {
           </div>
           <button
             type="button"
-            onClick={fetchQuests}
+            onClick={() => fetchQuests()}
             className="px-3 py-1 bg-danger-600 hover:bg-danger-700 text-white rounded-xl font-bold text-xs transition-colors cursor-pointer"
           >
             Thử lại
@@ -185,7 +190,7 @@ export default function AdminQuestsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
-                {quests.map((q) => (
+                {Array.isArray(quests) && quests.map((q) => (
                   <tr key={q.id} className="hover:bg-ink-50/80 transition-colors">
                     <td className="px-6 py-4">
                       <p className="font-bold text-ink-900">{q.title}</p>
@@ -242,6 +247,29 @@ export default function AdminQuestsPage() {
               </tbody>
             </table>
           </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-ink-100 px-6 py-3 text-xs text-ink-500">
+              <span>Trang {page + 1} / {totalPages}</span>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  disabled={page === 0}
+                  onClick={() => setPage((current) => Math.max(0, current - 1))}
+                  className="cursor-pointer rounded border border-ink-200 px-3 py-1 disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  &larr; Trước
+                </button>
+                <button
+                  type="button"
+                  disabled={page >= totalPages - 1}
+                  onClick={() => setPage((current) => current + 1)}
+                  className="cursor-pointer rounded border border-ink-200 px-3 py-1 disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  Sau &rarr;
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

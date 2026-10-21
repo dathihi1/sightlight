@@ -41,6 +41,16 @@ export function extractGoogleDriveId(url?: string | null): string | null {
 const RATES = [0.5, 0.75, 1];
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
+// Các object raw trên R2 đã được chuyển từ MPEG-4 Part 2 sang H.264 ngày 2026-10-21.
+// Đổi query string để trình duyệt không giữ bản codec cũ do Cache-Control: immutable.
+const R2_VIDEO_REVISION = "20261021-h264";
+
+export function withR2VideoRevision(url: string): string {
+  if (!url.includes(".r2.dev/")) return url;
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}v=${R2_VIDEO_REVISION}`;
+}
+
 /**
  * Trình phát video ký hiệu:
  * - Phát MP4 trực tiếp qua /api/media/drive/[fileId] (loop, tua byte-range, đổi tốc độ).
@@ -85,7 +95,7 @@ export function SignVideoPlayer({
   // Nguồn phát trực tiếp cho thẻ HTML5 <video>
   const directSrc = useMemo(() => {
     if (videoUrl && !videoUrl.includes("drive.google.com") && !videoUrl.includes("drive.usercontent.google.com")) {
-      return videoUrl;
+      return withR2VideoRevision(videoUrl);
     }
     if (resolvedDriveId) {
       return `/api/media/drive/${resolvedDriveId}`;
