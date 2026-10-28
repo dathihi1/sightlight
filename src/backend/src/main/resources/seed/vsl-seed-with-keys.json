@@ -16,7 +16,7 @@
   "signs": [
     {
       "word": "Anh",
-      "meaning": "Anh trai; cách xưng hô với nam lớn tuổi hơn",
+      "meaning": "Anh trai; cách xưng hô với người nam lớn tuổi hơn mình.",
       "topic": "Gia đình & Xưng hô",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -101,7 +101,7 @@
     },
     {
       "word": "Cháu",
-      "meaning": "Cháu; con của anh chị em hoặc thế hệ sau",
+      "meaning": "Con của anh, chị hoặc em; người thuộc thế hệ sau trong gia đình.",
       "topic": "Gia đình & Xưng hô",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -118,7 +118,7 @@
     },
     {
       "word": "Chú",
-      "meaning": "Chú; em trai của bố",
+      "meaning": "Em trai của bố; cách gọi người đàn ông ít tuổi hơn bố.",
       "topic": "Gia đình & Xưng hô",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -152,7 +152,7 @@
     },
     {
       "word": "Chồng",
-      "meaning": "Ký hiệu biểu thị từ: Chồng",
+      "meaning": "Người đàn ông trong quan hệ hôn nhân với vợ.",
       "topic": "Gia đình & Xưng hô",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -169,7 +169,7 @@
     },
     {
       "word": "Con gái",
-      "meaning": "Loài động vật quen thuộc: con gái",
+      "meaning": "Người con mang giới tính nữ trong gia đình.",
       "topic": "Gia đình & Xưng hô",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -186,7 +186,7 @@
     },
     {
       "word": "Con trai",
-      "meaning": "Loài động vật quen thuộc: con trai",
+      "meaning": "Người con mang giới tính nam trong gia đình.",
       "topic": "Gia đình & Xưng hô",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -203,7 +203,7 @@
     },
     {
       "word": "Cô",
-      "meaning": "Cô; chị hoặc em gái của bố",
+      "meaning": "Chị hoặc em gái của bố; cách gọi người phụ nữ lớn tuổi hơn mình.",
       "topic": "Gia đình & Xưng hô",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -220,7 +220,7 @@
     },
     {
       "word": "Cậu",
-      "meaning": "Cậu; anh hoặc em trai của mẹ",
+      "meaning": "Anh hoặc em trai của mẹ.",
       "topic": "Gia đình & Xưng hô",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -237,7 +237,7 @@
     },
     {
       "word": "Dì",
-      "meaning": "Em gái của mẹ",
+      "meaning": "Chị hoặc em gái của mẹ.",
       "topic": "Gia đình & Xưng hô",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -305,7 +305,7 @@
     },
     {
       "word": "Vợ",
-      "meaning": "Ký hiệu biểu thị từ: Vợ",
+      "meaning": "Người phụ nữ trong quan hệ hôn nhân với chồng.",
       "topic": "Gia đình & Xưng hô",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -492,7 +492,7 @@
     },
     {
       "word": "Kế toán",
-      "meaning": "Ký hiệu biểu thị từ: Kế toán",
+      "meaning": "Người ghi chép, kiểm tra và quản lý thông tin tài chính.",
       "topic": "Nghề nghiệp & Xã hội",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -526,7 +526,7 @@
     },
     {
       "word": "Lễ tân",
-      "meaning": "Ký hiệu biểu thị từ: Lễ tân",
+      "meaning": "Người đón tiếp, hướng dẫn khách tại cơ quan hoặc cơ sở dịch vụ.",
       "topic": "Nghề nghiệp & Xã hội",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -560,7 +560,7 @@
     },
     {
       "word": "Nhân viên phục vụ",
-      "meaning": "Ký hiệu biểu thị từ: Nhân viên phục vụ",
+      "meaning": "Người phục vụ khách tại nhà hàng, quán ăn hoặc cơ sở dịch vụ.",
       "topic": "Nghề nghiệp & Xã hội",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -577,7 +577,7 @@
     },
     {
       "word": "Nhân viên văn phòng",
-      "meaning": "Ký hiệu biểu thị từ: Nhân viên văn phòng",
+      "meaning": "Người làm các công việc hành chính hoặc chuyên môn tại văn phòng.",
       "topic": "Nghề nghiệp & Xã hội",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -611,7 +611,7 @@
     },
     {
       "word": "Sinh viên",
-      "meaning": "Ký hiệu biểu thị từ: Sinh viên",
+      "meaning": "Người đang học tại trường đại học hoặc cao đẳng.",
       "topic": "Nghề nghiệp & Xã hội",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -628,7 +628,7 @@
     },
     {
       "word": "Thư ký",
-      "meaning": "Ký hiệu biểu thị từ: Thư ký",
+      "meaning": "Người hỗ trợ công việc hành chính, sắp xếp lịch và xử lý văn bản.",
       "topic": "Nghề nghiệp & Xã hội",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -662,7 +662,7 @@
     },
     {
       "word": "Đầu bếp",
-      "meaning": "Ký hiệu biểu thị từ: Đầu bếp",
+      "meaning": "Người chế biến món ăn trong gia đình hoặc cơ sở ăn uống.",
       "topic": "Nghề nghiệp & Xã hội",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -3960,7 +3960,7 @@
     },
     {
       "word": "Quả đào",
-      "meaning": "Loại trái cây tươi ngon: quả đào",
+      "meaning": "Quả có vỏ mỏng, thịt mềm, thường có vị ngọt hoặc hơi chua.",
       "topic": "Trái cây (Hoa quả)",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -4470,7 +4470,7 @@
     },
     {
       "word": "Quả địa cầu",
-      "meaning": "Loại trái cây tươi ngon: quả địa cầu",
+      "meaning": "Mô hình thu nhỏ của Trái Đất, dùng để quan sát vị trí các khu vực địa lý.",
       "topic": "Đồ dùng, Thiết bị & Gia dụng",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -5082,7 +5082,7 @@
     },
     {
       "word": "Con trâu",
-      "meaning": "Loài động vật quen thuộc: con trâu",
+      "meaning": "Động vật lớn thuộc họ bò, thường được nuôi để kéo cày.",
       "topic": "Động vật",
       "wordClass": "NOUN",
       "aiVocabulary": true,
@@ -6663,7 +6663,7 @@
     },
     {
       "word": "Trung thu",
-      "meaning": "Ký hiệu biểu thị từ: Trung thu",
+      "meaning": "Tết Trung thu, diễn ra vào ngày rằm tháng Tám âm lịch.",
       "topic": "Quốc gia & Ngày lễ",
       "wordClass": "NOUN",
       "aiVocabulary": true,

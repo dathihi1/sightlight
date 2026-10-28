@@ -159,16 +159,6 @@ export default function NewLessonPage() {
             )}
           </div>
 
-          {card.bodyText && (
-            <div className="mt-5 flex items-center gap-4 rounded-3xl border border-ink-200 bg-white px-5 py-4">
-              <Mascot className="w-14 shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-ink-500">Nghĩa là</p>
-                <p className="text-xl font-bold text-ink-900">{card.bodyText}</p>
-              </div>
-            </div>
-          )}
-
           <p className="mt-6 text-base text-ink-600">
             Mẹo: chú ý hình dạng bàn tay, hướng lòng bàn tay và biểu cảm khuôn mặt.
           </p>
@@ -362,6 +352,7 @@ export default function NewLessonPage() {
         <ExerciseHeader exercise={exercise} />
         <div className="mt-6">
           <ExerciseRenderer
+            key={exercise.id}
             exercise={exercise}
             selectedOptionId={selectedOptionId}
             typedAnswer={typedAnswer}

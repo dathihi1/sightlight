@@ -4,12 +4,15 @@ import { useState, useEffect, use } from "react";
 import { apiCall } from "@/lib/api";
 import Link from "next/link";
 import { SignVideoPlayer } from "@/components/SignVideoPlayer";
+import { ExerciseRenderer } from "@/components/lesson/ExerciseRenderer";
+import type { ExerciseNode, MatchPair } from "@/lib/lesson-types";
 
 interface ExerciseOption {
   id?: string;
   orderIndex: number;
   labelText: string;
   isCorrect: boolean;
+  videoUrl?: string;
 }
 
 interface Exercise {
@@ -56,6 +59,118 @@ interface LessonDetail {
   blocks: ContentBlock[];
 }
 
+function LessonInterfacePreview({
+  lesson,
+  exercises,
+  onClose,
+}: {
+  lesson: LessonDetail;
+  exercises: Exercise[];
+  onClose: () => void;
+}) {
+  const [index, setIndex] = useState(0);
+  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
+  const [typedAnswer, setTypedAnswer] = useState("");
+  const [orderedTokens, setOrderedTokens] = useState<string[]>([]);
+  const [matches, setMatches] = useState<MatchPair[]>([]);
+
+  const exercise = exercises[index];
+  const previewExercise: ExerciseNode | null = exercise
+    ? {
+        id: exercise.id,
+        type: exercise.type,
+        skill: exercise.skill,
+        difficulty: exercise.difficulty,
+        instructionText: exercise.instructionText,
+        promptText: exercise.promptText,
+        videoUrl: exercise.videoUrl || null,
+        placeholderVideo: false,
+        options: (exercise.options || []).map((option, optionIndex) => ({
+          id: option.id || `${exercise.id}-option-${optionIndex}`,
+          labelText: option.labelText,
+          videoUrl: option.videoUrl || null,
+        })),
+        tokens:
+          exercise.type === "SENTENCE_ORDER" && exercise.correctAnswerText
+            ? exercise.correctAnswerText.split(/\s+/).filter(Boolean)
+            : null,
+      }
+    : null;
+
+  useEffect(() => {
+    setSelectedOptionId(null);
+    setTypedAnswer("");
+    setOrderedTokens(
+      exercise?.type === "SENTENCE_ORDER" && exercise.correctAnswerText
+        ? exercise.correctAnswerText.split(/\s+/).filter(Boolean)
+        : [],
+    );
+    setMatches([]);
+  }, [index, exercise?.correctAnswerText, exercise?.id, exercise?.type]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-xs">
+      <div className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-ink-50 shadow-2xl">
+        <div className="flex items-center justify-between gap-4 border-b border-ink-200 bg-white px-5 py-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-brand-600">Xem như học viên</p>
+            <h2 className="text-lg font-bold text-ink-900">{lesson.title}</h2>
+          </div>
+          <button type="button" onClick={onClose} className="btn btn-secondary btn-sm">Đóng</button>
+        </div>
+
+        <div className="overflow-y-auto p-4 sm:p-7">
+          {!previewExercise ? (
+            <div className="rounded-3xl border border-dashed border-ink-300 bg-white p-12 text-center font-semibold text-ink-500">
+              Bài học chưa có bài tập để xem trước.
+            </div>
+          ) : (
+            <div className="mx-auto max-w-3xl space-y-5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="chip bg-brand-100 text-brand-700">Bài tập {index + 1}/{exercises.length}</span>
+                <span className="text-xs font-semibold text-ink-500">{exercise.instructionText}</span>
+              </div>
+              <div className="rounded-3xl border border-ink-200 bg-white p-5 sm:p-7">
+                <ExerciseRenderer
+                  key={previewExercise.id}
+                  exercise={previewExercise}
+                  selectedOptionId={selectedOptionId}
+                  typedAnswer={typedAnswer}
+                  onSelectOption={setSelectedOptionId}
+                  onTypeAnswer={setTypedAnswer}
+                  disabled={false}
+                  orderedTokens={orderedTokens}
+                  onOrderTokens={setOrderedTokens}
+                  matches={matches}
+                  onMatches={setMatches}
+                />
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  disabled={index === 0}
+                  onClick={() => setIndex((value) => value - 1)}
+                  className="btn btn-secondary disabled:opacity-40"
+                >
+                  ← Bài trước
+                </button>
+                <button
+                  type="button"
+                  disabled={index === exercises.length - 1}
+                  onClick={() => setIndex((value) => value + 1)}
+                  className="btn btn-primary disabled:opacity-40"
+                >
+                  Bài tiếp →
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminLessonBuilderPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const lessonId = resolvedParams.id;
@@ -72,6 +187,7 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [availableSigns, setAvailableSigns] = useState<any[]>([]);
   const [previewVideo, setPreviewVideo] = useState<{ url: string; title: string } | null>(null);
+  const [showLessonPreview, setShowLessonPreview] = useState(false);
 
   // Form states for adding/editing exercise
   const [formType, setFormType] = useState("SIGN_TO_MEANING");
@@ -292,6 +408,13 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
         </div>
 
         <div className="flex items-center gap-2 self-start md:self-auto">
+          <button
+            type="button"
+            onClick={() => setShowLessonPreview(true)}
+            className="btn btn-secondary btn-sm"
+          >
+            Xem trước giao diện
+          </button>
           <Link
             href={`/hoc/bai/${lesson.id}`}
             target="_blank"
@@ -694,6 +817,14 @@ export default function AdminLessonBuilderPage({ params }: { params: Promise<{ i
             </div>
           </div>
         </div>
+      )}
+
+      {showLessonPreview && (
+        <LessonInterfacePreview
+          lesson={lesson}
+          exercises={exercises}
+          onClose={() => setShowLessonPreview(false)}
+        />
       )}
     </div>
   );

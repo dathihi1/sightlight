@@ -45,7 +45,8 @@ public record AdminLessonDetailDto(
             int orderIndex,
             String labelText,
             boolean isCorrect,
-            UUID signVideoId
+            UUID signVideoId,
+            String videoUrl
     ) {}
 
     public record AdminBlockDto(

@@ -134,15 +134,16 @@ public class SeedRunner implements ApplicationRunner {
                         (first, second) -> first));
 
         for (SeedSign seed : seeds) {
+            String normalizedMeaning = VietnameseMeaningNormalizer.normalize(seed.word(), seed.meaning());
             Sign sign = existing.getOrDefault(seed.word(), Sign.builder()
                     .id(UUID.randomUUID())
                     .courseId(course.getId())
                     .word(seed.word())
                     .build());
-            sign.setMeaning(seed.meaning());
+            sign.setMeaning(normalizedMeaning);
             sign.setTopic(seed.topic());
             sign.setWordClass(seed.wordClass());
-            sign.setDescription(seed.meaning());
+            sign.setDescription(normalizedMeaning);
             sign.setStatus(STATUS_PUBLISHED);
             sign.setSeed(true);
             signRepository.save(sign);
@@ -503,7 +504,8 @@ public class SeedRunner implements ApplicationRunner {
             exercise.setSkill(seedExercise.skill());
             exercise.setDifficulty(seedExercise.difficulty());
             exercise.setSignId(sign == null ? null : sign.getId());
-            exercise.setPromptText(seedExercise.prompt());
+            exercise.setPromptText(VietnameseMeaningNormalizer.normalizePrompt(
+                    seedExercise.prompt(), sign == null ? null : sign.getMeaning()));
             exercise.setCorrectAnswerText(seedExercise.answer());
             exercise.setAcceptedAnswers(writeJson(
                     Optional.ofNullable(seedExercise.acceptedAnswers()).orElse(List.of())));

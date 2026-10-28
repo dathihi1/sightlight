@@ -96,42 +96,56 @@ export function ExerciseRenderer({
 }
 
 /**
- * Hiển thị đề bài và nổi bật phần ý nghĩa của từ
+ * Hiển thị đề bài. Nghĩa đầy đủ không xuất hiện trong bài học; gợi ý chỉ
+ * được mở khi người học chủ động yêu cầu.
  */
 function FormattedPrompt({ prompt }: { prompt: string }) {
   const meaningMatch = prompt.match(/^(.*?)\((Nghĩa:[^)]+)\)(.*)$/);
   if (meaningMatch) {
-    const [, prefix, meaningPart, suffix] = meaningMatch;
-    return (
-      <div className="space-y-2">
-        <p className="text-xl font-bold text-ink-900">
-          {prefix.trim()} {suffix.replace(/^[—\s-]+/, "— ").trim()}
-        </p>
-        <div className="inline-flex items-center gap-2 rounded-2xl border border-sun-200 bg-sun-50 px-4 py-2 text-base font-bold text-sun-800">
-          <span className="grid h-6 w-6 place-items-center rounded-full bg-sun-400 text-xs font-bold text-ink-900" aria-hidden="true">!</span>
-          <span>{meaningPart}</span>
-        </div>
-      </div>
-    );
+    const [, prefix, , suffix] = meaningMatch;
+    const visiblePrompt = `${prefix.trim()} ${suffix.replace(/^[—\s-]+/, "").trim()}`.trim();
+    return <p className="text-xl font-bold text-ink-900">{visiblePrompt}</p>;
   }
 
   const hintMatch = prompt.match(/^(.*?)\((Gợi ý nghĩa:[^)]+)\)(.*)$/);
   if (hintMatch) {
     const [, prefix, hintPart, suffix] = hintMatch;
+    const hint = hintPart.replace(/^Gợi ý nghĩa:\s*/i, "").trim();
     return (
       <div className="space-y-2">
         <p className="text-xl font-bold text-ink-900">
           {prefix.trim()} {suffix.trim()}
         </p>
-        <div className="inline-flex items-center gap-2 rounded-2xl border border-sun-200 bg-sun-50 px-4 py-2 text-base font-bold text-sun-800">
-          <span className="grid h-6 w-6 place-items-center rounded-full bg-sun-400 text-xs font-bold text-ink-900" aria-hidden="true">!</span>
-          <span>{hintPart}</span>
-        </div>
+        <HintReveal hint={hint} />
       </div>
     );
   }
 
   return <p className="text-xl font-bold text-ink-900">{prompt}</p>;
+}
+
+function HintReveal({ hint }: { hint: string }) {
+  const [revealed, setRevealed] = useState(false);
+
+  return (
+    <div className="space-y-2">
+      <button
+        type="button"
+        onClick={() => setRevealed((value) => !value)}
+        aria-expanded={revealed}
+        className="inline-flex items-center gap-2 rounded-2xl border border-sun-300 bg-white px-4 py-2 text-sm font-bold text-sun-800 hover:bg-sun-50"
+      >
+        <span aria-hidden="true">💡</span>
+        {revealed ? "Ẩn gợi ý" : "Gợi ý"}
+      </button>
+      {revealed && (
+        <div role="status" className="inline-flex items-center gap-2 rounded-2xl border border-sun-200 bg-sun-50 px-4 py-2 text-base font-bold text-sun-800">
+          <span className="grid h-6 w-6 place-items-center rounded-full bg-sun-400 text-xs font-bold text-ink-900" aria-hidden="true">!</span>
+          <span>{hint}</span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -327,9 +341,7 @@ function SentenceOrderExercise({
 
   return (
     <div className="space-y-4">
-      {exercise.promptText && (
-        <p className="text-xl font-bold text-ink-900">{exercise.promptText}</p>
-      )}
+      {exercise.promptText && <FormattedPrompt prompt={exercise.promptText} />}
 
       <div className="rounded-3xl border border-dashed border-ink-200 bg-ink-50 p-5">
         <p className="mb-4 text-base font-bold text-ink-600">Sắp xếp các từ theo thứ tự đúng:</p>
@@ -420,9 +432,7 @@ function MatchSignMeaningExercise({
 
   return (
     <div className="space-y-4">
-      {exercise.promptText && (
-        <p className="text-xl font-bold text-ink-900">{exercise.promptText}</p>
-      )}
+      {exercise.promptText && <FormattedPrompt prompt={exercise.promptText} />}
 
       <div className="grid md:grid-cols-2 gap-4">
         {/* Prompts (left side) */}

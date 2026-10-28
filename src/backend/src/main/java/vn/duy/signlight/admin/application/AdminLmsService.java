@@ -116,6 +116,15 @@ public class AdminLmsService {
                 : optionRepository.findByExerciseIdInOrderByOrderIndexAsc(exIds);
         Map<UUID, List<ExerciseOption>> optionsByEx = allOptions.stream()
                 .collect(Collectors.groupingBy(ExerciseOption::getExerciseId));
+        List<UUID> optionVideoIds = allOptions.stream()
+                .map(ExerciseOption::getSignVideoId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<UUID, SignVideo> optionVideos = optionVideoIds.isEmpty()
+                ? Map.of()
+                : signVideoRepository.findAllById(optionVideoIds).stream()
+                        .collect(Collectors.toMap(SignVideo::getId, Function.identity()));
 
         List<UUID> signIds = exercises.stream()
                 .map(Exercise::getSignId)
@@ -143,7 +152,10 @@ public class AdminLmsService {
                             opt.getOrderIndex(),
                             opt.getLabelText(),
                             opt.isCorrect(),
-                            opt.getSignVideoId()
+                            opt.getSignVideoId(),
+                            opt.getSignVideoId() != null && optionVideos.containsKey(opt.getSignVideoId())
+                                    ? mediaUrlService.resolveVideoUrl(optionVideos.get(opt.getSignVideoId()))
+                                    : null
                     )).toList();
 
             return new AdminLessonDetailDto.AdminExerciseDto(

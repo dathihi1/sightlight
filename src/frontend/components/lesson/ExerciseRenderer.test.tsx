@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ExerciseRenderer } from "./ExerciseRenderer";
 import type { ExerciseNode } from "@/lib/lesson-types";
@@ -54,5 +55,40 @@ describe("ExerciseRenderer", () => {
 
     expect(screen.getAllByTestId("sign-video")).toHaveLength(2);
     expect(screen.getAllByRole("button", { name: "Chọn ký hiệu này" })).toHaveLength(2);
+  });
+
+  it("ẩn phần nghĩa khỏi câu hỏi bài học", () => {
+    render(
+      <ExerciseRenderer
+        exercise={{ ...baseExercise, type: "SIGN_TO_MEANING", promptText: "Ký hiệu này là gì? (Nghĩa: người nam lớn tuổi hơn)" }}
+        selectedOptionId={null}
+        typedAnswer=""
+        onSelectOption={vi.fn()}
+        onTypeAnswer={vi.fn()}
+        disabled={false}
+      />,
+    );
+
+    expect(screen.getByText("Ký hiệu này là gì?")).toBeInTheDocument();
+    expect(screen.queryByText(/người nam lớn tuổi hơn/i)).not.toBeInTheDocument();
+  });
+
+  it("chỉ hiện gợi ý sau khi người học bấm nút", async () => {
+    const user = userEvent.setup();
+    render(
+      <ExerciseRenderer
+        exercise={{ ...baseExercise, type: "SIGN_TO_MEANING", promptText: "Ký hiệu này là gì? (Gợi ý nghĩa: người trong gia đình)" }}
+        selectedOptionId={null}
+        typedAnswer=""
+        onSelectOption={vi.fn()}
+        onTypeAnswer={vi.fn()}
+        disabled={false}
+      />,
+    );
+
+    expect(screen.queryByText("người trong gia đình")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Gợi ý" }));
+    expect(screen.getByText("người trong gia đình")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ẩn gợi ý" })).toHaveAttribute("aria-expanded", "true");
   });
 });

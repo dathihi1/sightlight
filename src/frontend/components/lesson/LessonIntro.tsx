@@ -140,7 +140,6 @@ function SignCardBlock({ block }: { block: ContentBlockNode }) {
   return (
     <div className="card p-5">
       {block.title && <h3 className="text-xl font-bold text-ink-900 mb-2">{block.title}</h3>}
-      {block.bodyText && <p className="text-ink-700 font-semibold mb-3">{block.bodyText}</p>}
       {block.mediaRef && (
         <SignVideoPlayer videoUrl={block.mediaRef} title={block.title} autoPlay={false} />
       )}
