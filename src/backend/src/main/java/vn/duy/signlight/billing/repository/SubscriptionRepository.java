@@ -17,6 +17,8 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
 
     boolean existsByUserIdAndStatusAndExpiresAtAfter(UUID userId, String status, Instant now);
 
+    boolean existsByUserIdAndPlanId(UUID userId, String planId);
+
     @Query("""
             SELECT count(s) FROM Subscription s
             WHERE s.status = :status AND s.activatedAt <= :activatedAt AND s.expiresAt > :expiresAt

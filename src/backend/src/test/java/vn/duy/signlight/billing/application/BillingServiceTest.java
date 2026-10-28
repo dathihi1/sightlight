@@ -16,15 +16,26 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import vn.duy.signlight.billing.domain.GiftCode;
 import vn.duy.signlight.billing.domain.PaymentTransaction;
 import vn.duy.signlight.billing.domain.Plan;
 import vn.duy.signlight.billing.domain.Subscription;
+import vn.duy.signlight.billing.domain.UserFeedback;
+import vn.duy.signlight.billing.repository.GiftCodeRedemptionRepository;
+import vn.duy.signlight.billing.repository.GiftCodeRepository;
 import vn.duy.signlight.billing.repository.PaymentTransactionRepository;
 import vn.duy.signlight.billing.repository.PaymentWebhookLogRepository;
 import vn.duy.signlight.billing.repository.PlanRepository;
 import vn.duy.signlight.billing.repository.SubscriptionRepository;
+import vn.duy.signlight.billing.repository.UserFeedbackRepository;
 import vn.duy.signlight.billing.web.dto.CheckoutResult;
+import vn.duy.signlight.billing.web.dto.FeedbackRequest;
+import vn.duy.signlight.billing.web.dto.FeedbackResult;
+import vn.duy.signlight.billing.web.dto.RedeemCodeResult;
 import vn.duy.signlight.identity.application.AuthService;
+import vn.duy.signlight.identity.domain.UserProfile;
+import vn.duy.signlight.identity.repository.UserProfileRepository;
+import vn.duy.signlight.notification.application.NotificationService;
 
 class BillingServiceTest {
 
@@ -35,6 +46,11 @@ class BillingServiceTest {
     private PayOsClient payOsClient;
     private AuthService authService;
     private ObjectMapper objectMapper;
+    private GiftCodeRepository giftCodeRepository;
+    private GiftCodeRedemptionRepository giftCodeRedemptionRepository;
+    private UserFeedbackRepository userFeedbackRepository;
+    private UserProfileRepository userProfileRepository;
+    private NotificationService notificationService;
     private BillingService billingService;
 
     @BeforeEach
@@ -46,6 +62,11 @@ class BillingServiceTest {
         payOsClient = mock(PayOsClient.class);
         authService = mock(AuthService.class);
         objectMapper = new ObjectMapper();
+        giftCodeRepository = mock(GiftCodeRepository.class);
+        giftCodeRedemptionRepository = mock(GiftCodeRedemptionRepository.class);
+        userFeedbackRepository = mock(UserFeedbackRepository.class);
+        userProfileRepository = mock(UserProfileRepository.class);
+        notificationService = mock(NotificationService.class);
 
         billingService = new BillingService(
                 planRepository,
@@ -54,7 +75,12 @@ class BillingServiceTest {
                 webhookLogRepository,
                 payOsClient,
                 authService,
-                objectMapper
+                objectMapper,
+                giftCodeRepository,
+                giftCodeRedemptionRepository,
+                userFeedbackRepository,
+                userProfileRepository,
+                notificationService
         );
     }
 
@@ -228,5 +254,133 @@ class BillingServiceTest {
         assertEquals(vn.duy.signlight.common.error.ErrorCode.PAYMENT_AMOUNT_MISMATCH.getCode(), ex.getErrorCode());
         verify(subscriptionRepository, never()).save(any());
         verify(authService, never()).upgradeToPremium(any());
+    }
+
+    @Test
+    @DisplayName("createCheckout với gói tri ân 0đ kích hoạt trực tiếp Subscription không qua payOS")
+    void createCheckoutAppreciationPlanActivatesDirectly() {
+        UUID userId = UUID.randomUUID();
+        Plan plan = Plan.builder()
+                .id("PREMIUM_TRIAN_1M")
+                .name("SignLight Premium Tri An")
+                .priceVnd(0)
+                .durationDays(30)
+                .active(true)
+                .build();
+
+        when(planRepository.findById("PREMIUM_TRIAN_1M")).thenReturn(Optional.of(plan));
+        when(subscriptionRepository.existsByUserIdAndPlanId(userId, "PREMIUM_TRIAN_1M")).thenReturn(false);
+        when(subscriptionRepository.findFirstByUserIdAndStatusOrderByExpiresAtDesc(userId, "ACTIVE"))
+                .thenReturn(Optional.empty());
+
+        CheckoutResult result = billingService.createCheckout(userId, "PREMIUM_TRIAN_1M");
+
+        assertNotNull(result);
+        assertEquals("PAID", result.status());
+        assertEquals(0, result.amount());
+        verify(payOsClient, never()).createPaymentLink(any(Long.class), any(Integer.class), any(String.class));
+        verify(subscriptionRepository).save(any(Subscription.class));
+        verify(authService).upgradeToPremium(userId);
+    }
+
+    @Test
+    @DisplayName("createCheckout với gói tri ân 0đ từ chối khi user đã từng nhận")
+    void createCheckoutAppreciationPlanRejectsWhenAlreadyClaimed() {
+        UUID userId = UUID.randomUUID();
+        Plan plan = Plan.builder()
+                .id("PREMIUM_TRIAN_1M")
+                .name("SignLight Premium Tri An")
+                .priceVnd(0)
+                .durationDays(30)
+                .active(true)
+                .build();
+
+        when(planRepository.findById("PREMIUM_TRIAN_1M")).thenReturn(Optional.of(plan));
+        when(subscriptionRepository.existsByUserIdAndPlanId(userId, "PREMIUM_TRIAN_1M")).thenReturn(true);
+
+        vn.duy.signlight.common.error.BusinessException ex = assertThrows(
+                vn.duy.signlight.common.error.BusinessException.class,
+                () -> billingService.createCheckout(userId, "PREMIUM_TRIAN_1M")
+        );
+
+        assertEquals(vn.duy.signlight.common.error.ErrorCode.TRIAL_ALREADY_CLAIMED.getCode(), ex.getErrorCode());
+        verify(subscriptionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("redeemCode cộng quà EXP và AI quota thành công")
+    void redeemCodeGrantsRewards() {
+        UUID userId = UUID.randomUUID();
+        GiftCode code = GiftCode.builder()
+                .code("TRIAN2026")
+                .title("Quà Tri Ân")
+                .description("+10 lượt AI, +150 EXP")
+                .aiQuota(10)
+                .expReward(150)
+                .premiumDays(0)
+                .maxUses(-1)
+                .usedCount(0)
+                .active(true)
+                .build();
+
+        UserProfile profile = UserProfile.builder()
+                .userId(userId)
+                .displayName("Hoc vien")
+                .timezone("Asia/Ho_Chi_Minh")
+                .aiBonusQuota(2)
+                .expBalance(100)
+                .build();
+
+        when(giftCodeRepository.findByCodeIgnoreCaseAndActiveTrue("TRIAN2026")).thenReturn(Optional.of(code));
+        when(giftCodeRedemptionRepository.existsByUserIdAndCodeIgnoreCase(userId, "TRIAN2026")).thenReturn(false);
+        when(userProfileRepository.findById(userId)).thenReturn(Optional.of(profile));
+
+        RedeemCodeResult result = billingService.redeemCode(userId, "trian2026");
+
+        assertNotNull(result);
+        assertEquals("TRIAN2026", result.code());
+        assertEquals(150, result.expReward());
+        assertEquals(10, result.aiQuota());
+        assertEquals(12, profile.getAiBonusQuota());
+        assertEquals(250, profile.getExpBalance());
+        verify(giftCodeRedemptionRepository).save(any());
+        verify(userProfileRepository).save(profile);
+    }
+
+    @Test
+    @DisplayName("redeemCode từ chối khi mã quà tặng đã nhận rồi")
+    void redeemCodeRejectsWhenAlreadyRedeemed() {
+        UUID userId = UUID.randomUUID();
+        GiftCode code = GiftCode.builder()
+                .code("TRIAN2026")
+                .title("Quà Tri Ân")
+                .active(true)
+                .build();
+
+        when(giftCodeRepository.findByCodeIgnoreCaseAndActiveTrue("TRIAN2026")).thenReturn(Optional.of(code));
+        when(giftCodeRedemptionRepository.existsByUserIdAndCodeIgnoreCase(userId, "TRIAN2026")).thenReturn(true);
+
+        vn.duy.signlight.common.error.BusinessException ex = assertThrows(
+                vn.duy.signlight.common.error.BusinessException.class,
+                () -> billingService.redeemCode(userId, "TRIAN2026")
+        );
+
+        assertEquals(vn.duy.signlight.common.error.ErrorCode.GIFT_CODE_ALREADY_USED.getCode(), ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("submitFeedback lưu feedback thành công")
+    void submitFeedbackSavesSuccessfully() {
+        UUID userId = UUID.randomUUID();
+        FeedbackRequest req = new FeedbackRequest();
+        req.setRating(5);
+        req.setCategory("AI_CAMERA");
+        req.setContent("Tính năng luyện AI nhận diện rất nhạy!");
+
+        FeedbackResult result = billingService.submitFeedback(userId, req);
+
+        assertNotNull(result);
+        assertEquals(true, result.success());
+        verify(userFeedbackRepository).save(any(UserFeedback.class));
     }
 }

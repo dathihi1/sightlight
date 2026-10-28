@@ -53,12 +53,16 @@ public enum ErrorCode {
     PAYMENT_AMOUNT_MISMATCH("06102"),
     PREMIUM_REQUIRED("06203"),
     AI_QUOTA_EXCEEDED("06204"),
+    TRIAL_ALREADY_CLAIMED("06205"),
 
     // ---------------------------------------------------------- gamification (07)
     EXP_INSUFFICIENT("07201"),
     ITEM_ALREADY_OWNED("07202"),
     AD_REWARD_LIMIT_REACHED("07203"),
     UNLOCK_TICKET_UNAVAILABLE("07204"),
+    GIFT_CODE_INVALID("07205"),
+    GIFT_CODE_ALREADY_USED("07206"),
+    GIFT_CODE_EXPIRED("07207"),
 
     // --------------------------------------------------------- airecognition (10)
     AI_MODEL_VERSION_UNSUPPORTED("10101"),

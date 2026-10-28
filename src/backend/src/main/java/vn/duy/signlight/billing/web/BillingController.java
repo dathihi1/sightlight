@@ -15,13 +15,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import vn.duy.signlight.billing.application.BillingService;
 import vn.duy.signlight.billing.domain.PaymentTransaction;
+import vn.duy.signlight.billing.web.dto.AppreciationStatusResult;
 import vn.duy.signlight.billing.web.dto.CheckoutRequest;
 import vn.duy.signlight.billing.web.dto.CheckoutResult;
+import vn.duy.signlight.billing.web.dto.FeedbackRequest;
+import vn.duy.signlight.billing.web.dto.FeedbackResult;
 import vn.duy.signlight.billing.web.dto.PlanDto;
+import vn.duy.signlight.billing.web.dto.RedeemCodeRequest;
+import vn.duy.signlight.billing.web.dto.RedeemCodeResult;
 import vn.duy.signlight.common.error.ApiResponses;
 import vn.duy.signlight.common.web.CurrentUser;
 import vn.duy.signlight.common.web.RequestIdFilter;
 import vn.duy.signlight.common.web.TransactionResponse;
+import vn.duy.signlight.identity.application.AuthService;
 
 @RestController
 @RequestMapping("/api/v1/billing")
@@ -29,9 +35,11 @@ import vn.duy.signlight.common.web.TransactionResponse;
 public class BillingController {
 
     private final BillingService billingService;
+    private final AuthService authService;
 
-    public BillingController(BillingService billingService) {
+    public BillingController(BillingService billingService, AuthService authService) {
         this.billingService = billingService;
+        this.authService = authService;
     }
 
     @GetMapping("/plans")
@@ -42,12 +50,44 @@ public class BillingController {
         return ResponseEntity.ok(ApiResponses.ok(requestId, result));
     }
 
+    @GetMapping("/appreciation-status")
+    @Operation(summary = "Kiểm tra xem người dùng đã nhận gói tri ân 0đ 1 tháng hay chưa")
+    public ResponseEntity<TransactionResponse<AppreciationStatusResult>> appreciationStatus(
+            @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId) {
+        UUID userId = CurrentUser.findId().orElse(null);
+        boolean claimed = userId != null && billingService.hasClaimedAppreciationPlan(userId);
+        boolean isPremium = userId != null && authService.isPremium(userId);
+        return ResponseEntity.ok(ApiResponses.ok(requestId, new AppreciationStatusResult(
+                claimed,
+                BillingService.APPRECIATION_PLAN_ID,
+                isPremium
+        )));
+    }
+
     @PostMapping("/checkout")
-    @Operation(summary = "Tạo liên kết thanh toán payOS cho gói dịch vụ")
+    @Operation(summary = "Tạo liên kết thanh toán payOS hoặc kích hoạt trực tiếp gói tri ân 0đ")
     public ResponseEntity<TransactionResponse<CheckoutResult>> checkout(
             @Valid @RequestBody CheckoutRequest request) {
         UUID userId = CurrentUser.id();
         CheckoutResult result = billingService.createCheckout(userId, request.getPlanId());
+        return ResponseEntity.ok(ApiResponses.ok(request.getRequestId(), result));
+    }
+
+    @PostMapping("/redeem-code")
+    @Operation(summary = "Nhập mã Gift Code hoặc mã giới thiệu để nhận thêm quà tặng")
+    public ResponseEntity<TransactionResponse<RedeemCodeResult>> redeemCode(
+            @Valid @RequestBody RedeemCodeRequest request) {
+        UUID userId = CurrentUser.id();
+        RedeemCodeResult result = billingService.redeemCode(userId, request.getCode());
+        return ResponseEntity.ok(ApiResponses.ok(request.getRequestId(), result));
+    }
+
+    @PostMapping("/feedback")
+    @Operation(summary = "Gửi đóng góp ý kiến & phản hồi khi trải nghiệm gói tri ân")
+    public ResponseEntity<TransactionResponse<FeedbackResult>> submitFeedback(
+            @Valid @RequestBody FeedbackRequest request) {
+        UUID userId = CurrentUser.findId().orElse(null);
+        FeedbackResult result = billingService.submitFeedback(userId, request);
         return ResponseEntity.ok(ApiResponses.ok(request.getRequestId(), result));
     }
 
