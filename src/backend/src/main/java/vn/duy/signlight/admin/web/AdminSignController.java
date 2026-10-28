@@ -41,9 +41,12 @@ public class AdminSignController {
             @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId,
             @RequestParam(value = "search", required = false) String search,
             @RequestParam(value = "topic", required = false) String topic,
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "level", required = false) String level,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "15") int size) {
-        AdminSignDtos.AdminSignListResponse result = adminSignService.getSignList(search, topic, page, size);
+        AdminSignDtos.AdminSignListResponse result = adminSignService.getSignList(
+                search, topic, status, level, page, size);
         return ResponseEntity.ok(ApiResponses.ok(requestId, result));
     }
 

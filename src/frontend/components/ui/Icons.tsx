@@ -4,6 +4,40 @@ interface IconProps {
   className?: string;
 }
 
+export function IconMail({ className = "w-5 h-5" }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3 7 9 6 9-6" />
+    </svg>
+  );
+}
+
+export function IconFacebook({ className = "w-5 h-5" }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.03 1.79-4.7 4.54-4.7 1.31 0 2.69.24 2.69.24v2.97h-1.52c-1.5 0-1.97.94-1.97 1.89v2.26h3.35l-.54 3.49h-2.81V24C19.61 23.1 24 18.1 24 12.07Z" />
+    </svg>
+  );
+}
+
+export function IconTikTok({ className = "w-5 h-5" }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12.53.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.99-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.93-3.62 3.17-5.95 3.11-1.43-.02-2.86-.42-4.08-1.17-2.02-1.18-3.44-3.36-3.61-5.7-.01-.5-.03-1 .02-1.5.18-1.9 1.12-3.74 2.62-4.93 1.7-1.48 4.18-2.17 6.39-1.54.02 1.48-.04 2.96-.04 4.44-.98-.31-2.1-.22-2.92.41-.59.42-1.04 1.05-1.23 1.75-.16.39-.11.81-.1 1.22.21 1.45 1.59 2.7 3.08 2.57 1.04-.01 2.03-.67 2.4-1.64.13-.23.09-.5.1-.75.01-5.29 0-10.57.01-15.86Z" />
+    </svg>
+  );
+}
+
 export function IconBook({ className = "w-5 h-5" }: IconProps) {
   return (
     <svg
@@ -270,7 +304,7 @@ export function IconShield({ className = "w-5 h-5" }: IconProps) {
   );
 }
 
-/* ---------- Game icons (filled, two-tone) — dùng cho streak / XP / tim / huy hiệu ---------- */
+/* ---------- Game icons (filled, two-tone) — dùng cho streak / EXP / tim / huy hiệu ---------- */
 
 export function IconFlame({ className = "w-5 h-5" }: IconProps) {
   return (

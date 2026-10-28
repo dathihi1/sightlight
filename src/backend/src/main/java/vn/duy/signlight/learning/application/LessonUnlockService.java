@@ -18,6 +18,8 @@ import vn.duy.signlight.common.error.BusinessException;
 import vn.duy.signlight.common.error.ErrorCode;
 import vn.duy.signlight.content.domain.Lesson;
 import vn.duy.signlight.content.repository.LessonRepository;
+import vn.duy.signlight.gamification.domain.UserInventory;
+import vn.duy.signlight.gamification.repository.UserInventoryRepository;
 import vn.duy.signlight.identity.domain.UserProfile;
 import vn.duy.signlight.identity.repository.UserProfileRepository;
 import vn.duy.signlight.learning.domain.UserUnlockedLesson;
@@ -30,8 +32,12 @@ public class LessonUnlockService {
 
     private static final Logger log = LoggerFactory.getLogger(LessonUnlockService.class);
 
-    public static final int COST_RENT_1M = 5000;
-    public static final int COST_PERMANENT = 25000;
+    public static final int COST_EXP = 5000;
+    public static final String UNLOCK_TICKET_ITEM_KEY = "LESSON_UNLOCK_TICKET";
+    /** Chỉ giữ để hoàn tất các giao dịch cũ đã tạo trước khi bỏ thanh toán mở bài. */
+    @Deprecated public static final int COST_RENT_1M = 5000;
+    /** Chỉ giữ để hoàn tất các giao dịch cũ đã tạo trước khi bỏ thanh toán mở bài. */
+    @Deprecated public static final int COST_PERMANENT = 25000;
 
     private final UserUnlockedLessonRepository unlockedLessonRepository;
     private final UserProfileRepository userProfileRepository;
@@ -39,6 +45,7 @@ public class LessonUnlockService {
     private final PayOsClient payOsClient;
     private final PaymentTransactionRepository transactionRepository;
     private final NotificationService notificationService;
+    private final UserInventoryRepository userInventoryRepository;
 
     public LessonUnlockService(
             UserUnlockedLessonRepository unlockedLessonRepository,
@@ -47,57 +54,97 @@ public class LessonUnlockService {
             PayOsClient payOsClient,
             PaymentTransactionRepository transactionRepository,
             NotificationService notificationService) {
+        this(unlockedLessonRepository, userProfileRepository, lessonRepository, payOsClient,
+                transactionRepository, notificationService, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public LessonUnlockService(
+            UserUnlockedLessonRepository unlockedLessonRepository,
+            UserProfileRepository userProfileRepository,
+            LessonRepository lessonRepository,
+            PayOsClient payOsClient,
+            PaymentTransactionRepository transactionRepository,
+            NotificationService notificationService,
+            UserInventoryRepository userInventoryRepository) {
         this.unlockedLessonRepository = unlockedLessonRepository;
         this.userProfileRepository = userProfileRepository;
         this.lessonRepository = lessonRepository;
         this.payOsClient = payOsClient;
         this.transactionRepository = transactionRepository;
         this.notificationService = notificationService;
+        this.userInventoryRepository = userInventoryRepository;
     }
 
     @Transactional
-    public LessonUnlockResult unlockWithExp(UUID userId, UUID lessonId, String unlockType) {
+    public LessonUnlockResult unlockWithExp(UUID userId, UUID lessonId) {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
-
-        int requiredCost = UserUnlockedLesson.TYPE_PERMANENT.equalsIgnoreCase(unlockType)
-                ? COST_PERMANENT
-                : COST_RENT_1M;
-        String normalizedType = UserUnlockedLesson.TYPE_PERMANENT.equalsIgnoreCase(unlockType)
-                ? UserUnlockedLesson.TYPE_PERMANENT
-                : UserUnlockedLesson.TYPE_RENT_1M;
 
         UserProfile profile = userProfileRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
 
-        if (profile.getExpBalance() < requiredCost) {
+        if (profile.getExpBalance() < COST_EXP) {
             throw new BusinessException(ErrorCode.EXP_INSUFFICIENT);
         }
 
-        profile.setExpBalance(profile.getExpBalance() - requiredCost);
+        profile.setExpBalance(profile.getExpBalance() - COST_EXP);
         userProfileRepository.save(profile);
 
-        UserUnlockedLesson unlock = saveOrUpdateUnlock(userId, lessonId, normalizedType, "EXP", requiredCost);
+        UserUnlockedLesson unlock = saveOrUpdateUnlock(userId, lessonId,
+                UserUnlockedLesson.TYPE_PERMANENT, UserUnlockedLesson.PAID_EXP, COST_EXP);
 
         if (notificationService != null) {
             String title = "Mở khóa bài học thành công!";
-            String desc = "Bạn đã dùng " + requiredCost + " EXP để mở khóa '" + lesson.getTitle() + "' "
-                    + (unlock.getExpiresAt() == null ? "vĩnh viễn." : "trong 30 ngày.");
+            String desc = "Bạn đã dùng " + COST_EXP + " EXP để mở khóa vĩnh viễn bài '"
+                    + lesson.getTitle() + "'.";
             notificationService.sendNotification(userId, title, desc, "LEARNING", "/hoc/bai-moi/" + lessonId);
         }
 
-        log.info("lesson_unlocked_with_exp userId={} lessonId={} type={} cost={}",
-                userId, lessonId, normalizedType, requiredCost);
+        log.info("lesson_unlocked_with_exp userId={} lessonId={} cost={}", userId, lessonId, COST_EXP);
 
         return new LessonUnlockResult(
                 lessonId,
-                normalizedType,
-                "EXP",
-                requiredCost,
+                UserUnlockedLesson.TYPE_PERMANENT,
+                UserUnlockedLesson.PAID_EXP,
+                COST_EXP,
                 unlock.getExpiresAt(),
                 unlock.getExpiresAt() == null,
                 profile.getExpBalance()
         );
+    }
+
+    /** Tương thích giao dịch nội bộ cũ; loại thời hạn không còn áp dụng cho lượt mở mới. */
+    @Deprecated
+    public LessonUnlockResult unlockWithExp(UUID userId, UUID lessonId, String ignoredUnlockType) {
+        return unlockWithExp(userId, lessonId);
+    }
+
+    @Transactional
+    public LessonUnlockResult unlockWithTicket(UUID userId, UUID lessonId) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        if (userInventoryRepository == null) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+        }
+
+        UserInventory ticket = userInventoryRepository
+                .findByUserIdAndItemType(userId, "UNLOCK_TICKET").stream()
+                .filter(item -> UNLOCK_TICKET_ITEM_KEY.equals(item.getItemKey()))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.UNLOCK_TICKET_UNAVAILABLE));
+        userInventoryRepository.delete(ticket);
+
+        UserUnlockedLesson unlock = saveOrUpdateUnlock(userId, lessonId,
+                UserUnlockedLesson.TYPE_PERMANENT, UserUnlockedLesson.PAID_TICKET, 0);
+        if (notificationService != null) {
+            notificationService.sendNotification(userId, "Mở khóa bài học thành công!",
+                    "Bạn đã dùng vé mở khóa để mở vĩnh viễn bài '" + lesson.getTitle() + "'.",
+                    "LEARNING", "/hoc/bai-moi/" + lessonId);
+        }
+        log.info("lesson_unlocked_with_ticket userId={} lessonId={}", userId, lessonId);
+        return new LessonUnlockResult(lessonId, UserUnlockedLesson.TYPE_PERMANENT,
+                UserUnlockedLesson.PAID_TICKET, 0, unlock.getExpiresAt(), true, 0);
     }
 
     @Transactional

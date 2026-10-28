@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Bài học được mở khóa riêng lẻ bởi người dùng (bằng EXP hoặc PayOS: thuê 1 tháng hoặc vĩnh viễn).
+ * Bài học được mở khóa riêng lẻ bằng EXP hoặc vé mở khóa.
  */
 @Entity
 @Table(name = "user_unlocked_lesson")
@@ -29,6 +29,7 @@ public class UserUnlockedLesson {
 
     public static final String PAID_VND = "VND";
     public static final String PAID_EXP = "EXP";
+    public static final String PAID_TICKET = "UNLOCK_TICKET";
 
     @Id
     private UUID id;

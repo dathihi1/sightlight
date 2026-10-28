@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ApiError, apiCall, tokenStore } from "@/lib/api";
@@ -38,29 +37,8 @@ export default function UpgradePage() {
     queryFn: () => apiCall<Plan[]>("/api/v1/billing/plans", { auth: false }),
   });
 
-  const plans = plansQuery.data ?? [
-    {
-      id: "PREMIUM_1M",
-      name: "SignLight Premium 1 Tháng",
-      description: "Luyện AI không giới hạn, 100% Ad-Free, trình phát chậm 0.5x-0.75x, và huy hiệu Đại sứ Vàng.",
-      durationDays: 30,
-      priceVnd: 29000,
-    },
-    {
-      id: "PREMIUM_6M",
-      name: "SignLight Premium 6 Tháng",
-      description: "Tiết kiệm lớn: Luyện tập AI vô hạn, xem video tua chậm, góc quay đa chiều, chứng chỉ hoàn thành, không quảng cáo.",
-      durationDays: 180,
-      priceVnd: 100000,
-    },
-    {
-      id: "PREMIUM_LIFETIME",
-      name: "SignLight Premium Trọn đời",
-      description: "Trọn đời không lo hết hạn: toàn bộ tính năng Premium, luyện AI không giới hạn, 100% Ad-Free, huy hiệu đặc biệt.",
-      durationDays: 36500,
-      priceVnd: 350000,
-    },
-  ];
+  // Giá chỉ lấy từ server để trang hiển thị và số tiền thanh toán luôn thống nhất.
+  const plans = plansQuery.data ?? [];
 
   async function handleCheckout(planId: string) {
     setError(null);
@@ -96,11 +74,9 @@ export default function UpgradePage() {
     days >= 36500 ? t("trọn đời", "lifetime") : days >= 365 ? t("năm", "year") : days >= 180 ? t("6 tháng", "6 months") : t("tháng", "month");
 
   const perks = [
-    t("Mở khoá cả 17 chủ đề, 400 ký hiệu", "All 17 units, 400 signs"),
     t("Luyện AI qua camera không giới hạn", "Unlimited AI camera practice"),
-    t("Phát video chậm 0.5x & 0.75x", "Slow-motion video 0.5x & 0.75x"),
-    t("Huy hiệu Đại sứ", "Ambassador badge"),
-    t("Chứng chỉ hoàn thành PDF", "PDF completion certificate"),
+    t("Không cần xem quảng cáo để nhận thêm lượt AI", "No rewarded ads needed for extra AI attempts"),
+    t("Tiến độ học và EXP vẫn được giữ nguyên", "Your learning progress and EXP are preserved"),
   ];
 
   return (
@@ -115,11 +91,23 @@ export default function UpgradePage() {
         </h1>
         <p className="mt-4 text-lg text-ink-600">
           {t(
-            "Mở khoá toàn bộ lộ trình và luyện với AI không giới hạn lượt.",
-            "Unlock the full path and practice with AI, no daily limits.",
+            "Cả 17 chủ đề đều miễn phí. Premium dành cho người muốn luyện Camera AI không giới hạn.",
+            "All 17 units are free. Premium is for unlimited AI camera practice.",
           )}
         </p>
       </div>
+
+      {plansQuery.isLoading && (
+        <p className="mt-10 text-center text-sm text-ink-600">
+          {t("Đang tải bảng giá từ hệ thống…", "Loading current prices…")}
+        </p>
+      )}
+
+      {plansQuery.isError && (
+        <div className="mx-auto mt-8 max-w-xl">
+          <ErrorNotice message={t("Không tải được bảng giá. Vui lòng thử lại sau.", "Unable to load pricing. Please try again later.")} />
+        </div>
+      )}
 
       {error && (
         <div className="mx-auto mt-8 max-w-xl">
@@ -127,7 +115,7 @@ export default function UpgradePage() {
         </div>
       )}
 
-      <fieldset className="mt-12">
+      {plans.length > 0 && <fieldset className="mt-12">
         <legend className="sr-only">{t("Chọn gói", "Choose a plan")}</legend>
         <div className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-3">
           {plans.map((p) => {
@@ -203,7 +191,7 @@ export default function UpgradePage() {
             );
           })}
         </div>
-      </fieldset>
+      </fieldset>}
 
       <div className="card-flat mt-12 flex flex-col items-center justify-between gap-4 bg-ink-50 p-6 sm:flex-row">
         <div className="flex items-center gap-4">
@@ -214,8 +202,8 @@ export default function UpgradePage() {
             <h2 className="text-base font-bold text-ink-900">{t("Thanh toán VietQR qua payOS", "VietQR payment via payOS")}</h2>
             <p className="text-sm text-ink-600">
               {t(
-                "Quét mã bằng app ngân hàng bất kỳ, tài khoản được kích hoạt ngay.",
-                "Scan with any Vietnamese banking app — activated instantly.",
+                "Thanh toán một lần cho gói đã chọn, không tự động gia hạn hay trừ tiền lần sau.",
+                "One-time payment for the selected plan; no automatic renewal or future charges.",
               )}
             </p>
           </div>

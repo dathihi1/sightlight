@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
-import { IconCheck, IconLock, IconCrown } from "@/components/ui/Icons";
+import { IconCheck, IconLock, IconWebcam } from "@/components/ui/Icons";
 
 type RowState = "done" | "current" | "locked";
 
@@ -26,17 +26,17 @@ export function PathPreview() {
           </h2>
           <p className="mt-4 max-w-md text-lg leading-relaxed text-ink-600">
             {t(
-              "Từ lời chào đến cảm xúc — mỗi bài ngắn vài phút, có ôn tập để bạn nhớ lâu. Chủ đề đầu tiên miễn phí.",
-              "From hello to feelings — every lesson takes minutes, with reviews so it sticks. The first unit is free.",
+              "Từ lời chào đến cảm xúc — cả 17 chủ đề đều miễn phí. Mỗi bài ngắn vài phút, có ôn tập để bạn nhớ lâu.",
+              "From hello to feelings — all 17 units are free. Every lesson takes minutes, with reviews so it sticks.",
             )}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/dang-ky" className="btn btn-primary">
-              {t("Học chủ đề 1 miễn phí", "Start unit 1 free")}
+              {t("Bắt đầu học miễn phí", "Start learning free")}
             </Link>
             <Link href="/nang-cap" className="btn btn-secondary">
-              <IconCrown className="h-5 w-5" />
-              {t("Gói Premium", "Premium")}
+              <IconWebcam className="h-5 w-5" />
+              {t("Luyện Camera AI không giới hạn", "Unlimited Camera AI")}
             </Link>
           </div>
         </div>

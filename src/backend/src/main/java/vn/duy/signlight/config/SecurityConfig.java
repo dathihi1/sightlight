@@ -53,6 +53,7 @@ public class SecurityConfig {
             "/api/v1/dictionary/search",
             "/api/v1/dictionary/signs/**",
             "/api/v1/dictionary/topics",
+            "/api/v1/dictionary/topics/**",
             "/api/v1/billing/plans",
             "/api/v1/billing/ipn/**",
             "/api/v1/billing/return/**",

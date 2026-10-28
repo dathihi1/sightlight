@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vn.duy.signlight.common.error.ApiResponses;
 import vn.duy.signlight.common.web.CurrentUser;
@@ -17,6 +18,8 @@ import vn.duy.signlight.content.application.ContentCatalogService;
 import vn.duy.signlight.content.domain.Course;
 import vn.duy.signlight.content.web.dto.CourseListResult;
 import vn.duy.signlight.learning.application.LearningPathService;
+import vn.duy.signlight.learning.web.dto.ChapterLessonsResult;
+import vn.duy.signlight.learning.web.dto.CourseOverviewResult;
 import vn.duy.signlight.learning.web.dto.LearningPathResult;
 
 /** api-spec §2 endpoint 24 và §3.4 — danh sách khoá (công khai) và lộ trình học (cần đăng nhập). */
@@ -42,6 +45,29 @@ public class CourseController {
                 .map(this::toItem)
                 .toList();
         return ResponseEntity.ok(ApiResponses.ok(requestId, new CourseListResult(items)));
+    }
+
+    @GetMapping("/{courseId}/overview")
+    @Operation(summary = "Tổng quan lộ trình không chứa danh sách bài học")
+    public ResponseEntity<TransactionResponse<CourseOverviewResult>> overview(
+            @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId,
+            @PathVariable UUID courseId) {
+        CourseOverviewResult result = learningPathService.overview(
+                CurrentUser.findId().orElse(null), courseId);
+        return ResponseEntity.ok(ApiResponses.ok(requestId, result));
+    }
+
+    @GetMapping("/{courseId}/chapters/{chapterId}/lessons")
+    @Operation(summary = "Danh sách bài học đã xuất bản của một chương, có phân trang")
+    public ResponseEntity<TransactionResponse<ChapterLessonsResult>> chapterLessons(
+            @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId,
+            @PathVariable UUID courseId,
+            @PathVariable UUID chapterId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        ChapterLessonsResult result = learningPathService.chapterLessons(
+                CurrentUser.findId().orElse(null), courseId, chapterId, page, size);
+        return ResponseEntity.ok(ApiResponses.ok(requestId, result));
     }
 
     @GetMapping("/{courseId}/path")

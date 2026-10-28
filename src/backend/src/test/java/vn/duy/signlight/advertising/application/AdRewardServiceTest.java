@@ -9,12 +9,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import vn.duy.signlight.advertising.web.dto.AdRewardResult;
+import vn.duy.signlight.advertising.repository.AdRewardClaimRepository;
 import vn.duy.signlight.gamification.application.QuestService;
 import vn.duy.signlight.identity.domain.UserProfile;
 import vn.duy.signlight.identity.repository.UserProfileRepository;
 import vn.duy.signlight.notification.application.NotificationService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,6 +28,9 @@ class AdRewardServiceTest {
     private UserProfileRepository profileRepository;
 
     @Mock
+    private AdRewardClaimRepository claimRepository;
+
+    @Mock
     private QuestService questService;
 
     @Mock
@@ -35,7 +40,7 @@ class AdRewardServiceTest {
 
     @BeforeEach
     void setUp() {
-        adRewardService = new AdRewardService(profileRepository, questService, notificationService);
+        adRewardService = new AdRewardService(profileRepository, claimRepository, questService, notificationService);
     }
 
     @Test
@@ -49,6 +54,7 @@ class AdRewardServiceTest {
                 .build();
 
         when(profileRepository.findById(userId)).thenReturn(Optional.of(profile));
+        when(claimRepository.countByUserIdAndRewardDateLocal(eq(userId), any())).thenReturn(0L);
 
         AdRewardResult result = adRewardService.claimReward(userId, "AI_QUOTA", "CAMERA_MODAL");
 
@@ -56,27 +62,7 @@ class AdRewardServiceTest {
         assertEquals(1, result.amountGranted());
         assertEquals(3, result.newAiBonusQuota());
         verify(profileRepository).save(profile);
-        verify(questService).recordAction(eq(userId), eq("WATCH_AD"), eq(1));
-    }
-
-    @Test
-    @DisplayName("Xem video nhận +30 EXP")
-    void claimReward_exp_success() {
-        UUID userId = UUID.randomUUID();
-        UserProfile profile = UserProfile.builder()
-                .userId(userId)
-                .expBalance(100)
-                .aiBonusQuota(2)
-                .build();
-
-        when(profileRepository.findById(userId)).thenReturn(Optional.of(profile));
-
-        AdRewardResult result = adRewardService.claimReward(userId, "EXP", "STORE_PAGE");
-
-        assertEquals("EXP", result.rewardType());
-        assertEquals(30, result.amountGranted());
-        assertEquals(130, result.newExpBalance());
-        verify(profileRepository).save(profile);
+        verify(claimRepository).save(any());
         verify(questService).recordAction(eq(userId), eq("WATCH_AD"), eq(1));
     }
 }

@@ -52,10 +52,32 @@ interface AiCapabilities {
   recognizableSignIds: string[];
 }
 
+interface TopicItem {
+  topic: string;
+  signCount: number;
+}
+
+const SHORT_TOPIC_LABELS: Record<string, string> = {
+  "Gia đình & Xưng hô": "Xưng hô & gia đình",
+  "Đồ dùng, Thiết bị & Gia dụng": "Đồ vật & gia dụng",
+  "Động từ hành động & Sinh hoạt": "Hành động",
+  "Tính từ & Miêu tả đặc điểm": "Trạng thái & đặc điểm",
+  "Cảm xúc, Nhu cầu & Trạng thái tâm lý": "Cảm xúc & tâm lý",
+  "Ẩm thực (Món ăn & Đồ uống)": "Ăn uống",
+  "Thời gian, Lịch & Mùa": "Thời gian & mùa",
+  "Địa điểm & Công trình": "Địa điểm",
+  "Phương tiện giao thông": "Phương tiện",
+};
+
+function topicLabel(topic: string) {
+  return SHORT_TOPIC_LABELS[topic] ?? topic;
+}
+
 /** SCR-17 — từ điển ký hiệu (FR-21, FR-22). Hỗ trợ tìm kiếm và phát video mẫu trực tiếp. */
 export default function DictionaryPage() {
   const [input, setInput] = useState("");
   const [query, setQuery] = useState("");
+  const [activeTopic, setActiveTopic] = useState<string | null>(null);
   const [selectedSignId, setSelectedSignId] = useState<string | null>(null);
   const [activeVariantIndex, setActiveVariantIndex] = useState(0);
   const [hasSession, setHasSession] = useState(false);
@@ -80,6 +102,21 @@ export default function DictionaryPage() {
       apiCall<SearchResult>(`/api/v1/dictionary/search?q=${encodeURIComponent(query)}`, {
         auth: false,
       }),
+  });
+
+  const topics = useQuery({
+    queryKey: ["dictionary-topics"],
+    queryFn: () => apiCall<TopicItem[]>("/api/v1/dictionary/topics", { auth: false }),
+  });
+
+  const topicSigns = useQuery({
+    queryKey: ["dictionary-topic", activeTopic],
+    enabled: Boolean(activeTopic),
+    queryFn: () =>
+      apiCall<SearchResult>(
+        `/api/v1/dictionary/topics/${encodeURIComponent(activeTopic ?? "")}/signs?size=100`,
+        { auth: false },
+      ),
   });
 
   const signDetail = useQuery({
@@ -120,6 +157,9 @@ export default function DictionaryPage() {
   const recognizableSignIds = new Set(aiCapabilities.data?.recognizableSignIds ?? []);
   const canPracticeWithAi = (signId: string) => recognizableSignIds.has(signId);
   const usesPremiumModel = aiCapabilities.data?.modelVersion?.includes("400") ?? false;
+  const visibleResults = query ? search.data : topicSigns.data;
+  const resultsLoading = query ? search.isLoading : topicSigns.isLoading;
+  const resultsError = query ? search.isError : topicSigns.isError;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 space-y-8">
@@ -142,6 +182,7 @@ export default function DictionaryPage() {
       <form
         onSubmit={(event) => {
           event.preventDefault();
+          setActiveTopic(null);
           setQuery(input);
         }}
         className="flex gap-2"
@@ -165,7 +206,55 @@ export default function DictionaryPage() {
         </button>
       </form>
 
-      {!query && (
+      <section aria-labelledby="dictionary-topics-heading">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <p className="eyebrow text-sky-700">Duyệt theo nhóm</p>
+            <h2 id="dictionary-topics-heading" className="mt-1 text-2xl font-bold text-ink-900">
+              Chọn chủ đề từ vựng
+            </h2>
+          </div>
+          {activeTopic && (
+            <button
+              type="button"
+              onClick={() => setActiveTopic(null)}
+              className="text-sm font-bold text-sky-700 hover:text-sky-800"
+            >
+              Bỏ lọc
+            </button>
+          )}
+        </div>
+        {topics.isLoading && <p className="mt-3 text-sm font-bold text-ink-500">Đang tải chủ đề…</p>}
+        {topics.data && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {topics.data.map((item) => {
+              const selected = activeTopic === item.topic;
+              return (
+                <button
+                  key={item.topic}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => {
+                    setActiveTopic(item.topic);
+                    setInput("");
+                    setQuery("");
+                  }}
+                  className={`rounded-2xl border px-4 py-2.5 text-left transition-colors ${
+                    selected
+                      ? "border-brand-400 bg-brand-50 text-brand-700 ring-2 ring-brand-100"
+                      : "border-ink-200 bg-white text-ink-700 hover:border-sky-300 hover:bg-sky-50"
+                  }`}
+                >
+                  <span className="font-bold">{topicLabel(item.topic)}</span>
+                  <span className="ml-2 text-sm text-ink-500">{item.signCount}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {!query && !activeTopic && (
         <div>
           <p className="text-sm font-bold text-ink-500">Thử tra</p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -186,16 +275,18 @@ export default function DictionaryPage() {
         </div>
       )}
 
-      {search.isError && <ErrorNotice message="Không tra cứu được. Kiểm tra mạng rồi thử lại." />}
-      {search.isLoading && query && <p className="text-base font-bold text-ink-600" role="status">Đang tìm…</p>}
+      {resultsError && <ErrorNotice message="Không tra cứu được. Kiểm tra mạng rồi thử lại." />}
+      {resultsLoading && (query || activeTopic) && <p className="text-base font-bold text-ink-600" role="status">Đang tìm…</p>}
 
-      {search.data && (
+      {visibleResults && (
         <section className="space-y-3">
           <p className="text-base font-bold text-ink-600">
-            Tìm thấy {search.data.totalElements} kết quả cho &ldquo;{query}&rdquo;
+            {activeTopic
+              ? `${visibleResults.totalElements} ký hiệu trong nhóm “${topicLabel(activeTopic)}”`
+              : `Tìm thấy ${visibleResults.totalElements} kết quả cho “${query}”`}
           </p>
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {search.data.items.map((sign) => (
+            {visibleResults.items.map((sign) => (
               <li key={sign.id}>
                 <button
                   type="button"
@@ -239,7 +330,7 @@ export default function DictionaryPage() {
             ))}
           </ul>
 
-          {search.data.items.length === 0 && (
+          {visibleResults.items.length === 0 && (
             <EmptyState heading="h2" title="Không tìm thấy ký hiệu" body="Thử từ khác, hoặc bỏ bớt từ trong cụm." mood="sad" />
           )}
         </section>

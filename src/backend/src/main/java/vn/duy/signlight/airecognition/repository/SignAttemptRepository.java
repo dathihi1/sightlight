@@ -1,5 +1,6 @@
 package vn.duy.signlight.airecognition.repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
@@ -12,4 +13,6 @@ public interface SignAttemptRepository extends JpaRepository<SignAttempt, UUID> 
 
     List<SignAttempt> findByUserIdAndTargetSignIdOrderByCreatedAtDesc(
             UUID userId, UUID targetSignId, Pageable pageable);
+
+    long countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(Instant from, Instant toExclusive);
 }

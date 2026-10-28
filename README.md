@@ -36,12 +36,12 @@ SignLight giải quyết đúng chỗ đó: **AI nhận diện ký hiệu độn
 
 | Nhóm | Nội dung |
 |------|----------|
-| Học | Lộ trình Unit → Chương → Bài; bài học là **chuỗi bước** (dạy · giải thích · bài tập); **7 loại bài tập**; quiz; bài mốc 1–5 sao |
+| Học | **17 chủ đề miễn phí**; trong từng chủ đề phải hoàn thành bài trước mới mở bài sau; bài học là **chuỗi bước** (dạy · giải thích · bài tập) |
 | 🤖 **AI luyện ký hiệu động** | Quay ~2 giây → AI chấm → phản hồi + gợi ý sửa. Khởi điểm 30 ký hiệu, lộ trình lên 100 |
 | Luyện tập | Lặp lại ngắt quãng: từ vựng · bảng chữ cái · số. **Mở khoá theo tiến độ học**, không theo gói |
 | Từ điển | Tra không dấu, gợi ý sai chính tả, biến thể vùng miền, **báo thiếu ký hiệu** |
 | Động lực | Chuỗi ngày · Freeze · 6 huy hiệu có cấp bậc · Khám phá văn hoá Điếc · chứng chỉ PDF |
-| Thanh toán | Premium 1/3/12 tháng qua **VNPay & MoMo** — **mua từng kỳ, không tự động trừ tiền** |
+| Thanh toán | Premium **1 tháng / 6 tháng / vĩnh viễn** qua **payOS/VietQR** — mua một lần, không tự động trừ tiền. [Mô hình giá hiện hành](docs/PRICING_AND_ACCESS_MODEL.md) |
 | Quản trị | CMS soạn & duyệt nội dung (**bắt buộc người Điếc duyệt**), quản lý vốn ký hiệu AI |
 
 ## Kiến trúc
@@ -60,7 +60,7 @@ bị, **không pixel nào**. Lý do chọn và các phương án đã loại: [`
 3. Paywall chặn **ở backend**, không chỉ ẩn nút.
 4. Không phân biệt được email tồn tại / không tồn tại.
 5. Không có dữ liệu thẻ/ví và không có PII trong log.
-6. **`returnUrl` của VNPay/MoMo không bao giờ cấp quyền** — chỉ IPN đã xác thực chữ ký.
+6. **`returnUrl` không bao giờ tự cấp Premium** — chỉ trạng thái payOS đã xác thực, đúng mã đơn và đúng số tiền mới được kích hoạt.
 7. **Lỗi của dịch vụ AI không bị tính là lỗi của người học.**
 
 ## Cấu trúc thư mục

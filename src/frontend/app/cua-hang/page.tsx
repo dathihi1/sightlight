@@ -1,17 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { apiCall } from "@/lib/api";
 import Link from "next/link";
 import {
   IconShop,
   IconCrown,
   IconWebcam,
-  IconUnlock,
   IconShield,
   IconLightning,
   IconTrophy,
-  IconBook,
   IconFlame,
   IconSparkles,
   IconStar,
@@ -58,6 +56,8 @@ export default function ShopPage() {
   const [redeeming, setRedeeming] = useState(false);
   const [successResult, setSuccessResult] = useState<RedeemResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const redeemInFlightRef = useRef(false);
+  const redeemTriggerRef = useRef<HTMLElement | null>(null);
 
   const fetchCatalog = async () => {
     setLoading(true);
@@ -80,8 +80,31 @@ export default function ShopPage() {
     }
   }, [isClient, isLoggedIn]);
 
-  const handleConfirmRedeem = async () => {
+  useEffect(() => {
     if (!confirmItem) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !redeemInFlightRef.current) {
+        setConfirmItem(null);
+        requestAnimationFrame(() => redeemTriggerRef.current?.focus());
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [confirmItem]);
+
+  const openConfirm = (item: StoreItem) => {
+    redeemTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setConfirmItem(item);
+  };
+
+  const closeConfirm = () => {
+    setConfirmItem(null);
+    requestAnimationFrame(() => redeemTriggerRef.current?.focus());
+  };
+
+  const handleConfirmRedeem = async () => {
+    if (!confirmItem || redeemInFlightRef.current) return;
+    redeemInFlightRef.current = true;
     setRedeeming(true);
     setErrorMsg(null);
 
@@ -89,6 +112,7 @@ export default function ShopPage() {
       const res = await apiCall<RedeemResult>("/api/v1/gamification/store/redeem", {
         method: "POST",
         body: { itemKey: confirmItem.itemKey },
+        retry: false,
       });
 
       if (res) {
@@ -112,11 +136,15 @@ export default function ShopPage() {
             ),
           });
         }
+        window.dispatchEvent(new CustomEvent("signlight:balance-update", {
+          detail: { expBalance: res.newExpBalance, aiBonusQuota: res.newAiBonusQuota },
+        }));
       }
     } catch (err: any) {
       setErrorMsg(err?.errorMessage || "Không thể đổi vật phẩm này.");
-      setConfirmItem(null);
+      closeConfirm();
     } finally {
+      redeemInFlightRef.current = false;
       setRedeeming(false);
     }
   };
@@ -124,19 +152,16 @@ export default function ShopPage() {
   const getItemVisual = (item: StoreItem) => {
     if (item.itemKey.includes("AI_BONUS_10")) return { Icon: IconWebcam, bg: "bg-sky-50 text-sky-600 border-sky-200" };
     if (item.itemKey.includes("AI_BONUS")) return { Icon: IconWebcam, bg: "bg-sky-50 text-sky-600 border-sky-200" };
-    if (item.itemKey.includes("LESSON_UNLOCK_UNIT")) return { Icon: IconBook, bg: "bg-emerald-50 text-emerald-600 border-emerald-200" };
-    if (item.itemKey.includes("LESSON_UNLOCK")) return { Icon: IconUnlock, bg: "bg-amber-50 text-amber-600 border-amber-200" };
-    if (item.itemKey.includes("STREAK")) return { Icon: IconShield, bg: "bg-cyan-50 text-cyan-600 border-cyan-200" };
-    if (item.itemKey.includes("BOOSTER")) return { Icon: IconLightning, bg: "bg-yellow-50 text-yellow-600 border-yellow-200" };
-    if (item.itemKey.includes("AMBASSADOR")) return { Icon: IconCrown, bg: "bg-rose-50 text-rose-600 border-rose-200" };
-    if (item.itemKey.includes("PERSISTENCE")) return { Icon: IconFlame, bg: "bg-orange-50 text-orange-600 border-orange-200" };
+    if (item.itemKey.includes("STREAK")) return { Icon: IconShield, bg: "bg-sky-50 text-sky-600 border-sky-200" };
+    if (item.itemKey.includes("BOOSTER")) return { Icon: IconLightning, bg: "bg-sun-50 text-sun-600 border-sun-200" };
+    if (item.itemKey.includes("AMBASSADOR")) return { Icon: IconCrown, bg: "bg-grape-50 text-grape-600 border-grape-200" };
+    if (item.itemKey.includes("PERSISTENCE")) return { Icon: IconFlame, bg: "bg-flame-50 text-flame-600 border-flame-200" };
     return { Icon: IconTrophy, bg: "bg-brand-50 text-brand-600 border-brand-200" };
   };
 
   const filteredItems = catalog?.items.filter((item) => {
     if (activeCategory === "ALL") return true;
     if (activeCategory === "AI_QUOTA") return item.itemType === "AI_QUOTA" || item.itemKey.includes("AI");
-    if (activeCategory === "LESSON_UNLOCK") return item.itemType === "LESSON_PASS" || item.itemKey.includes("LESSON");
     if (activeCategory === "STREAK") return item.itemType === "STREAK" || item.itemType === "BOOSTER" || item.itemKey.includes("FREEZE");
     if (activeCategory === "BADGE") return item.itemType === "BADGE";
     return true;
@@ -165,13 +190,13 @@ export default function ShopPage() {
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Cửa Hàng</h1>
             <p className="mt-1.5 text-sm text-brand-100">
-              Dùng EXP mở khóa bài học, lượt camera và các vật phẩm bổ trợ.
+              Dùng EXP đổi lượt Camera AI, bảo vệ streak và huy hiệu danh dự.
             </p>
           </div>
 
           {/* User Balances Box */}
           {isLoggedIn ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 text-center shrink-0">
+            <div className="grid grid-cols-3 gap-3 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 text-center shrink-0">
               <div className="p-2.5 rounded-xl bg-white/10">
                 <span className="text-xs text-brand-200 block font-medium">EXP</span>
                 <div className="flex items-center justify-center gap-1.5 mt-1">
@@ -189,14 +214,6 @@ export default function ShopPage() {
               </div>
 
               <div className="p-2.5 rounded-xl bg-white/10">
-                <span className="text-xs text-brand-200 block font-medium">Vé bài học</span>
-                <div className="flex items-center justify-center gap-1.5 mt-1">
-                  <IconUnlock className="h-5 w-5 text-emerald-300" />
-                  <span className="text-xl sm:text-2xl font-bold text-emerald-300">{catalog?.lessonPassCount ?? 0}</span>
-                </div>
-              </div>
-
-              <div className="p-2.5 rounded-xl bg-white/10">
                 <span className="text-xs text-brand-200 block font-medium">Băng streak</span>
                 <div className="flex items-center justify-center gap-1.5 mt-1">
                   <IconShield className="h-5 w-5 text-cyan-300" />
@@ -208,7 +225,7 @@ export default function ShopPage() {
             <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/15 text-center shrink-0 max-w-xs flex flex-col items-center justify-center">
               <IconShop className="h-8 w-8 text-white/80 mb-2" />
               <p className="text-sm font-bold text-white">Đăng nhập để xem số dư</p>
-              <p className="text-xs text-brand-100 mt-1">Tích lũy EXP để đổi lượt camera và vé mở bài học.</p>
+              <p className="text-xs text-brand-100 mt-1">Tích lũy EXP để đổi lượt Camera AI và vật phẩm hỗ trợ.</p>
               <Link href="/dang-nhap?next=/cua-hang" className="btn btn-sm bg-white text-brand-700 hover:bg-brand-50 font-semibold mt-3 w-full">
                 Đăng nhập ngay
               </Link>
@@ -232,8 +249,7 @@ export default function ShopPage() {
         {[
           { key: "ALL", label: "Tất cả", Icon: IconSparkles },
           { key: "AI_QUOTA", label: "Lượt Camera", Icon: IconWebcam },
-          { key: "LESSON_UNLOCK", label: "Mở khóa bài học", Icon: IconUnlock },
-          { key: "STREAK", label: "Streak & Booster", Icon: IconLightning },
+          { key: "STREAK", label: "Bảo vệ Streak", Icon: IconLightning },
           { key: "BADGE", label: "Huy hiệu", Icon: IconTrophy },
         ].map((tab) => (
           <button
@@ -314,7 +330,7 @@ export default function ShopPage() {
                     <button
                       type="button"
                       disabled={!canAfford}
-                      onClick={() => setConfirmItem(item)}
+                      onClick={() => openConfirm(item)}
                       className={`w-full py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                         canAfford
                           ? "btn-primary shadow-sm hover:scale-[1.01]"
@@ -362,7 +378,12 @@ export default function ShopPage() {
       {/* Confirm Redemption Modal */}
       {confirmItem && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="card max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-150">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="redeem-dialog-title"
+            className="card max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-150"
+          >
             <div className="text-center">
               <div className={`w-14 h-14 rounded-2xl mx-auto mb-3 grid place-items-center border ${getItemVisual(confirmItem).bg}`}>
                 {(() => {
@@ -370,7 +391,7 @@ export default function ShopPage() {
                   return <ItemIcon className="h-7 w-7" />;
                 })()}
               </div>
-              <h3 className="text-lg font-bold text-ink-900">Xác nhận đổi vật phẩm</h3>
+              <h3 id="redeem-dialog-title" className="text-lg font-bold text-ink-900">Xác nhận đổi vật phẩm</h3>
               <p className="text-xs text-ink-500 mt-1">
                 Bạn sắp dùng điểm kinh nghiệm để đổi:
               </p>
@@ -398,7 +419,7 @@ export default function ShopPage() {
               <button
                 type="button"
                 disabled={redeeming}
-                onClick={() => setConfirmItem(null)}
+                onClick={closeConfirm}
                 className="btn btn-secondary btn-sm flex-1 cursor-pointer"
               >
                 Hủy
@@ -420,7 +441,7 @@ export default function ShopPage() {
       {successResult && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="card max-w-md w-full p-6 shadow-2xl text-center animate-in zoom-in-95 duration-150">
-            <div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 mx-auto mb-3 grid place-items-center border border-emerald-200">
+            <div className="w-14 h-14 rounded-full bg-success-50 text-success-600 mx-auto mb-3 grid place-items-center border border-success-200">
               <IconCheck className="h-7 w-7" />
             </div>
             <h3 className="text-xl font-bold text-ink-900">Đổi thưởng thành công!</h3>
@@ -430,9 +451,6 @@ export default function ShopPage() {
               <p>• Số dư EXP còn lại: <strong>{successResult.newExpBalance} EXP</strong></p>
               {successResult.newAiBonusQuota > 0 && (
                 <p>• Tổng lượt AI camera khả dụng: <strong>{successResult.newAiBonusQuota} lượt</strong></p>
-              )}
-              {(successResult.newLessonPassCount ?? 0) > 0 && (
-                <p>• Tổng vé mở khóa bài học: <strong>{successResult.newLessonPassCount} vé</strong></p>
               )}
               {successResult.newFreezeCount > 0 && (
                 <p>• Băng bảo vệ Streak: <strong>{successResult.newFreezeCount} băng</strong></p>

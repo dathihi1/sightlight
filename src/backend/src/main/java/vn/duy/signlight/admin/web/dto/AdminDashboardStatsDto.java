@@ -1,5 +1,6 @@
 package vn.duy.signlight.admin.web.dto;
 
+import java.time.Instant;
 import java.util.List;
 
 public record AdminDashboardStatsDto(
@@ -10,6 +11,10 @@ public record AdminDashboardStatsDto(
         long totalRevenueVnd,
         long activeSubscriptionsCount,
         long totalQuestsAvailable,
+        String metricScope,
+        String timeZone,
+        Instant rangeFrom,
+        Instant rangeToExclusive,
         List<RecentActivityItem> recentCompletions
 ) {
     public record RecentActivityItem(

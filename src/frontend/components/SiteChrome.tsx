@@ -66,7 +66,7 @@ function LearnerShell({ children }: { children: React.ReactNode }) {
         <IconCrown className="h-6 w-6" />
       </span>
       <p className="mt-3 text-base font-semibold">{t("Nâng cấp Premium", "Go Premium")}</p>
-      <p className="mt-1 text-sm text-white/90">{t("Mở khoá 17 chủ đề và luyện AI không giới hạn.", "Unlock all 17 units and unlimited AI practice.")}</p>
+      <p className="mt-1 text-sm text-white/90">{t("Luyện Camera AI không giới hạn mỗi ngày.", "Unlimited AI camera practice every day.")}</p>
       <Link href="/nang-cap" className="btn btn-sm mt-4 w-full bg-white text-brand-600 hover:bg-brand-50">
         {t("Xem các gói", "See plans")}
       </Link>

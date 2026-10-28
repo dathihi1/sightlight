@@ -65,7 +65,7 @@ public class BillingService {
 
     @Transactional(readOnly = true)
     public List<PlanDto> activePlans() {
-        return planRepository.findByActiveTrueOrderByPriceVndAsc().stream()
+        return planRepository.findByActiveTrueAndIdStartingWithOrderByPriceVndAsc("PREMIUM_").stream()
                 .map(p -> new PlanDto(p.getId(), p.getName(), p.getDescription(),
                         p.getDurationDays(), p.getPriceVnd(), p.isActive()))
                 .toList();
@@ -75,6 +75,9 @@ public class BillingService {
     public CheckoutResult createCheckout(UUID userId, String planId) {
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        if (!plan.isActive() || !plan.getId().startsWith("PREMIUM_")) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
 
         // orderCode payOS: số nguyên dương duy nhất
         long timestampSeconds = Instant.now().getEpochSecond();
@@ -140,8 +143,9 @@ public class BillingService {
         // Khi webhook chưa tới được (vd chạy localhost chưa có public URL), chủ động kiểm tra payOS API
         payOsClient.getPaymentLinkInformation(orderCode).ifPresent(payOsResult -> {
             if ("PAID".equalsIgnoreCase(payOsResult.status())) {
+                requireMatchingAmount(tx, payOsResult.amount());
                 log.info("payos_polled_paid_activated orderCode={}", orderCode);
-                activateSubscriptionForTransaction(tx, null);
+                activateEntitlementForTransaction(tx, null);
             }
         });
 
@@ -163,8 +167,9 @@ public class BillingService {
         if (payOsOpt.isPresent()) {
             PayOsClient.PayOsPaymentResult payOsResult = payOsOpt.get();
             if ("PAID".equalsIgnoreCase(payOsResult.status())) {
+                requireMatchingAmount(tx, payOsResult.amount());
                 log.info("payos_confirm_verified_paid orderCode={}", orderCode);
-                activateSubscriptionForTransaction(tx, null);
+                activateEntitlementForTransaction(tx, null);
                 return toCheckoutResult(tx);
             } else if ("CANCELLED".equalsIgnoreCase(payOsResult.status())) {
                 tx.setStatus("CANCELLED");
@@ -256,11 +261,17 @@ public class BillingService {
             return true;
         }
 
-        if (tx.getPlanId() != null && tx.getPlanId().startsWith("LESSON_")) {
-            activateLessonUnlockForTransaction(tx, payload.signature());
-        } else {
-            activateSubscriptionForTransaction(tx, payload.signature());
+        Long paidAmount = extractLong(data, "amount");
+        if (paidAmount == null || paidAmount != tx.getAmount()) {
+            webhookLog.setErrorMessage("Số tiền webhook không khớp giao dịch");
+            webhookLog.setProcessed(true);
+            webhookLogRepository.save(webhookLog);
+            log.warn("payos_webhook_amount_mismatch orderCode={} expected={} actual={}",
+                    orderCode, tx.getAmount(), paidAmount);
+            return false;
         }
+
+        activateEntitlementForTransaction(tx, payload.signature());
 
         webhookLog.setProcessed(true);
         webhookLogRepository.save(webhookLog);
@@ -272,6 +283,18 @@ public class BillingService {
     @Transactional(readOnly = true)
     public Optional<PaymentTransaction> getTransactionStatus(long orderCode) {
         return transactionRepository.findByOrderCode(orderCode);
+    }
+
+    /** Phân luồng entitlement ở server; giao dịch bài học cũ tuyệt đối không được nâng Premium. */
+    private void activateEntitlementForTransaction(PaymentTransaction tx, String webhookSignature) {
+        if (tx.getPlanId() != null && tx.getPlanId().startsWith("LESSON_")) {
+            activateLessonUnlockForTransaction(tx, webhookSignature);
+            return;
+        }
+        if (tx.getPlanId() == null || !tx.getPlanId().startsWith("PREMIUM_")) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
+        activateSubscriptionForTransaction(tx, webhookSignature);
     }
 
     private void activateLessonUnlockForTransaction(PaymentTransaction tx, String webhookSignature) {
@@ -370,10 +393,14 @@ public class BillingService {
     }
 
     private Long extractOrderCode(Map<String, Object> data) {
-        if (data == null || !data.containsKey("orderCode")) {
+        return extractLong(data, "orderCode");
+    }
+
+    private Long extractLong(Map<String, Object> data, String key) {
+        if (data == null || !data.containsKey(key)) {
             return null;
         }
-        Object val = data.get("orderCode");
+        Object val = data.get(key);
         if (val instanceof Number num) {
             return num.longValue();
         }
@@ -381,6 +408,14 @@ public class BillingService {
             return Long.parseLong(val.toString());
         } catch (NumberFormatException e) {
             return null;
+        }
+    }
+
+    private void requireMatchingAmount(PaymentTransaction tx, Integer paidAmount) {
+        if (paidAmount != null && paidAmount != tx.getAmount()) {
+            log.warn("payos_payment_amount_mismatch orderCode={} expected={} actual={}",
+                    tx.getOrderCode(), tx.getAmount(), paidAmount);
+            throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
         }
     }
 }

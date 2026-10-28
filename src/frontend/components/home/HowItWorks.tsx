@@ -31,8 +31,8 @@ export function HowItWorks() {
       n: 3,
       title: t("Nhận điểm", "Score"),
       body: t(
-        "Biết ngay đúng hay sai, nhận XP, giữ chuỗi ngày và mở khoá bài tiếp theo.",
-        "See instantly if you got it, earn XP, keep your streak and unlock the next lesson.",
+        "Biết ngay đúng hay sai, nhận EXP, giữ chuỗi ngày và mở khoá bài tiếp theo.",
+        "See instantly if you got it, earn EXP, keep your streak and unlock the next lesson.",
       ),
       icon: <IconStar className="h-9 w-9" />,
       tone: "bg-sun-50 text-sun-600",

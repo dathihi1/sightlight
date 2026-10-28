@@ -61,4 +61,15 @@ public class DictionaryController {
             @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId) {
         return ResponseEntity.ok(ApiResponses.ok(requestId, dictionaryService.topics()));
     }
+
+    @GetMapping("/topics/{topic}/signs")
+    @Operation(summary = "Duyệt các ký hiệu theo chủ đề (FR-21)")
+    public ResponseEntity<TransactionResponse<DictionarySearchResult>> signsByTopic(
+            @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId,
+            @PathVariable @Size(max = 100, message = "00101") String topic,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size) {
+        return ResponseEntity.ok(
+                ApiResponses.ok(requestId, dictionaryService.browseTopic(topic, page, size)));
+    }
 }

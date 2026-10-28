@@ -6,5 +6,5 @@ import vn.duy.signlight.billing.domain.Plan;
 
 public interface PlanRepository extends JpaRepository<Plan, String> {
 
-    List<Plan> findByActiveTrueOrderByPriceVndAsc();
+    List<Plan> findByActiveTrueAndIdStartingWithOrderByPriceVndAsc(String idPrefix);
 }

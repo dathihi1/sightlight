@@ -36,6 +36,13 @@ public class AdminQuestDtos {
         }
     }
 
+    public record QuestListResult(
+            java.util.List<QuestItem> items,
+            int totalPages,
+            long totalElements,
+            int currentPage
+    ) {}
+
     public record QuestUpsertRequest(
             String title,
             String description,

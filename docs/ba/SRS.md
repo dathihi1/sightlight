@@ -8,7 +8,8 @@
 - **Lưu trữ & phát Video:** Bỏ MinIO S3 nội bộ, chuyển sang **Google Drive CDN Direct Streaming** (`https://lh3.googleusercontent.com/d/{id}`) kết hợp Backend Streaming Proxy hỗ trợ HTTP 206 Partial Content (Byte Range requests) và HTTP 307 redirect.
 - **Xác thực & Danh tính:** Tích hợp **Google OAuth2 / OIDC ID Token verification** (`/api/v1/auth/google`), xác thực tài khoản qua **mã OTP email 6 chữ số** (TTL 15 phút, cooldown 60s), quy trình đặt lại mật khẩu bảo mật, và cơ chế **Refresh Token rotation** lưu bảng CSDL với khả năng phát hiện tái sử dụng phiên.
 - **🤖 Kiến trúc AI nhận diện kép (Dual Inference):** Hỗ trợ **Client-side WASM ONNX Runtime Web** (<20ms) trực tiếp trên trình duyệt bằng landmark MediaPipe Holistic 75 điểm (225 chiều x 30 khung = 6750 features) làm kênh chính; dự phòng qua Python FastAPI (`POST /api/infer/features`) trên mạng nội bộ. Hỗ trợ cả 30 nhãn (MVP-30) và 400 nhãn (MVP-400).
-- **Phân bổ nội dung:** Phân loại 400 ký hiệu VSL thành **17 Units** lớn (Unit 1 Miễn phí, Units 2–17 Premium).
+- **Phân bổ nội dung:** Cả **17 Units** đều miễn phí; bài đầu mỗi Unit mở sẵn, bài sau chỉ mở khi bài liền trước trong Unit đã hoàn thành. Premium không bỏ qua thứ tự học.
+- **Mô hình thương mại:** Premium 1 tháng / 6 tháng / vĩnh viễn chỉ bán quyền luyện Camera AI không giới hạn; bài kế tiếp mở miễn phí khi hoàn thành bài trước, hoặc có thể mở vĩnh viễn bằng 5.000 EXP / vé mở khóa. Xem `docs/PRICING_AND_ACCESS_MODEL.md`.
 - **Phân quyền người dùng (RBAC):** 6 vai trò: `LEARNER_FREE`, `LEARNER_PREMIUM`, `CONTENT_CREATOR`, `CONTENT_APPROVER`, `ADMIN`, `SUPPORT`.
 
 **Thay đổi so với v0.2:** chốt **Q8 = phương án B** (trình duyệt trích landmark, server phân lớp) → viết lại

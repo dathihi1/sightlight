@@ -9,24 +9,31 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.duy.signlight.admin.web.dto.AdminLessonDetailDto;
+import vn.duy.signlight.admin.web.dto.AdminLmsDtos;
 import vn.duy.signlight.common.error.BusinessException;
 import vn.duy.signlight.common.error.ErrorCode;
 import vn.duy.signlight.content.application.MediaUrlService;
 import vn.duy.signlight.content.domain.Exercise;
 import vn.duy.signlight.content.domain.ExerciseOption;
+import vn.duy.signlight.content.domain.Course;
 import vn.duy.signlight.content.domain.Lesson;
 import vn.duy.signlight.content.domain.LessonContentBlock;
 import vn.duy.signlight.content.domain.Sign;
 import vn.duy.signlight.content.domain.SignVideo;
 import vn.duy.signlight.content.repository.ExerciseOptionRepository;
+import vn.duy.signlight.content.repository.ChapterRepository;
+import vn.duy.signlight.content.repository.CourseRepository;
 import vn.duy.signlight.content.repository.ExerciseRepository;
 import vn.duy.signlight.content.repository.LessonContentBlockRepository;
 import vn.duy.signlight.content.repository.LessonRepository;
 import vn.duy.signlight.content.repository.SignRepository;
 import vn.duy.signlight.content.repository.SignVideoRepository;
+import vn.duy.signlight.content.repository.UnitRepository;
 
 @Service
 public class AdminLmsService {
@@ -40,6 +47,9 @@ public class AdminLmsService {
     private final SignRepository signRepository;
     private final SignVideoRepository signVideoRepository;
     private final MediaUrlService mediaUrlService;
+    private final CourseRepository courseRepository;
+    private final UnitRepository unitRepository;
+    private final ChapterRepository chapterRepository;
 
     public AdminLmsService(
             LessonRepository lessonRepository,
@@ -48,7 +58,10 @@ public class AdminLmsService {
             LessonContentBlockRepository blockRepository,
             SignRepository signRepository,
             SignVideoRepository signVideoRepository,
-            MediaUrlService mediaUrlService) {
+            MediaUrlService mediaUrlService,
+            CourseRepository courseRepository,
+            UnitRepository unitRepository,
+            ChapterRepository chapterRepository) {
         this.lessonRepository = lessonRepository;
         this.exerciseRepository = exerciseRepository;
         this.optionRepository = optionRepository;
@@ -56,6 +69,39 @@ public class AdminLmsService {
         this.signRepository = signRepository;
         this.signVideoRepository = signVideoRepository;
         this.mediaUrlService = mediaUrlService;
+        this.courseRepository = courseRepository;
+        this.unitRepository = unitRepository;
+        this.chapterRepository = chapterRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public AdminLmsDtos.CourseListResult listCourses(String search, String status, int page, int size) {
+        String normalizedSearch = normalizeNullable(search);
+        String normalizedStatus = normalizeNullable(status);
+        if (normalizedStatus != null) {
+            normalizedStatus = normalizedStatus.toUpperCase(java.util.Locale.ROOT);
+        }
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        var result = courseRepository.adminSearch(
+                normalizedSearch,
+                normalizedStatus,
+                PageRequest.of(safePage, safeSize, Sort.by("code").ascending()));
+        List<AdminLmsDtos.CourseItem> items = result.getContent().stream()
+                .map(this::toCourseItem)
+                .toList();
+        return new AdminLmsDtos.CourseListResult(items, result.getTotalPages(), result.getTotalElements(), safePage);
+    }
+
+    private AdminLmsDtos.CourseItem toCourseItem(Course course) {
+        return new AdminLmsDtos.CourseItem(course.getId(), course.getCode(), course.getName(), course.getStatus());
+    }
+
+    private String normalizeNullable(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 
     @Transactional(readOnly = true)

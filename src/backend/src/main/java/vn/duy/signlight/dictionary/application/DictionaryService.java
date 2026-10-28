@@ -29,6 +29,7 @@ import vn.duy.signlight.dictionary.web.dto.SignDetailResult;
 public class DictionaryService {
 
     private static final int MAX_PAGE_SIZE = 50;
+    private static final int MAX_TOPIC_PAGE_SIZE = 100;
 
     private final SignRepository signRepository;
     private final SignVideoRepository signVideoRepository;
@@ -55,6 +56,19 @@ public class DictionaryService {
         Page<Sign> results = signRepository.search(query.trim(),
                 PageRequest.of(Math.max(page, 0), boundedSize));
 
+        return toSearchResult(results);
+    }
+
+    /** Duyệt trọn một nhóm từ vựng thay vì buộc người học phải biết từ để tìm. */
+    @Transactional(readOnly = true)
+    public DictionarySearchResult browseTopic(String topic, int page, int size) {
+        int boundedSize = Math.clamp(size, 1, MAX_TOPIC_PAGE_SIZE);
+        Page<Sign> results = signRepository.findByTopicAndStatusOrderByWordAsc(
+                topic.trim(), "PUBLISHED", PageRequest.of(Math.max(page, 0), boundedSize));
+        return toSearchResult(results);
+    }
+
+    private DictionarySearchResult toSearchResult(Page<Sign> results) {
         Set<UUID> recognizable = recognitionService.recognizableSignIds();
         var videos = contentTree.primaryVideos(results.getContent().stream().map(Sign::getId).toList());
 

@@ -40,9 +40,10 @@ public class AdminUserController {
             @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId,
             @RequestParam(value = "search", required = false) String search,
             @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "role", required = false) String role,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size) {
-        AdminUserDtos.UserListResult result = adminUserService.listUsers(search, status, page, size);
+        AdminUserDtos.UserListResult result = adminUserService.listUsers(search, status, role, page, size);
         return ResponseEntity.ok(ApiResponses.ok(requestId, result));
     }
 

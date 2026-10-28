@@ -422,8 +422,10 @@ public class SeedRunner implements ApplicationRunner {
         // Thêm MATCH_SIGN_MEANING nếu có từ 3 ký hiệu
         if (signs.size() >= 3) {
             String matchKey = (lesson.getStableKey() != null ? lesson.getStableKey() : lesson.getId().toString()) + ".match.1";
-            if (exerciseRepository.findByLessonIdAndStableKey(lesson.getId(), matchKey).isEmpty()) {
-                Exercise matchEx = Exercise.builder()
+            Exercise matchEx = exerciseRepository.findByLessonIdAndStableKey(lesson.getId(), matchKey)
+                    .orElse(null);
+            if (matchEx == null) {
+                matchEx = Exercise.builder()
                         .id(UUID.randomUUID())
                         .lessonId(lesson.getId())
                         .orderIndex(currentCount++)
@@ -439,18 +441,27 @@ public class SeedRunner implements ApplicationRunner {
                         .seed(true)
                         .build();
                 exerciseRepository.save(matchEx);
+            }
 
-                for (int i = 0; i < Math.min(4, signs.size()); i++) {
-                    Sign s = signs.get(i);
-                    optionRepository.save(ExerciseOption.builder()
-                            .id(UUID.randomUUID())
-                            .exerciseId(matchEx.getId())
-                            .orderIndex(i)
-                            .correct(true)
-                            .labelText(s.getWord())
-                            .seed(true)
-                            .build());
-                }
+            List<ExerciseOption> matchOptions = optionRepository
+                    .findByExerciseIdOrderByOrderIndexAsc(matchEx.getId());
+            UUID matchExerciseId = matchEx.getId();
+            for (int i = 0; i < Math.min(4, signs.size()); i++) {
+                final int optionIndex = i;
+                Sign sign = signs.get(i);
+                ExerciseOption option = matchOptions.stream()
+                        .filter(candidate -> candidate.getOrderIndex() == optionIndex)
+                        .findFirst()
+                        .orElseGet(() -> ExerciseOption.builder()
+                                .id(UUID.randomUUID())
+                                .exerciseId(matchExerciseId)
+                                .build());
+                option.setOrderIndex(i);
+                option.setCorrect(true);
+                option.setLabelText(sign.getWord());
+                option.setSignVideoId(primaryVideoId(sign));
+                option.setSeed(true);
+                optionRepository.save(option);
             }
         }
     }
@@ -499,29 +510,49 @@ public class SeedRunner implements ApplicationRunner {
             exercise.setSeed(true);
             exerciseRepository.save(exercise);
 
-            upsertOptions(exercise, seedExercise);
+            upsertOptions(exercise, seedExercise, signsByWord);
         }
     }
 
-    /** Lựa chọn đầu tiên trong seed là đáp án đúng; thứ tự hiển thị do giao diện xáo. */
-    private void upsertOptions(Exercise exercise, SeedExercise seedExercise) {
+    /**
+     * Lựa chọn đầu tiên trong seed là đáp án đúng; API xáo thứ tự trước khi trả.
+     * Luôn đồng bộ lại option seed cũ để sửa dữ liệu đáp án/video đã nạp sai.
+     */
+    private void upsertOptions(Exercise exercise, SeedExercise seedExercise,
+            Map<String, Sign> signsByWord) {
         if (seedExercise.options() == null || seedExercise.options().isEmpty()) {
             return;
         }
-        if (!optionRepository.findByExerciseIdOrderByOrderIndexAsc(exercise.getId()).isEmpty()) {
-            return;
-        }
+        List<ExerciseOption> existing = optionRepository.findByExerciseIdOrderByOrderIndexAsc(exercise.getId());
         List<String> options = seedExercise.options();
         for (int index = 0; index < options.size(); index++) {
-            optionRepository.save(ExerciseOption.builder()
-                    .id(UUID.randomUUID())
-                    .exerciseId(exercise.getId())
-                    .orderIndex(index)
-                    .correct(index == 0)
-                    .labelText(options.get(index))
-                    .seed(true)
-                    .build());
+            final int optionIndex = index;
+            ExerciseOption option = existing.stream()
+                    .filter(candidate -> candidate.getOrderIndex() == optionIndex)
+                    .findFirst()
+                    .orElseGet(() -> ExerciseOption.builder()
+                            .id(UUID.randomUUID())
+                            .exerciseId(exercise.getId())
+                            .build());
+            String label = options.get(index);
+            option.setOrderIndex(index);
+            option.setCorrect(index == 0);
+            option.setLabelText(label);
+            option.setSignVideoId(primaryVideoId(signsByWord.get(label)));
+            option.setSeed(true);
+            optionRepository.save(option);
         }
+    }
+
+    private UUID primaryVideoId(Sign sign) {
+        if (sign == null) {
+            return null;
+        }
+        return signVideoRepository.findBySignId(sign.getId()).stream()
+                .filter(SignVideo::isPrimaryVariant)
+                .map(SignVideo::getId)
+                .findFirst()
+                .orElse(null);
     }
 
     private String writeJson(Object value) {

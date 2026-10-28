@@ -11,12 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import vn.duy.signlight.content.domain.SignVideo;
 
-/**
- * Dựng URL phát video có chữ ký hoặc phân giải liên kết phát qua Google Drive.
- *
- * <p>Hỗ trợ Google Drive streaming URL (lh3 CDN hỗ trợ HTML5 video player và Range header)
- * và ký HMAC cho các luồng lưu trữ đối tượng.
- */
+/** Dựng URL phát video, ưu tiên CDN R2 và giữ Google Drive làm đường lui cho dữ liệu cũ. */
 @Service
 public class MediaUrlService {
 
@@ -41,7 +36,7 @@ public class MediaUrlService {
 
     /**
      * Phân giải URL video từ thực thể {@link SignVideo}.
-     * Thứ tự: directUrl -> driveFileId (preview) -> backend stream endpoint theo objectKey / id.
+     * Thứ tự: R2 theo objectKey -> directUrl -> driveFileId -> backend stream endpoint.
      */
     public String resolveVideoUrl(SignVideo video) {
         if (video == null) {
@@ -50,13 +45,20 @@ public class MediaUrlService {
         if (video.getObjectKey() != null && video.getObjectKey().startsWith("seed/placeholder/")) {
             return null;
         }
-        // Ưu tiên tuyệt đối video web (web/*.mp4). Nếu có cấu hình R2 public base URL thì trả
-        // thẳng link công khai của bucket R2 (FE tải trực tiếp); nếu không thì phát luồng qua backend.
+        // Bản web đã được tối ưu cho trình duyệt. Khi chưa cấu hình CDN, vẫn ưu tiên
+        // phát bản này qua API thay vì rơi về liên kết Drive cũ.
         if (video.getObjectKey() != null && video.getObjectKey().startsWith("web/")) {
             if (!r2PublicBaseUrl.isEmpty()) {
                 return r2PublicBaseUrl + "/" + encodePath(video.getObjectKey());
             }
             return baseUrl + "/api/v1/media/stream/" + video.getId();
+        }
+        // Cả raw/* và web/* đều đã được đồng bộ lên R2. Trả URL CDN trực tiếp để tránh
+        // giới hạn/bộ đệm của Google Drive và không kéo lưu lượng video qua API.
+        if (video.getObjectKey() != null
+                && !video.getObjectKey().isBlank()
+                && !r2PublicBaseUrl.isEmpty()) {
+            return r2PublicBaseUrl + "/" + encodePath(video.getObjectKey());
         }
         if (video.getDirectUrl() != null && !video.getDirectUrl().isBlank()) {
             String direct = video.getDirectUrl();

@@ -3,6 +3,13 @@
 import { useState, useEffect } from "react";
 import { apiCall } from "@/lib/api";
 import Link from "next/link";
+import {
+  IconUsers,
+  IconBook,
+  IconWebcam,
+  IconChart,
+  IconShield,
+} from "@/components/ui/Icons";
 
 interface DashboardStats {
   totalUsers: number;
@@ -12,6 +19,10 @@ interface DashboardStats {
   totalRevenueVnd: number;
   activeSubscriptionsCount: number;
   totalQuestsAvailable: number;
+  metricScope: "ALL_TIME" | "DATE_RANGE";
+  timeZone: string;
+  rangeFrom: string | null;
+  rangeToExclusive: string | null;
   recentCompletions: {
     lessonTitle: string;
     userEmail: string;
@@ -24,13 +35,21 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [rangeError, setRangeError] = useState<string | null>(null);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [appliedRange, setAppliedRange] = useState<{ from: string; to: string } | null>(null);
 
-  const fetchStats = async () => {
+  const fetchStats = async (range?: { from: string; to: string } | null) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiCall<DashboardStats>("/api/v1/admin/dashboard/stats");
+      const endpoint = range
+        ? `/api/v1/admin/dashboard/stats?from=${range.from}&to=${range.to}`
+        : "/api/v1/admin/dashboard/stats";
+      const data = await apiCall<DashboardStats>(endpoint);
       setStats(data);
+      setAppliedRange(range ?? null);
     } catch (err: any) {
       setError(err?.errorMessage || "Không thể tải dữ liệu thống kê. Vui lòng kiểm tra quyền Admin.");
     } finally {
@@ -55,6 +74,24 @@ export default function AdminDashboardPage() {
     });
   };
 
+  const formatInputDate = (value: string) => {
+    const [year, month, day] = value.split("-");
+    return `${day}/${month}/${year}`;
+  };
+
+  const applyDateRange = () => {
+    setRangeError(null);
+    if (!fromDate || !toDate) {
+      setRangeError("Chọn đủ cả ngày bắt đầu và ngày kết thúc");
+      return;
+    }
+    if (fromDate > toDate) {
+      setRangeError("Ngày bắt đầu không được sau ngày kết thúc");
+      return;
+    }
+    void fetchStats({ from: fromDate, to: toDate });
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -71,14 +108,14 @@ export default function AdminDashboardPage() {
   if (error) {
     return (
       <div className="p-8 bg-danger-50 border border-danger-200 rounded-2xl text-center max-w-xl mx-auto my-12">
-        <span className="text-3xl block mb-2">⚠️</span>
+        <IconShield className="h-10 w-10 text-danger-600 mx-auto mb-2" />
         <h3 className="font-bold text-danger-900 text-lg">Thông báo bảo mật</h3>
         <p className="text-sm text-danger-700 mt-1">{error}</p>
         <p className="text-xs text-danger-500 mt-3">
           Tài khoản cần có quyền <code className="font-mono bg-danger-100 px-1 py-0.5 rounded">ROLE_ADMIN</code> để xem trang này.
         </p>
         <button
-          onClick={fetchStats}
+          onClick={() => void fetchStats(appliedRange)}
           className="mt-4 px-4 py-2 bg-danger-600 hover:bg-danger-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
         >
           Thử lại
@@ -98,12 +135,62 @@ export default function AdminDashboardPage() {
           </p>
         </div>
         <button
-          onClick={fetchStats}
+          onClick={() => void fetchStats(appliedRange)}
           className="btn btn-secondary btn-sm self-start sm:self-auto cursor-pointer"
         >
           <span>↻</span>
           <span>Làm mới số liệu</span>
         </button>
+      </div>
+
+      <div className="card p-5 space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-end gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+            <label className="text-xs font-semibold text-ink-700">
+              Từ ngày
+              <input
+                aria-label="Từ ngày"
+                type="date"
+                value={fromDate}
+                onChange={(event) => setFromDate(event.target.value)}
+                className="mt-1 block w-full rounded-xl border border-ink-200 bg-white px-3 py-2"
+              />
+            </label>
+            <label className="text-xs font-semibold text-ink-700">
+              Đến ngày
+              <input
+                aria-label="Đến ngày"
+                type="date"
+                value={toDate}
+                onChange={(event) => setToDate(event.target.value)}
+                className="mt-1 block w-full rounded-xl border border-ink-200 bg-white px-3 py-2"
+              />
+            </label>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={applyDateRange} className="btn btn-primary btn-sm">
+              Áp dụng khoảng ngày
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFromDate("");
+                setToDate("");
+                setRangeError(null);
+                void fetchStats(null);
+              }}
+              className="btn btn-secondary btn-sm"
+            >
+              Xem tất cả
+            </button>
+          </div>
+        </div>
+        {rangeError && <p role="alert" className="text-xs font-semibold text-danger-700">{rangeError}</p>}
+        <p className="text-xs font-semibold text-ink-600">
+          {stats?.metricScope === "DATE_RANGE" && appliedRange
+            ? `Từ ${formatInputDate(appliedRange.from)} đến hết ${formatInputDate(appliedRange.to)}`
+            : "Tổng từ trước đến nay"}
+        </p>
       </div>
 
       {/* KPI Stats Cards */}
@@ -112,7 +199,7 @@ export default function AdminDashboardPage() {
         <div className="card p-5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase text-ink-500">Tổng Học Viên</span>
-            <span className="text-xl">👥</span>
+            <IconUsers className="h-5 w-5 text-brand-600" />
           </div>
           <div className="mt-3">
             <p className="text-2xl font-bold text-ink-900">{stats?.totalUsers.toLocaleString("vi-VN")}</p>
@@ -126,13 +213,13 @@ export default function AdminDashboardPage() {
         <div className="card p-5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase text-ink-500">Bài Học Hoàn Thành</span>
-            <span className="text-xl">🎓</span>
+            <IconBook className="h-5 w-5 text-brand-600" />
           </div>
           <div className="mt-3">
             <p className="text-2xl font-bold text-ink-900">
               {stats?.totalLessonsCompleted.toLocaleString("vi-VN")}
             </p>
-            <p className="text-xs font-semibold text-ink-500 mt-1">Lượt hoàn thành tất cả các Unit</p>
+            <p className="text-xs font-semibold text-ink-500 mt-1">Lượt hoàn thành trong phạm vi đã chọn</p>
           </div>
         </div>
 
@@ -140,13 +227,13 @@ export default function AdminDashboardPage() {
         <div className="card p-5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase text-ink-500">Thực Hành Camera AI</span>
-            <span className="text-xl">📷</span>
+            <IconWebcam className="h-5 w-5 text-sky-600" />
           </div>
           <div className="mt-3">
             <p className="text-2xl font-bold text-ink-900">
               {stats?.totalAiAttempts.toLocaleString("vi-VN")}
             </p>
-            <p className="text-xs font-semibold text-sky-600 mt-1">Lượt chấm ký hiệu VSL</p>
+            <p className="text-xs font-semibold text-sky-600 mt-1">Lượt chấm ký hiệu VSL trong phạm vi</p>
           </div>
         </div>
 
@@ -154,13 +241,15 @@ export default function AdminDashboardPage() {
         <div className="card p-5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase text-ink-500">Doanh Thu Gói Cước</span>
-            <span className="text-xl">💳</span>
+            <IconChart className="h-5 w-5 text-sun-600" />
           </div>
           <div className="mt-3">
             <p className="text-2xl font-bold text-brand-500">{formatVnd(stats?.totalRevenueVnd || 0)}</p>
-            <p className="text-xs font-semibold text-sun-600 mt-1">
-              {stats?.activeSubscriptionsCount} gói Premium kích hoạt
+            <p className="text-xs font-semibold text-sun-600 mt-1">Chỉ tính giao dịch PAID</p>
+            <p className="text-xs font-semibold text-ink-500 mt-1">
+              {stats?.activeSubscriptionsCount} gói Premium
             </p>
+            <p className="text-xs font-semibold text-ink-500 mt-1">Đang hiệu lực hiện tại</p>
           </div>
         </div>
       </div>
@@ -171,7 +260,7 @@ export default function AdminDashboardPage() {
           href="/admin/courses"
           className="card p-5 hover:border-brand-500 transition-all group"
         >
-          <div className="text-2xl mb-2">📚</div>
+          <IconBook className="h-6 w-6 text-brand-600 mb-2 group-hover:text-brand-700 transition-colors" />
           <h3 className="font-semibold text-ink-900 group-hover:text-brand-500 transition-colors">
             Quản trị Khóa học & Bài học
           </h3>

@@ -11,9 +11,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
+            // Dữ liệu được cache 30s trước khi được coi là cũ
             staleTime: 30_000,
-            retry: 1,
+            // Cache được giữ trong bộ nhớ 5 phút, sau đó bị loại bỏ
+            gcTime: 5 * 60 * 1000,
+            // Không tự động fetch lại khi cửa sổ focus
             refetchOnWindowFocus: false,
+            // Chỉ retry 1 lần khi lỗi
+            retry: 1,
+            // Timeout 10s cho request
+            networkMode: "always",
+          },
+          mutations: {
+            retry: 1,
+            networkMode: "always",
           },
         },
       }),

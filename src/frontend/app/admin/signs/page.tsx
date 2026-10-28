@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { apiCall } from "@/lib/api";
+import { normalizeListPage } from "@/lib/paginated-list";
 import { SignVideoPlayer } from "@/components/SignVideoPlayer";
 import { IconVideo, IconSearch } from "@/components/ui/Icons";
 
@@ -22,13 +23,6 @@ interface AdminSignItem {
   regionLabel?: string;
   signerLabel?: string;
   durationMs?: number;
-}
-
-interface SignListResponse {
-  items: AdminSignItem[];
-  totalPages: number;
-  totalElements: number;
-  currentPage: number;
 }
 
 const WORD_CLASSES = [
@@ -89,13 +83,12 @@ export default function AdminSignsPage() {
       if (searchVal.trim()) params.set("search", searchVal.trim());
       if (topicVal.trim()) params.set("topic", topicVal.trim());
 
-      const res = await apiCall<SignListResponse>(`/api/v1/admin/signs?${params.toString()}`);
-      if (res) {
-        setSigns(res.items || []);
-        setTotalPages(res.totalPages || 1);
-        setTotalElements(res.totalElements || 0);
-        setCurrentPage(res.currentPage || 0);
-      }
+      const res = await apiCall<unknown>(`/api/v1/admin/signs?${params.toString()}`);
+      const result = normalizeListPage<AdminSignItem>(res, page);
+      setSigns(result.items);
+      setTotalPages(result.totalPages);
+      setTotalElements(result.totalElements);
+      setCurrentPage(result.currentPage);
     } catch (err: any) {
       setMessage({ text: err?.errorMessage || "Không thể tải danh sách ký hiệu.", type: "error" });
     } finally {

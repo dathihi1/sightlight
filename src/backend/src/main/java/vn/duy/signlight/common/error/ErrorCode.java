@@ -50,12 +50,15 @@ public enum ErrorCode {
 
     // --------------------------------------------------------------- billing (06)
     PAYMENT_NOT_COMPLETED("06101"),
+    PAYMENT_AMOUNT_MISMATCH("06102"),
     PREMIUM_REQUIRED("06203"),
     AI_QUOTA_EXCEEDED("06204"),
 
     // ---------------------------------------------------------- gamification (07)
     EXP_INSUFFICIENT("07201"),
     ITEM_ALREADY_OWNED("07202"),
+    AD_REWARD_LIMIT_REACHED("07203"),
+    UNLOCK_TICKET_UNAVAILABLE("07204"),
 
     // --------------------------------------------------------- airecognition (10)
     AI_MODEL_VERSION_UNSUPPORTED("10101"),

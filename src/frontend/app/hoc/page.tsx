@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { ErrorNotice } from "@/components/ErrorNotice";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { IconArrowRight, IconCheck, IconCrown, IconFlame, IconLock, IconStar, IconTarget, IconShop } from "@/components/ui/Icons";
+import { IconArrowRight, IconCheck, IconFlame, IconLock, IconStar, IconTarget, IconShop } from "@/components/ui/Icons";
 import { UnlockLessonModal } from "@/components/UnlockLessonModal";
 import { useAuthSession } from "@/lib/useAuthSession";
 import { apiCall } from "@/lib/api";
@@ -51,6 +51,7 @@ interface Summary {
   signsMastered: number;
   averageScore: number;
   expBalance: number;
+  unlockTicketCount: number;
   recentActivities: { date: string; minutes: number; goalMinutes: number; goalMet: boolean }[];
 }
 
@@ -77,8 +78,7 @@ function currentWeek(activities: Summary["recentActivities"]) {
 export default function LearningPathPage() {
   const { isClient, isLoggedIn, isLoading, user } = useAuthSession();
   const courseId = user?.preferences.activeCourseId ?? null;
-  const [unlockModalLesson, setUnlockModalLesson] = useState<LessonNode | null>(null);
-
+  const [unlockLesson, setUnlockLesson] = useState<{ id: string; title: string } | null>(null);
   const path = useQuery({
     queryKey: ["path", courseId],
     enabled: Boolean(courseId),
@@ -143,6 +143,7 @@ export default function LearningPathPage() {
     .slice(0, 2);
 
   return (
+    <>
     <div className="grid gap-8 p-4 sm:p-8 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="min-w-0">
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -176,21 +177,10 @@ export default function LearningPathPage() {
               index={idx}
               nextLessonId={data.nextLessonId}
               defaultOpen={lessonsOf(unit).some((l) => l.id === data.nextLessonId) || (idx === 0 && !data.nextLessonId)}
-              onSelectLockedLesson={setUnlockModalLesson}
+              onUnlock={setUnlockLesson}
             />
           ))}
         </div>
-
-        <UnlockLessonModal
-          isOpen={Boolean(unlockModalLesson)}
-          onClose={() => setUnlockModalLesson(null)}
-          lesson={unlockModalLesson}
-          userExpBalance={summary.data?.expBalance ?? 0}
-          onUnlocked={() => {
-            path.refetch();
-            summary.refetch();
-          }}
-        />
       </div>
 
       <aside className="space-y-5" aria-label="Thống kê cá nhân">
@@ -205,6 +195,17 @@ export default function LearningPathPage() {
         ) : null}
       </aside>
     </div>
+    <UnlockLessonModal
+      lesson={unlockLesson}
+      expBalance={summary.data?.expBalance ?? 0}
+      ticketCount={summary.data?.unlockTicketCount ?? 0}
+      onClose={() => setUnlockLesson(null)}
+      onUnlocked={() => {
+        void path.refetch();
+        void summary.refetch();
+      }}
+    />
+    </>
   );
 }
 
@@ -212,7 +213,7 @@ function ContinueCard({ unit, index, nextLessonId }: { unit: UnitNode; index: nu
   const ls = lessonsOf(unit);
   const done = ls.filter((l) => l.status === "COMPLETED").length;
   const pct = Math.round((done / Math.max(ls.length, 1)) * 100);
-  const target = ls.find((l) => l.id === nextLessonId) ?? ls.find((l) => l.status !== "COMPLETED" && !l.locked && !l.premiumLocked);
+  const target = ls.find((l) => l.id === nextLessonId) ?? ls.find((l) => l.status !== "COMPLETED" && !l.locked);
 
   return (
     <article className="rounded-3xl border border-ink-200 bg-white p-5" style={{ boxShadow: "var(--shadow-soft)" }}>
@@ -221,7 +222,7 @@ function ContinueCard({ unit, index, nextLessonId }: { unit: UnitNode; index: nu
         <div className="min-w-0">
           <h3 className="truncate text-lg font-semibold text-ink-900">{unit.title}</h3>
           <p className="text-xs font-semibold uppercase tracking-wider text-ink-500">
-            Chủ đề {index + 1} · {unit.isFree ? "Miễn phí" : "Premium"}
+            Chủ đề {index + 1} · Miễn phí
           </p>
         </div>
       </div>
@@ -240,7 +241,7 @@ function ContinueCard({ unit, index, nextLessonId }: { unit: UnitNode; index: nu
           <IconArrowRight className="h-4 w-4" />
         </Link>
       ) : (
-        <p className="mt-4 text-sm text-ink-600">{done === ls.length ? "Đã hoàn thành chủ đề" : "Cần mở khoá để học tiếp"}</p>
+        <p className="mt-4 text-sm text-ink-600">{done === ls.length ? "Đã hoàn thành chủ đề" : "Hoàn thành bài trước để học tiếp"}</p>
       )}
     </article>
   );
@@ -251,13 +252,13 @@ function UnitSection({
   index,
   nextLessonId,
   defaultOpen,
-  onSelectLockedLesson,
+  onUnlock,
 }: {
   unit: UnitNode;
   index: number;
   nextLessonId: string | null;
   defaultOpen: boolean;
-  onSelectLockedLesson: (lesson: LessonNode) => void;
+  onUnlock: (lesson: { id: string; title: string }) => void;
 }) {
   const ls = lessonsOf(unit);
   const done = ls.filter((l) => l.status === "COMPLETED").length;
@@ -271,11 +272,6 @@ function UnitSection({
             {done}/{ls.length} bài đã xong
           </p>
         </div>
-        {!unit.isFree && (
-          <span className="chip bg-grape-50 text-grape-700">
-            <IconCrown className="h-4 w-4" /> Premium
-          </span>
-        )}
         <svg className="h-5 w-5 shrink-0 text-ink-500 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
           <path d="m6 9 6 6 6-6" />
         </svg>
@@ -291,7 +287,7 @@ function UnitSection({
                   lesson={lesson}
                   isNext={lesson.id === nextLessonId}
                   isLast={i === chapter.lessons.length - 1}
-                  onSelectLockedLesson={onSelectLockedLesson}
+                  onUnlock={onUnlock}
                 />
               ))}
             </ol>
@@ -306,15 +302,14 @@ function LessonRow({
   lesson,
   isNext,
   isLast,
-  onSelectLockedLesson,
+  onUnlock,
 }: {
   lesson: LessonNode;
   isNext: boolean;
   isLast: boolean;
-  onSelectLockedLesson: (lesson: LessonNode) => void;
+  onUnlock: (lesson: { id: string; title: string }) => void;
 }) {
-  // Hai loại khoá cần hai thông điệp khác nhau (BR-A12 vs BR-A14) — gộp lại là người học hiểu sai.
-  const reason = lesson.premiumLocked ? "Cần gói Premium" : lesson.locked ? "Học xong bài trước để mở" : null;
+  const reason = lesson.locked ? "Học xong bài trước để mở" : null;
   const done = lesson.status === "COMPLETED";
   const current = !reason && (isNext || lesson.status === "IN_PROGRESS");
   const status = reason ?? (done ? "Đã hoàn thành" : lesson.status === "IN_PROGRESS" ? "Đang học" : "Chưa học");
@@ -324,8 +319,8 @@ function LessonRow({
       <IconCheck className="h-4 w-4" />
     </span>
   ) : reason ? (
-    <span className={`grid h-8 w-8 place-items-center rounded-full ${lesson.premiumLocked ? "bg-grape-50 text-grape-600" : "bg-ink-100 text-ink-400"}`}>
-      {lesson.premiumLocked ? <IconCrown className="h-4 w-4" /> : <IconLock className="h-3.5 w-3.5" />}
+    <span className="grid h-8 w-8 place-items-center rounded-full bg-ink-100 text-ink-400">
+      <IconLock className="h-3.5 w-3.5" />
     </span>
   ) : (
     <span className={`grid h-8 w-8 place-items-center rounded-full border-2 bg-white ${current ? "border-brand-500" : "border-ink-300"}`}>
@@ -344,9 +339,9 @@ function LessonRow({
       </div>
       {current && <span className="btn btn-primary btn-sm pointer-events-none">{lesson.status === "IN_PROGRESS" ? "Tiếp tục" : "Bắt đầu"}</span>}
       {reason && (
-        <span className="inline-flex items-center rounded-xl bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 border border-amber-200">
+        <button type="button" onClick={() => onUnlock({ id: lesson.id, title: lesson.title })} className="btn btn-secondary btn-sm shrink-0">
           Mở khóa
-        </span>
+        </button>
       )}
     </div>
   );
@@ -356,14 +351,9 @@ function LessonRow({
       {!isLast && <span className="absolute bottom-0 left-4 top-11 w-px -translate-x-1/2 bg-ink-200" aria-hidden="true" />}
       <div className="pt-3.5">{dot}</div>
       {reason ? (
-        <button
-          type="button"
-          onClick={() => onSelectLockedLesson(lesson)}
-          className="group flex flex-1 text-left rounded-2xl pb-1 cursor-pointer"
-          title="Nhấn để mở khóa bài học này bằng 5k/25k VND hoặc 5k/25k EXP"
-        >
+        <div className="group flex flex-1 rounded-2xl pb-1" aria-disabled="true">
           {body}
-        </button>
+        </div>
       ) : (
         <Link href={`/hoc/bai-moi/${lesson.id}`} className="group flex flex-1 rounded-2xl pb-1" aria-label={`${lesson.title} — ${status}`}>
           {body}
@@ -400,7 +390,7 @@ function ProfileCard({ name, coursePct, summary }: { name: string; coursePct: nu
           {summary && (
             <div className="mt-1 flex items-center gap-2">
               <span className="flex items-center gap-1 text-sm font-bold text-sun-900">
-                <IconStar className="h-4 w-4 text-sun-500" /> {summary.expBalance} XP
+                <IconStar className="h-4 w-4 text-sun-500" /> {summary.expBalance} EXP
               </span>
               <Link
                 href="/cua-hang"

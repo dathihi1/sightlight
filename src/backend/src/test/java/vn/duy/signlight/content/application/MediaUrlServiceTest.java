@@ -43,8 +43,8 @@ class MediaUrlServiceTest {
     }
 
     @Test
-    @DisplayName("resolveVideoUrl trả link R2 công khai (đã mã hoá) cho video web khi cấu hình R2 base URL")
-    void returnsR2PublicUrlForWebObjectKey() {
+    @DisplayName("resolveVideoUrl trả link R2 công khai (đã mã hoá) cho mọi objectKey")
+    void returnsR2PublicUrlForObjectKey() {
         MediaUrlService r2Service = new MediaUrlService(
                 "http://localhost:18080",
                 "test-secret-key-at-least-32-chars-long!",
@@ -62,6 +62,23 @@ class MediaUrlServiceTest {
         assertFalse(url.contains(" "));
         assertFalse(url.contains("("));
         assertFalse(url.contains("+"));
+    }
+
+    @Test
+    @DisplayName("resolveVideoUrl ưu tiên R2 cho raw objectKey thay vì link Drive cũ")
+    void prefersR2ForRawObjectKeyOverLegacyDriveUrl() {
+        MediaUrlService r2Service = new MediaUrlService(
+                "http://localhost:18080",
+                "test-secret-key-at-least-32-chars-long!",
+                "https://pub-abc123.r2.dev");
+        SignVideo video = SignVideo.builder()
+                .id(UUID.randomUUID())
+                .directUrl("https://drive.google.com/file/d/1abcXYZ/view")
+                .driveFileId("1abcXYZ")
+                .objectKey("raw/000300.mp4")
+                .build();
+
+        assertEquals("https://pub-abc123.r2.dev/raw/000300.mp4", r2Service.resolveVideoUrl(video));
     }
 
     @Test

@@ -2,7 +2,6 @@ package vn.duy.signlight.admin.web;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vn.duy.signlight.admin.application.AdminQuestService;
 import vn.duy.signlight.admin.web.dto.AdminQuestDtos;
@@ -37,9 +37,15 @@ public class AdminQuestController {
 
     @GetMapping
     @Operation(summary = "Lấy toàn bộ danh sách nhiệm vụ hệ thống")
-    public ResponseEntity<TransactionResponse<List<AdminQuestDtos.QuestItem>>> listQuests(
-            @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId) {
-        List<AdminQuestDtos.QuestItem> result = adminQuestService.listAllQuests();
+    public ResponseEntity<TransactionResponse<AdminQuestDtos.QuestListResult>> listQuests(
+            @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId,
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "type", required = false) String type,
+            @RequestParam(value = "active", required = false) Boolean active,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size) {
+        AdminQuestDtos.QuestListResult result = adminQuestService.listQuests(
+                search, type, active, page, size);
         return ResponseEntity.ok(ApiResponses.ok(requestId, result));
     }
 

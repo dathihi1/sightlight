@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Mascot } from "@/components/ui/Mascot";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { ErrorNotice } from "@/components/ErrorNotice";
 import { ApiError, apiCall, tokenStore } from "@/lib/api";
 import { dispatchAuthChange } from "@/lib/useAuthSession";
@@ -80,6 +80,7 @@ function RegisterContent() {
   const [password, setPassword] = useState("");
   const [referralCode, setReferralCode] = useState(initialRef);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const acceptedTermsRef = useRef(acceptedTerms);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -116,12 +117,21 @@ function RegisterContent() {
     }
   }, [hearingAbout, learningReason, skillLevel, dailyGoalMinutes]);
 
+  // Trình xử lý của Google được đăng ký một lần; ref giúp nó luôn đọc được lựa chọn mới nhất.
+  useEffect(() => {
+    acceptedTermsRef.current = acceptedTerms;
+  }, [acceptedTerms]);
+
   // Cấu hình Google Sign-In ở Bước 5
   useEffect(() => {
     if (currentStep !== 5 || !GOOGLE_CLIENT_ID) return;
 
     const handleCredential = async (response: GoogleCredentialResponse) => {
       setError(null);
+      if (!acceptedTermsRef.current) {
+        setError("Vui lòng đọc và đồng ý với Điều khoản sử dụng và Chính sách riêng tư trước khi tạo tài khoản.");
+        return;
+      }
       setSubmitting(true);
       try {
         const result = await apiCall<GoogleLoginResult>("/api/v1/auth/google", {
@@ -163,6 +173,10 @@ function RegisterContent() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
+    if (!acceptedTerms) {
+      setError("Vui lòng đọc và đồng ý với Điều khoản sử dụng và Chính sách riêng tư trước khi tạo tài khoản.");
+      return;
+    }
     setSubmitting(true);
     try {
       const result = await apiCall<RegisterResult>("/api/v1/auth/register", {
@@ -627,18 +641,39 @@ function RegisterContent() {
               />
             </div>
 
-            <label className="flex items-start gap-2 text-xs text-ink-600">
+            <label htmlFor="acceptedTerms" className="flex items-start gap-2.5 rounded-xl border border-ink-200 bg-ink-50/70 p-3 text-xs leading-5 text-ink-700 transition hover:border-brand-200">
               <input
+                id="acceptedTerms"
+                name="acceptedTerms"
                 type="checkbox"
                 checked={acceptedTerms}
                 onChange={(event) => setAcceptedTerms(event.target.checked)}
-                className="mt-0.5 rounded accent-brand-500 focus:ring-brand-500 cursor-pointer"
+                aria-describedby="acceptedTerms-hint"
+                className="mt-0.5 h-4 w-4 shrink-0 rounded accent-brand-500 focus:ring-brand-500 cursor-pointer"
               />
-              <span>
+              <span id="acceptedTerms-hint">
                 {t(
-                  "Tôi đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư.",
-                  "I agree to the Terms of Service and Privacy Policy."
+                  "Tôi đã đọc và đồng ý với ",
+                  "I have read and agree to the "
                 )}
+                <Link
+                  href="/dieu-khoan-su-dung"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-brand-700 underline underline-offset-2 hover:text-brand-800"
+                >
+                  {t("Điều khoản sử dụng", "Terms of Service")}
+                </Link>
+                {t(" và ", " and the ")}
+                <Link
+                  href="/chinh-sach-rieng-tu"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-brand-700 underline underline-offset-2 hover:text-brand-800"
+                >
+                  {t("Chính sách riêng tư", "Privacy Policy")}
+                </Link>
+                {t(" của SignLight.", " of SignLight.")}
               </span>
             </label>
 

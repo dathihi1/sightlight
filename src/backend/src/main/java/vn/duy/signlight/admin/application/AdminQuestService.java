@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.duy.signlight.admin.web.dto.AdminQuestDtos;
@@ -25,10 +28,24 @@ public class AdminQuestService {
     }
 
     @Transactional(readOnly = true)
-    public List<AdminQuestDtos.QuestItem> listAllQuests() {
-        return questRepository.findAllByOrderByOrderIndexAsc().stream()
-                .map(AdminQuestDtos.QuestItem::from)
-                .toList();
+    public AdminQuestDtos.QuestListResult listQuests(
+            String search, String questType, Boolean active, int page, int size) {
+        int boundedPage = Math.max(0, page);
+        Page<Quest> result = questRepository.adminSearch(normalize(search), upper(questType), active,
+                PageRequest.of(boundedPage, Math.max(1, Math.min(100, size)),
+                        Sort.by(Sort.Order.asc("orderIndex"), Sort.Order.asc("id"))));
+        return new AdminQuestDtos.QuestListResult(
+                result.getContent().stream().map(AdminQuestDtos.QuestItem::from).toList(),
+                result.getTotalPages(), result.getTotalElements(), boundedPage);
+    }
+
+    private String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String upper(String value) {
+        String normalized = normalize(value);
+        return normalized == null ? null : normalized.toUpperCase(java.util.Locale.ROOT);
     }
 
     @Transactional

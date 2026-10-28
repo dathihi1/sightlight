@@ -17,6 +17,7 @@ public record GamificationSummaryResult(
         List<DailyActivityDto> recentActivities,
         int expBalance,
         int aiBonusQuota,
+        int unlockTicketCount,
         List<String> ownedBadges
 ) {
     public record DailyActivityDto(

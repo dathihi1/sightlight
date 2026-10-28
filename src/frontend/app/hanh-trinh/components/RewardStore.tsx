@@ -136,7 +136,7 @@ export function RewardStore() {
       {/* Consumables Section */}
       <div className="space-y-4">
         <h3 className="text-xl font-bold text-ink-900">
-          {t("Lượt AI, Vé học & Hỗ trợ học tập", "AI Quota, Passes & Boosters")}
+          {t("Lượt AI và hỗ trợ học tập", "AI Quota and Learning Support")}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {consumables.map((item) => (
@@ -189,9 +189,7 @@ function StoreItemCard({
 }) {
   const getIcon = (key: string) => {
     if (key.startsWith("AI_BONUS")) return "🚀";
-    if (key.startsWith("LESSON_UNLOCK")) return "🎫";
     if (key === "STREAK_FREEZE") return "❄️";
-    if (key === "EXP_BOOSTER") return "✨";
     if (key === "BADGE_AMBASSADOR") return "👑";
     if (key === "BADGE_PERSISTENCE") return "🔥";
     if (key === "BADGE_COMMUNITY_HERO") return "⚡";

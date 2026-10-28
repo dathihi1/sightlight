@@ -156,6 +156,16 @@ public class ContentTreeService {
                         (first, second) -> first));
     }
 
+    /** Tải các video theo ID để dựng lựa chọn dạng ký hiệu mà không phát sinh truy vấn N+1. */
+    @Transactional(readOnly = true)
+    public Map<UUID, SignVideo> videosByIds(Collection<UUID> videoIds) {
+        if (videoIds.isEmpty()) {
+            return Map.of();
+        }
+        return signVideoRepository.findAllById(videoIds).stream()
+                .collect(Collectors.toMap(SignVideo::getId, video -> video));
+    }
+
     /** Cây nội dung thô — chưa gắn tiến độ của người học. */
     public record CourseTree(
             List<Unit> units,

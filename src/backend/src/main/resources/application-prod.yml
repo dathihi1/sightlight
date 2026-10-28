@@ -1,0 +1,12 @@
+spring:
+  jpa:
+    hibernate:
+      # Flyway is the only schema owner in production.
+      ddl-auto: validate
+
+signlight:
+  seed:
+    enabled: false
+
+server:
+  forward-headers-strategy: framework

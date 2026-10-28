@@ -10,6 +10,35 @@ import lombok.NoArgsConstructor;
 
 public class ArticleDtos {
 
+    public record ArticleSummary(
+            UUID id,
+            String slug,
+            String titleVi,
+            String titleEn,
+            String excerptVi,
+            String excerptEn,
+            String author,
+            String category,
+            String categoryLabelVi,
+            String categoryLabelEn,
+            List<String> tags,
+            String thumbnailUrl,
+            String readTimeVi,
+            String readTimeEn,
+            boolean published,
+            int viewsCount,
+            int orderIndex,
+            Instant createdAt,
+            Instant updatedAt
+    ) {}
+
+    public record ArticleListResult(
+            List<ArticleSummary> items,
+            int totalPages,
+            long totalElements,
+            int currentPage
+    ) {}
+
     @Data
     @Builder
     @NoArgsConstructor

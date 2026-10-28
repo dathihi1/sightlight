@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { SignLightLogo } from "./SignLightLogo";
 import { useLanguage } from "@/context/LanguageContext";
+import { IconFacebook, IconMail, IconTikTok } from "@/components/ui/Icons";
 
 export function Footer() {
   const { t } = useLanguage();
@@ -54,6 +55,39 @@ export function Footer() {
             <p className="mt-3 max-w-xs text-base text-ink-600">
               {t("Học Ngôn ngữ Ký hiệu Việt Nam, mỗi ngày một chút.", "Learn Vietnamese Sign Language, a little every day.")}
             </p>
+            <div className="mt-5">
+              <h2 className="text-sm font-bold text-ink-500">{t("Liên hệ", "Contact")}</h2>
+              <div className="mt-3 flex items-center gap-3">
+                <a
+                  href="mailto:signlight.forwork@gmail.com"
+                  aria-label={t("Gửi email cho SignLight", "Email SignLight")}
+                  title={t("Gửi email", "Email us")}
+                  className="grid h-10 w-10 place-items-center rounded-xl border border-ink-200 text-ink-700 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600"
+                >
+                  <IconMail className="h-5 w-5" />
+                </a>
+                <a
+                  href="https://www.facebook.com/profile.php?id=61594634564267"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook SignLight"
+                  title="Facebook"
+                  className="grid h-10 w-10 place-items-center rounded-xl border border-ink-200 text-ink-700 transition-colors hover:border-[#1877f2] hover:bg-[#1877f2]/10 hover:text-[#1877f2]"
+                >
+                  <IconFacebook className="h-5 w-5" />
+                </a>
+                <a
+                  href="https://www.tiktok.com/@signlight_"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="TikTok SignLight"
+                  title="TikTok"
+                  className="grid h-10 w-10 place-items-center rounded-xl border border-ink-200 text-ink-700 transition-colors hover:border-ink-500 hover:bg-ink-100 hover:text-ink-900"
+                >
+                  <IconTikTok className="h-5 w-5" />
+                </a>
+              </div>
+            </div>
           </div>
 
           {columns.map((col) => (

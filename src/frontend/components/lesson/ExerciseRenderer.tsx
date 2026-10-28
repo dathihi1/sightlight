@@ -1,6 +1,7 @@
 import { ExerciseNode, OptionNode, MatchPair } from "@/lib/lesson-types";
 import { SignVideoPlayer } from "@/components/SignVideoPlayer";
-import { useState } from "react";
+import { shuffleForDisplay } from "@/lib/shuffle";
+import { useMemo, useState } from "react";
 
 interface ExerciseRendererProps {
   exercise: ExerciseNode;
@@ -72,6 +73,7 @@ export function ExerciseRenderer({
       case "MATCH_SIGN_MEANING":
         return (
           <MatchSignMeaningExercise
+            key={exercise.id}
             exercise={exercise}
             disabled={disabled}
             matches={matches}
@@ -148,6 +150,53 @@ function ChoiceExercise({
   disabled: boolean;
   feedback?: ExerciseRendererProps["feedback"];
 }) {
+  // Backend đã phân bổ vị trí đáp án giữa các câu; giữ nguyên thứ tự này để
+  // không vô tình làm các đáp án đúng quay lại cùng một vị trí.
+  const options = exercise.options ?? [];
+
+  if (exercise.type === "MEANING_TO_SIGN") {
+    return (
+      <div className="space-y-4">
+        {exercise.promptText && <FormattedPrompt prompt={exercise.promptText} />}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {options.map((option, index) => {
+            const selected = selectedOptionId === option.id;
+            const right = !!feedback && (feedback.correctOptionId === option.id || (feedback.isCorrect && selected));
+            const wrong = !!feedback && selected && !feedback.isCorrect;
+            const tone = right
+              ? "border-success-500 bg-success-50 ring-2 ring-success-200"
+              : wrong
+                ? "border-danger-400 bg-danger-50 ring-2 ring-danger-200 animate-shake"
+                : selected
+                  ? "border-brand-500 bg-brand-50 ring-2 ring-brand-100"
+                  : "border-ink-200 bg-white";
+
+            return (
+              <div key={option.id} className={`overflow-hidden rounded-3xl border p-3 ${tone}`}>
+                <SignVideoPlayer
+                  videoUrl={option.videoUrl}
+                  title={`Lựa chọn ký hiệu ${index + 1}`}
+                  autoPlay={false}
+                  className="max-h-64"
+                />
+                <button
+                  type="button"
+                  onClick={() => onSelectOption(option.id)}
+                  disabled={disabled}
+                  aria-pressed={selected}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-ink-100 px-4 py-3 text-base font-bold text-ink-800 hover:bg-ink-200 disabled:cursor-not-allowed"
+                >
+                  <span aria-hidden="true">{right ? "✓" : wrong ? "✕" : index + 1}</span>
+                  {right ? "Ký hiệu đúng" : wrong ? "Chưa đúng" : "Chọn ký hiệu này"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Prompt */}
@@ -162,7 +211,7 @@ function ChoiceExercise({
 
       {/* Options */}
       <div className="grid gap-3 sm:grid-cols-2">
-        {exercise.options?.map((option, i) => {
+        {options.map((option, i) => {
           const selected = selectedOptionId === option.id;
           // Sau khi chấm: đáp án đúng luôn sáng xanh lá; lựa chọn sai rung + đỏ.
           const right = !!feedback && (feedback.correctOptionId === option.id || (feedback.isCorrect && selected));
@@ -337,7 +386,9 @@ function MatchSignMeaningExercise({
   matches?: MatchPair[];
   onMatches?: (matches: MatchPair[]) => void;
 }) {
-  const options = exercise.options || [];
+  const options = useMemo(() => exercise.options ?? [], [exercise.options]);
+  const promptOptions = useMemo(() => shuffleForDisplay(options), [exercise.id, options]);
+  const meaningOptions = useMemo(() => shuffleForDisplay(options), [exercise.id, options]);
   const [localMatches, setLocalMatches] = useState<MatchPair[]>(matches || []);
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
 
@@ -377,32 +428,36 @@ function MatchSignMeaningExercise({
         {/* Prompts (left side) */}
         <div className="space-y-2">
           <p className="text-sm font-bold text-ink-500">Cột ký hiệu:</p>
-          {options.map((option, idx) => {
-            const promptId = `prompt-${idx}`;
+          {promptOptions.map((option, idx) => {
+            const promptId = option.id;
             const matched = getMatchedOption(promptId);
             const isSelected = selectedPrompt === promptId;
             const isMatched = isPromptMatched(promptId);
             return (
-              <button
+              <div
                 key={promptId}
-                type="button"
-                onClick={() => handleSelectPrompt(promptId)}
-                disabled={disabled}
                 className={`
-                  w-full rounded-2xl border p-4 text-left transition-all
+                  w-full overflow-hidden rounded-2xl border p-3 text-left transition-all
                   ${isSelected ? "border-brand-500 bg-brand-50 ring-2 ring-brand-200" : ""}
                   ${isMatched && !isSelected ? "border-brand-300 bg-brand-50/50" : ""}
-                  ${!isMatched && !isSelected ? "border-ink-200 bg-white hover:bg-ink-50" : ""}
-                  ${disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"}
+                  ${!isMatched && !isSelected ? "border-ink-200 bg-white" : ""}
+                  ${disabled ? "opacity-70" : ""}
                 `}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-brand-100 text-xs font-bold text-brand-700">
-                      {idx + 1}
-                    </span>
-                    <span className="text-sm font-semibold text-ink-800">Ký hiệu #{idx + 1}</span>
-                  </div>
+                <SignVideoPlayer
+                  videoUrl={option.videoUrl}
+                  title={`Ký hiệu cần nối số ${idx + 1}`}
+                  autoPlay={false}
+                  className="max-h-56"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleSelectPrompt(promptId)}
+                  disabled={disabled}
+                  aria-pressed={isSelected}
+                  className="mt-3 flex w-full items-center justify-between gap-2 rounded-xl bg-ink-100 px-3 py-2.5 text-left hover:bg-ink-200 disabled:cursor-not-allowed"
+                >
+                  <span className="text-sm font-bold text-ink-800">Ký hiệu #{idx + 1}</span>
                   {matched ? (
                     <span className="text-xs font-bold text-brand-700 bg-brand-100 px-2.5 py-1 rounded-full">
                       → {matched.labelText}
@@ -412,8 +467,8 @@ function MatchSignMeaningExercise({
                       Chọn nghĩa bên phải...
                     </span>
                   ) : null}
-                </div>
-              </button>
+                </button>
+              </div>
             );
           })}
         </div>
@@ -421,7 +476,7 @@ function MatchSignMeaningExercise({
         {/* Options (right side) */}
         <div className="space-y-2">
           <p className="text-sm font-bold text-ink-500">Cột ý nghĩa:</p>
-          {options.map((option) => {
+          {meaningOptions.map((option) => {
             const isMatched = isOptionMatched(option.id);
             return (
               <button

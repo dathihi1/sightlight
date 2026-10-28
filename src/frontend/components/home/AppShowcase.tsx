@@ -246,7 +246,7 @@ export function AppShowcase({ lang }: AppShowcaseProps) {
                             Unit 3
                           </span>
                           <span className="text-[10px] text-ink-400">
-                            {lang === "vi" ? "Mở khóa" : "Unlocked"}
+                            {lang === "vi" ? "Học xong bài trước" : "Finish previous lesson"}
                           </span>
                         </div>
                         <p className="text-xs font-bold text-ink-900 truncate">

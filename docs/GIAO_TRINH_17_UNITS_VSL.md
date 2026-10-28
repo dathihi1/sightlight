@@ -4,6 +4,7 @@
 > 1. **Bước 1 — Xem video & nghĩa của từ (`SIGN_CARD`):** Người học quan sát video mẫu chuyển động tay (hỗ trợ tua 0.5x, 0.75x, lặp lại) và nắm chắc ý nghĩa từ trước khi làm bài tập.
 > 2. **Phạm vi đáp án (Lesson-scoped options):** Toàn bộ các lựa chọn (đáp án đúng và các phương án gây nhiễu) trong bài tập trắc nghiệm **CHỈ ĐƯỢC LẤY TỪ DANH SÁCH CÁC TỪ VỰNG CỦA CHÍNH BÀI ĐÓ**, không lẫn từ bài khác.
 > 3. **Trước khi chọn từ:** Đề bài luôn thể hiện rõ nghĩa giải thích của từ vựng để định hướng ngữ cảnh cho người học.
+> 4. **Quyền truy cập hiện hành:** Cả 17 Unit đều miễn phí; bài đầu mỗi Unit mở sẵn và các bài sau mở tuần tự khi hoàn thành bài trước. Quy tắc này thay thế mọi nhãn “Gói Premium” còn sót trong phần mô tả chi tiết cũ.
 
 ---
 
@@ -11,24 +12,24 @@
 
 | Unit | Tên chuyên đề lớn | Phân quyền | Số chương | Số bài học | Số từ vựng |
 | :---: | :--- | :---: | :---: | :---: | :---: |
-| 1 | Unit 1 — Gia đình & Xưng hô | Miễn phí (Free) | 2 | 4 | 20 |
-| 2 | Unit 2 — Nghề nghiệp & Xã hội | Gói Premium | 2 | 4 | 19 |
-| 3 | Unit 3 — Động từ hành động & Sinh hoạt | Gói Premium | 6 | 12 | 60 |
-| 4 | Unit 4 — Cảm xúc & Tâm lý | Gói Premium | 2 | 4 | 12 |
-| 5 | Unit 5 — Tính từ & Miêu tả | Gói Premium | 8 | 16 | 83 |
-| 6 | Unit 6 — Màu sắc quanh ta | Gói Premium | 2 | 2 | 10 |
-| 7 | Unit 7 — Ẩm thực & Đồ uống | Gói Premium | 2 | 4 | 19 |
-| 8 | Unit 8 — Trái cây & Hoa quả | Gói Premium | 2 | 2 | 10 |
-| 9 | Unit 9 — Đồ dùng & Gia dụng | Gói Premium | 4 | 8 | 42 |
-| 10 | Unit 10 — Trang phục & Phụ kiện | Gói Premium | 2 | 4 | 15 |
-| 11 | Unit 11 — Thế giới Động vật | Gói Premium | 2 | 2 | 10 |
-| 12 | Unit 12 — Phương tiện giao thông | Gói Premium | 2 | 2 | 10 |
-| 13 | Unit 13 — Địa điểm & Công trình | Gói Premium | 2 | 4 | 17 |
-| 14 | Unit 14 — Thời gian & Lịch mùa | Gói Premium | 4 | 8 | 43 |
-| 15 | Unit 15 — Thể thao & Giải trí | Gói Premium | 2 | 3 | 11 |
-| 16 | Unit 16 — Quốc gia & Ngày lễ | Gói Premium | 2 | 4 | 13 |
-| 17 | Unit 17 — Trợ từ & Cụm phủ định | Gói Premium | 1 | 2 | 6 |
-| **TỔNG** | **17 Units chuyên đề** | **1 Free / 16 Premium** | | **85 bài** | **400 từ** |
+| 1 | Unit 1 — Gia đình & Xưng hô | Miễn phí | 2 | 4 | 20 |
+| 2 | Unit 2 — Nghề nghiệp & Xã hội | Miễn phí | 2 | 4 | 19 |
+| 3 | Unit 3 — Động từ hành động & Sinh hoạt | Miễn phí | 6 | 12 | 60 |
+| 4 | Unit 4 — Cảm xúc & Tâm lý | Miễn phí | 2 | 4 | 12 |
+| 5 | Unit 5 — Tính từ & Miêu tả | Miễn phí | 8 | 16 | 83 |
+| 6 | Unit 6 — Màu sắc quanh ta | Miễn phí | 2 | 2 | 10 |
+| 7 | Unit 7 — Ẩm thực & Đồ uống | Miễn phí | 2 | 4 | 19 |
+| 8 | Unit 8 — Trái cây & Hoa quả | Miễn phí | 2 | 2 | 10 |
+| 9 | Unit 9 — Đồ dùng & Gia dụng | Miễn phí | 4 | 8 | 42 |
+| 10 | Unit 10 — Trang phục & Phụ kiện | Miễn phí | 2 | 4 | 15 |
+| 11 | Unit 11 — Thế giới Động vật | Miễn phí | 2 | 2 | 10 |
+| 12 | Unit 12 — Phương tiện giao thông | Miễn phí | 2 | 2 | 10 |
+| 13 | Unit 13 — Địa điểm & Công trình | Miễn phí | 2 | 4 | 17 |
+| 14 | Unit 14 — Thời gian & Lịch mùa | Miễn phí | 4 | 8 | 43 |
+| 15 | Unit 15 — Thể thao & Giải trí | Miễn phí | 2 | 3 | 11 |
+| 16 | Unit 16 — Quốc gia & Ngày lễ | Miễn phí | 2 | 4 | 13 |
+| 17 | Unit 17 — Trợ từ & Cụm phủ định | Miễn phí | 1 | 2 | 6 |
+| **TỔNG** | **17 Units chuyên đề** | **17 miễn phí; mở bài tuần tự trong từng Unit** | | **85 bài** | **400 từ** |
 
 ---
 

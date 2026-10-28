@@ -122,8 +122,8 @@ public class ExerciseGradingService {
      *   <li>Mỗi cặp đều hợp lệ</li>
      * </ul>
      *
-     * <p><b>TODO:</b> Implement production grading logic.
-     * Hiện tại chỉ validate structure, chưa chấm matching thực tế.
+     * Mỗi option mang cùng ID cho video prompt và nhãn ý nghĩa, nên cặp đúng phải có
+     * {@code promptId == optionId}.
      */
     private boolean gradeMatching(Exercise exercise, List<ExerciseOption> options, AnswerRequest request) {
         if (request.getMatches() == null || request.getMatches().isEmpty()) {
@@ -151,20 +151,10 @@ public class ExerciseGradingService {
             return false;
         }
 
-        // Validate tất cả IDs đều thuộc exercise
-        var optionIds = options.stream().map(ExerciseOption::getId).toList();
-        boolean allValid = request.getMatches().stream()
-                .allMatch(pair -> optionIds.contains(pair.getOptionId()));
-
-        if (!allValid) {
-            log.warn("matching_invalid_option_ids");
-            return false;
-        }
-
-        // TODO: Implement proper matching validation
-        // Convention: option[i] matches prompt[i] based on orderIndex
-        log.warn("matching_grading_not_fully_implemented exerciseId={}", exercise.getId());
-        return true; // Placeholder
+        var optionIds = options.stream().map(ExerciseOption::getId).collect(java.util.stream.Collectors.toSet());
+        return request.getMatches().stream().allMatch(pair ->
+                optionIds.contains(pair.getOptionId())
+                        && pair.getOptionId().toString().equals(pair.getPromptId()));
     }
 
     /**

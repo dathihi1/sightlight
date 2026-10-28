@@ -76,7 +76,7 @@ function LessonMock() {
           <p className="font-semibold text-brand-700">{t("Chính xác 96%", "96% accurate")}</p>
           <p className="text-sm text-ink-600">{t("Góc cổ tay rất chuẩn.", "Great wrist angle.")}</p>
         </div>
-        <span className="chip bg-sun-100 text-sun-700">+10 XP</span>
+        <span className="chip bg-sun-100 text-sun-700">+10 EXP</span>
       </div>
     </div>
   );
@@ -121,7 +121,7 @@ export function HeroSection() {
               <IconFlame className="h-5 w-5" /> {t("Chuỗi ngày học", "Daily streaks")}
             </li>
             <li className="flex items-center gap-2">
-              <IconGem className="h-5 w-5" /> {t("XP & huy hiệu", "XP & badges")}
+              <IconGem className="h-5 w-5" /> {t("EXP & huy hiệu", "EXP & badges")}
             </li>
             <li className="flex items-center gap-2">
               <span className="grid h-5 w-5 place-items-center rounded-full bg-brand-500 text-white">

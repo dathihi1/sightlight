@@ -17,7 +17,7 @@ import vn.duy.signlight.common.web.TransactionResponse;
 
 @RestController
 @RequestMapping("/api/v1/ads")
-@Tag(name = "advertising", description = "Xem video quảng cáo nhận lượt AI và EXP miễn phí")
+@Tag(name = "advertising", description = "Xem video quảng cáo nhận lượt Camera AI miễn phí")
 public class AdRewardController {
 
     private final AdRewardService adRewardService;
@@ -27,7 +27,7 @@ public class AdRewardController {
     }
 
     @PostMapping("/claim-reward")
-    @Operation(summary = "Xác nhận đã xem video quảng cáo và nhận thưởng (AI_QUOTA hoặc EXP)")
+    @Operation(summary = "Xác nhận đã xem video quảng cáo và nhận thêm lượt Camera AI")
     public ResponseEntity<TransactionResponse<AdRewardResult>> claimReward(
             @Valid @RequestBody ClaimAdRewardRequest request) {
         AdRewardResult result = adRewardService.claimReward(

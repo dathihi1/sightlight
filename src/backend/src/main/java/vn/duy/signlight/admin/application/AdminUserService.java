@@ -17,9 +17,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import vn.duy.signlight.admin.repository.AdminSubscriptionQueryRepository;
 import vn.duy.signlight.admin.web.dto.AdminUserDtos;
 import vn.duy.signlight.billing.domain.Subscription;
-import vn.duy.signlight.billing.repository.SubscriptionRepository;
 import vn.duy.signlight.common.error.BusinessException;
 import vn.duy.signlight.common.error.ErrorCode;
 import vn.duy.signlight.gamification.domain.Streak;
@@ -38,7 +38,7 @@ public class AdminUserService {
 
     private final AppUserRepository userRepository;
     private final UserProfileRepository profileRepository;
-    private final SubscriptionRepository subscriptionRepository;
+    private final AdminSubscriptionQueryRepository subscriptionRepository;
     private final StreakRepository streakRepository;
     private final LessonCompletionRepository completionRepository;
     private final NotificationService notificationService;
@@ -46,7 +46,7 @@ public class AdminUserService {
     public AdminUserService(
             AppUserRepository userRepository,
             UserProfileRepository profileRepository,
-            SubscriptionRepository subscriptionRepository,
+            AdminSubscriptionQueryRepository subscriptionRepository,
             StreakRepository streakRepository,
             LessonCompletionRepository completionRepository,
             NotificationService notificationService) {
@@ -59,48 +59,40 @@ public class AdminUserService {
     }
 
     @Transactional(readOnly = true)
-    public AdminUserDtos.UserListResult listUsers(String search, String status, int page, int size) {
-        Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, Math.min(100, size)), Sort.by("createdAt").descending());
-        Page<AppUser> userPage;
-
-        if (search != null && !search.isBlank()) {
-            userPage = userRepository.findByEmailContainingIgnoreCase(search.trim(), pageable);
-        } else if (status != null && !status.isBlank()) {
-            userPage = userRepository.findByStatus(status.trim().toUpperCase(), pageable);
-        } else {
-            userPage = userRepository.findAll(pageable);
-        }
-
+    public AdminUserDtos.UserListResult listUsers(String search, String status, String role, int page, int size) {
+        int boundedPage = Math.max(0, page);
+        Pageable pageable = PageRequest.of(boundedPage, Math.max(1, Math.min(100, size)),
+                Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id")));
+        Page<AppUser> userPage = userRepository.adminSearch(
+                normalize(search), upper(status), upper(role), pageable);
         List<AppUser> users = userPage.getContent();
         List<UUID> userIds = users.stream().map(AppUser::getId).toList();
-
         Map<UUID, UserProfile> profiles = userIds.isEmpty() ? Map.of() : profileRepository.findAllById(userIds).stream()
                 .collect(Collectors.toMap(UserProfile::getUserId, Function.identity()));
-
-        List<AdminUserDtos.UserSummary> summaries = new ArrayList<>();
         Instant now = Instant.now();
+        Map<UUID, Subscription> activeSubscriptions = subscriptionRepository.findActiveByUserIds(userIds, now).stream()
+                .collect(Collectors.toMap(Subscription::getUserId, Function.identity(), (first, ignored) -> first));
 
-        for (AppUser u : users) {
-            UserProfile p = profiles.get(u.getId());
-            Optional<Subscription> sub = subscriptionRepository.findFirstByUserIdAndStatusOrderByExpiresAtDesc(u.getId(), "ACTIVE");
-            boolean isPremium = sub.isPresent() && sub.get().getExpiresAt().isAfter(now);
-            String planName = isPremium ? sub.get().getPlanId() : "FREE";
+        List<AdminUserDtos.UserSummary> summaries = users.stream().map(user -> {
+            UserProfile profile = profiles.get(user.getId());
+            Subscription subscription = activeSubscriptions.get(user.getId());
+            return new AdminUserDtos.UserSummary(
+                    user.getId(), user.getEmail(), profile != null ? profile.getDisplayName() : user.getEmail(),
+                    user.getStatus(), user.getRoles(), profile != null ? profile.getExpBalance() : 0,
+                    profile != null ? profile.getAiBonusQuota() : 0, subscription != null,
+                    subscription != null ? subscription.getPlanId() : "FREE", user.getCreatedAt());
+        }).toList();
+        return new AdminUserDtos.UserListResult(summaries, userPage.getTotalPages(),
+                userPage.getTotalElements(), boundedPage);
+    }
 
-            summaries.add(new AdminUserDtos.UserSummary(
-                    u.getId(),
-                    u.getEmail(),
-                    p != null ? p.getDisplayName() : u.getEmail(),
-                    u.getStatus(),
-                    u.getRoles(),
-                    p != null ? p.getExpBalance() : 0,
-                    p != null ? p.getAiBonusQuota() : 0,
-                    isPremium,
-                    planName,
-                    u.getCreatedAt()
-            ));
-        }
+    private String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
 
-        return new AdminUserDtos.UserListResult(summaries, userPage.getTotalPages(), userPage.getTotalElements(), page);
+    private String upper(String value) {
+        String normalized = normalize(value);
+        return normalized == null ? null : normalized.toUpperCase(java.util.Locale.ROOT);
     }
 
     @Transactional(readOnly = true)
@@ -109,8 +101,9 @@ public class AdminUserService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         UserProfile p = profileRepository.findById(userId).orElse(null);
 
-        Optional<Subscription> sub = subscriptionRepository.findFirstByUserIdAndStatusOrderByExpiresAtDesc(userId, "ACTIVE");
-        boolean isPremium = sub.isPresent() && sub.get().getExpiresAt().isAfter(Instant.now());
+        Optional<Subscription> sub = subscriptionRepository.findActiveByUserIds(List.of(userId), Instant.now())
+                .stream().findFirst();
+        boolean isPremium = sub.isPresent();
 
         List<Streak> streaks = streakRepository.findByUserId(userId);
         int currentStreak = streaks.stream().mapToInt(Streak::getCurrentCount).max().orElse(0);

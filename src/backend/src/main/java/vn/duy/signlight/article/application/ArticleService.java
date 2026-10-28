@@ -13,6 +13,9 @@ import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.duy.signlight.article.domain.Article;
@@ -46,6 +49,39 @@ public class ArticleService {
                 })
                 .map(this::mapToItem)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ArticleDtos.ArticleListResult listAdminArticles(
+            String search, String category, String tag, Boolean published, int page, int size) {
+        int boundedPage = Math.max(0, page);
+        Page<ArticleRepository.ArticleSummaryProjection> result = articleRepository.adminSearch(
+                normalize(search), normalizeAll(category), normalize(tag), published,
+                PageRequest.of(boundedPage, Math.max(1, Math.min(100, size)),
+                        Sort.by(Sort.Order.desc("created_at"), Sort.Order.asc("id"))));
+        List<ArticleDtos.ArticleSummary> items = result.getContent().stream()
+                .map(this::mapToSummary)
+                .toList();
+        return new ArticleDtos.ArticleListResult(
+                items, result.getTotalPages(), result.getTotalElements(), boundedPage);
+    }
+
+    private ArticleDtos.ArticleSummary mapToSummary(ArticleRepository.ArticleSummaryProjection article) {
+        return new ArticleDtos.ArticleSummary(
+                article.getId(), article.getSlug(), article.getTitleVi(), article.getTitleEn(),
+                article.getExcerptVi(), article.getExcerptEn(), article.getAuthor(), article.getCategory(),
+                article.getCategoryLabelVi(), article.getCategoryLabelEn(), parseTags(article.getTags()),
+                article.getThumbnailUrl(), article.getReadTimeVi(), article.getReadTimeEn(), article.isPublished(),
+                article.getViewsCount(), article.getOrderIndex(), article.getCreatedAt(), article.getUpdatedAt());
+    }
+
+    private String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String normalizeAll(String value) {
+        String normalized = normalize(value);
+        return normalized == null || normalized.equalsIgnoreCase("all") ? null : normalized;
     }
 
     @Transactional(readOnly = true)
@@ -163,23 +199,8 @@ public class ArticleService {
 
     @Transactional(readOnly = true)
     public List<ArticleDtos.TagInfo> listAllTags(boolean onlyPublished) {
-        List<Article> articles = onlyPublished
-                ? articleRepository.findAllByPublishedTrueOrderByCreatedAtDesc()
-                : articleRepository.findAllByOrderByCreatedAtDesc();
-
-        Map<String, Long> tagCounts = new HashMap<>();
-        for (Article a : articles) {
-            List<String> tags = parseTags(a.getTags());
-            for (String t : tags) {
-                if (!t.isBlank()) {
-                    tagCounts.put(t, tagCounts.getOrDefault(t, 0L) + 1);
-                }
-            }
-        }
-
-        return tagCounts.entrySet().stream()
-                .sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue()))
-                .map(e -> new ArticleDtos.TagInfo(e.getKey(), e.getValue()))
+        return articleRepository.aggregateTags(onlyPublished).stream()
+                .map(tag -> new ArticleDtos.TagInfo(tag.getName(), tag.getCount()))
                 .toList();
     }
 

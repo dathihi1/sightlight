@@ -12,8 +12,8 @@ import vn.duy.signlight.common.web.BaseRequest;
 public class ClaimAdRewardRequest extends BaseRequest {
 
     @NotBlank(message = "01101")
-    @Pattern(regexp = "^(AI_QUOTA|EXP)$", message = "01101")
-    @Schema(description = "Loại phần thưởng: AI_QUOTA (lượt camera AI) hoặc EXP (điểm kinh nghiệm)", example = "AI_QUOTA")
+    @Pattern(regexp = "^AI_QUOTA$", message = "01101")
+    @Schema(description = "Phần thưởng lượt Camera AI", example = "AI_QUOTA")
     private String rewardType;
 
     @Schema(description = "Vị trí xem quảng cáo", example = "CAMERA_MODAL")

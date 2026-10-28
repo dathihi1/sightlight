@@ -25,7 +25,7 @@ export function StatsOverview({ stats, learnerName, onOpenShare }: StatsOverview
       tone: "border-flame-200 bg-flame-50 text-flame-700",
     },
     {
-      label: "XP",
+      label: "EXP",
       value: stats.userExp,
       sub: t(`${stats.totalMinutes} phút đã học`, `${stats.totalMinutes} minutes learned`),
       icon: <IconStar className="h-8 w-8" />,

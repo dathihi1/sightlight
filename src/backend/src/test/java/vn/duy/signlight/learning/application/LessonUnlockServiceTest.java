@@ -66,8 +66,8 @@ class LessonUnlockServiceTest {
     }
 
     @Test
-    @DisplayName("Mở khóa bài học bằng 5000 EXP (thuê 1 tháng) thành công")
-    void unlockWithExp_rent1M_success() {
+    @DisplayName("Mở khóa bài học vĩnh viễn bằng 5000 EXP thành công")
+    void unlockWithExp_success() {
         UUID userId = UUID.randomUUID();
         UUID lessonId = UUID.randomUUID();
 
@@ -83,14 +83,14 @@ class LessonUnlockServiceTest {
 
         assertEquals(1000, profile.getExpBalance());
         assertEquals(5000, result.amountPaid());
-        assertEquals("RENT_1M", result.unlockType());
-        assertNotNull(result.expiresAt());
+        assertEquals("PERMANENT", result.unlockType());
+        assertNull(result.expiresAt());
         verify(userProfileRepository).save(profile);
     }
 
     @Test
-    @DisplayName("Mở khóa bài học bằng 25000 EXP (vĩnh viễn) thành công")
-    void unlockWithExp_permanent_success() {
+    @DisplayName("API cũ cũng áp dụng giá mở khóa vĩnh viễn 5000 EXP")
+    void legacyUnlockWithExp_usesCurrentPermanentRule() {
         UUID userId = UUID.randomUUID();
         UUID lessonId = UUID.randomUUID();
 
@@ -104,8 +104,8 @@ class LessonUnlockServiceTest {
 
         LessonUnlockResult result = unlockService.unlockWithExp(userId, lessonId, "PERMANENT");
 
-        assertEquals(5000, profile.getExpBalance());
-        assertEquals(25000, result.amountPaid());
+        assertEquals(25000, profile.getExpBalance());
+        assertEquals(5000, result.amountPaid());
         assertEquals("PERMANENT", result.unlockType());
         assertNull(result.expiresAt());
         assertTrue(result.isPermanent());

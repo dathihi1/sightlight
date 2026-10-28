@@ -339,24 +339,22 @@ vị đang chờ bạn.
 
 | | Miễn phí | Premium |
 |---|:---:|:---:|
-| Bài học Unit 1 | ✅ | ✅ |
-| Toàn bộ bài học | ❌ | ✅ |
-| Luyện đánh vần bằng camera | ✅ không giới hạn | ✅ không giới hạn |
-| Luyện từ vựng & số | 1 phiên/ngày | không giới hạn |
+| Toàn bộ 17 chủ đề | ✅ | ✅ |
+| Mở bài kế tiếp sau khi hoàn thành bài trước | ✅ | ✅ |
+| Camera AI chấm ký hiệu | Hạn mức miễn phí + lượt đổi bằng EXP | Không giới hạn |
 | Từ điển | ✅ | ✅ |
-| Huy hiệu & Khám phá | ✅ | ✅ |
-| Chứng chỉ PDF | ❌ | ✅ |
+| EXP, nhiệm vụ, huy hiệu | ✅ | ✅ |
+| Lưu tiến độ học | ✅ | ✅ |
 
 ### Nâng cấp
 
-1. Vào **Hồ sơ → Nâng cấp Premium** (hoặc bấm vào một bài có ổ khoá).
-2. Chọn kỳ hạn: **1 tháng · 3 tháng · 12 tháng**. Kỳ dài hơn có giá theo tháng rẻ hơn.
-3. Chọn phương thức: **VNPay** hoặc **MoMo**.
-4. Bấm **Thanh toán**, bạn được chuyển sang trang/ứng dụng của VNPay hoặc MoMo.
-5. Hoàn tất thanh toán ở đó rồi quay lại.
+1. Vào **Hồ sơ → Nâng cấp Premium** khi bạn muốn luyện Camera AI không giới hạn.
+2. Chọn kỳ hạn: **1 tháng · 6 tháng · vĩnh viễn**.
+3. Bấm **Thanh toán**, bạn được chuyển sang payOS để quét VietQR.
+4. Thanh toán một lần rồi quay lại SignLight.
 
 > **Về thông tin thanh toán:** SignLight **không bao giờ nhìn thấy, không lưu** số thẻ hay thông tin ví của
-> bạn. Toàn bộ việc nhập diễn ra trên hệ thống của VNPay/MoMo.
+> bạn. Toàn bộ việc thanh toán diễn ra trên hệ thống payOS/ngân hàng.
 
 **Cần xác thực email trước khi nâng cấp.** Nếu chưa, bạn sẽ thấy nhắc nhở kèm nút gửi lại thư.
 
@@ -385,7 +383,7 @@ phải 30.
 ### Khi Premium hết hạn
 
 Bạn quay về gói miễn phí. **Toàn bộ tiến độ học, huy hiệu, chuỗi ngày và ký hiệu đã học đều được giữ
-nguyên** — không mất gì cả. Khi nào muốn học tiếp nội dung Premium, chỉ cần gia hạn.
+nguyên** — không mất gì cả. Bạn vẫn học đủ 17 chủ đề; chỉ quyền luyện Camera AI không giới hạn sẽ dừng.
 
 ---
 

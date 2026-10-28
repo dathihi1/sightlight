@@ -135,17 +135,39 @@ public class LessonService {
         List<Exercise> exercises = contentTree.exercisesOf(lessonId);
         Map<UUID, List<ExerciseOption>> optionsByExercise = contentTree.optionsOf(
                 exercises.stream().map(Exercise::getId).toList());
+        Map<UUID, SignVideo> optionVideos = contentTree.videosByIds(optionsByExercise.values().stream()
+                .flatMap(List::stream)
+                .map(ExerciseOption::getSignVideoId)
+                .filter(java.util.Objects::nonNull)
+                .toList());
         Map<UUID, SignVideo> videos = contentTree.primaryVideos(
                 exercises.stream().map(Exercise::getSignId).filter(java.util.Objects::nonNull).toList());
 
         List<LessonResult.ExerciseNode> nodes = new ArrayList<>();
+        int lessonOffset = java.util.concurrent.ThreadLocalRandom.current().nextInt();
+        int choiceOrdinal = 0;
+        int previousCorrectPosition = -1;
         for (Exercise exercise : exercises) {
             SignVideo video = exercise.getSignId() == null ? null : videos.get(exercise.getSignId());
-            List<LessonResult.OptionNode> options = optionsByExercise
-                    .getOrDefault(exercise.getId(), List.of()).stream()
+            ExerciseOptionOrderer.OrderedOptions orderedOptions = ExerciseOptionOrderer.order(
+                    exercise,
+                    optionsByExercise.getOrDefault(exercise.getId(), List.of()),
+                    lessonOffset,
+                    choiceOrdinal,
+                    previousCorrectPosition);
+            if (orderedOptions.correctPosition() >= 0) {
+                previousCorrectPosition = orderedOptions.correctPosition();
+                choiceOrdinal++;
+            }
+            List<LessonResult.OptionNode> options = orderedOptions.options().stream()
                     // Cố ý chỉ lấy id + nhãn: `isCorrect` không bao giờ rời khỏi server ở bước này.
-                    .map(option -> new LessonResult.OptionNode(
-                            option.getId(), option.getLabelText(), null))
+                    .map(option -> {
+                        SignVideo optionVideo = optionVideos.get(option.getSignVideoId());
+                        return new LessonResult.OptionNode(
+                                option.getId(),
+                                option.getLabelText(),
+                                optionVideo == null ? null : mediaUrlService.resolveVideoUrl(optionVideo));
+                    })
                     .toList();
             nodes.add(new LessonResult.ExerciseNode(
                     exercise.getId(),
@@ -394,25 +416,16 @@ public class LessonService {
             return false;
         }
 
-        // Validate tất cả các cặp
-        // Note: Logic này giả định exercise có metadata về correct matches trong payload hoặc
-        // có convention rõ ràng. Hiện tại implement đơn giản: mỗi option.id tương ứng với một prompt.
-        // Production cần thêm cột trong exercise hoặc dùng JSONB lưu correct matches.
+        // Mỗi option mang đồng thời video (prompt) và nhãn (meaning). Cặp đúng có cùng ID.
+        var optionIds = options.stream().map(ExerciseOption::getId).collect(java.util.stream.Collectors.toSet());
+        boolean allValidAndCorrect = request.getMatches().stream().allMatch(pair ->
+                optionIds.contains(pair.getOptionId())
+                        && pair.getOptionId().toString().equals(pair.getPromptId()));
 
-        // Tạm thời: chấp nhận nếu tất cả IDs đều valid (thuộc exercise)
-        var optionIds = options.stream().map(ExerciseOption::getId).toList();
-        boolean allValid = request.getMatches().stream()
-                .allMatch(pair -> optionIds.contains(pair.getOptionId()));
-
-        if (!allValid) {
-            log.warn("matching_invalid_option_ids");
-            return false;
+        if (!allValidAndCorrect) {
+            log.info("matching_incorrect exerciseId={}", exercise.getId());
         }
-
-        // TODO: Implement proper matching validation based on exercise.correctMatchesPayload
-        // For now, this is a placeholder that accepts structurally valid matches
-        log.warn("matching_grading_not_fully_implemented exerciseId={}", exercise.getId());
-        return true; // Placeholder - cần implement logic chấm thực tế
+        return allValidAndCorrect;
     }
 
     /** So khớp bỏ dấu, bỏ hoa thường, chấp nhận danh sách từ đồng nghĩa của bài tập. */
@@ -499,7 +512,7 @@ public class LessonService {
                 ? streakService.recordActivity(userId, courseId, timezone, effectiveMinutes, goalMinutes)
                 : streakService.current(userId, courseId, timezone);
 
-        UUID nextLessonId = learningPathService.path(userId, courseId).nextLessonId();
+        UUID nextLessonId = learningPathService.nextLessonId(userId, courseId);
         int newSigns = (int) contentTree.exercisesOf(lesson.getId()).stream()
                 .map(Exercise::getSignId)
                 .filter(java.util.Objects::nonNull)

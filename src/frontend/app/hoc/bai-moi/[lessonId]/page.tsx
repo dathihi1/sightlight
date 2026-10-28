@@ -194,7 +194,7 @@ export default function NewLessonPage() {
   if (summary) {
     const stats = [
       {
-        label: "XP",
+        label: "EXP",
         value: <CountUp to={summary.earnedExp} prefix="+" />,
         icon: <IconStar className="h-6 w-6" />,
         tone: "border-sun-300 bg-sun-50 text-sun-700",

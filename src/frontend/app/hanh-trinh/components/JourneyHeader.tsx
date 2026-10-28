@@ -26,7 +26,7 @@ export function JourneyHeader({ activeTab, onTabChange }: JourneyHeaderProps) {
         </svg>
       ),
     },
-    { id: "store", label: t("Cửa hàng XP", "XP shop"), icon: <IconStar className="h-5 w-5" /> },
+    { id: "store", label: t("Cửa hàng EXP", "EXP shop"), icon: <IconStar className="h-5 w-5" /> },
   ];
 
   return (

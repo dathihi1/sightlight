@@ -44,14 +44,20 @@ public class AdminSignService {
     }
 
     @Transactional(readOnly = true)
-    public AdminSignDtos.AdminSignListResponse getSignList(String search, String topic, int page, int size) {
+    public AdminSignDtos.AdminSignListResponse getSignList(
+            String search, String topic, String status, String level, int page, int size) {
         int boundedSize = Math.max(1, Math.min(size, 100));
         int boundedPage = Math.max(0, page);
 
         String trimmedSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
         String trimmedTopic = (topic != null && !topic.trim().isEmpty()) ? topic.trim() : null;
+        String normalizedStatus = normalizeUpper(status);
+        String normalizedLevel = normalizeUpper(level);
 
-        Page<Sign> signPage = signRepository.adminSearch(trimmedSearch, trimmedTopic, PageRequest.of(boundedPage, boundedSize));
+        Page<Sign> signPage = signRepository.adminSearch(trimmedSearch, trimmedTopic, normalizedStatus,
+                normalizedLevel, PageRequest.of(boundedPage, boundedSize,
+                        org.springframework.data.domain.Sort.by("word").ascending().and(
+                                org.springframework.data.domain.Sort.by("id").ascending())));
 
         List<UUID> signIds = signPage.getContent().stream().map(Sign::getId).toList();
         List<SignVideo> videos = signIds.isEmpty()
@@ -249,6 +255,10 @@ public class AdminSignService {
         }
         signRepository.delete(sign);
         log.info("admin_sign_deleted sign_id={}", signId);
+    }
+
+    private String normalizeUpper(String value) {
+        return value == null || value.isBlank() ? null : value.trim().toUpperCase(java.util.Locale.ROOT);
     }
 
     @Transactional(readOnly = true)

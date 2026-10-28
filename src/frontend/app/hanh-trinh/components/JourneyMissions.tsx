@@ -162,14 +162,14 @@ export function JourneyMissions({ missions, onClaimReward }: JourneyMissionsProp
               <div className="w-32 shrink-0 text-right">
                 {ready ? (
                   <button type="button" onClick={() => onClaimReward(mission)} className="btn btn-sun btn-sm w-full">
-                    +{mission.rewardExp} XP
+                    +{mission.rewardExp} EXP
                   </button>
                 ) : claimed ? (
                   <span className="inline-flex items-center gap-1 text-sm font-bold text-brand-600">
                     <IconCheck className="h-4 w-4" /> {t("Đã nhận", "Claimed")}
                   </span>
                 ) : (
-                  <span className="chip bg-sun-50 text-sun-700">+{mission.rewardExp} XP</span>
+                  <span className="chip bg-sun-50 text-sun-700">+{mission.rewardExp} EXP</span>
                 )}
               </div>
             </li>

@@ -74,6 +74,12 @@ public class LessonContentAssembler {
         Map<UUID, List<ExerciseOption>> optionsByExercise = contentTree.optionsOf(
                 exercises.stream().map(Exercise::getId).toList());
 
+        Map<UUID, SignVideo> optionVideos = contentTree.videosByIds(optionsByExercise.values().stream()
+                .flatMap(List::stream)
+                .map(ExerciseOption::getSignVideoId)
+                .filter(java.util.Objects::nonNull)
+                .toList());
+
         // Load videos
         Map<UUID, SignVideo> videos = contentTree.primaryVideos(
                 exercises.stream()
@@ -83,13 +89,30 @@ public class LessonContentAssembler {
 
         // Build exercise nodes
         List<LessonResult.ExerciseNode> nodes = new ArrayList<>();
+        int lessonOffset = java.util.concurrent.ThreadLocalRandom.current().nextInt();
+        int choiceOrdinal = 0;
+        int previousCorrectPosition = -1;
         for (Exercise exercise : exercises) {
             SignVideo video = exercise.getSignId() == null ? null : videos.get(exercise.getSignId());
-            List<LessonResult.OptionNode> options = optionsByExercise
-                    .getOrDefault(exercise.getId(), List.of()).stream()
+            ExerciseOptionOrderer.OrderedOptions orderedOptions = ExerciseOptionOrderer.order(
+                    exercise,
+                    optionsByExercise.getOrDefault(exercise.getId(), List.of()),
+                    lessonOffset,
+                    choiceOrdinal,
+                    previousCorrectPosition);
+            if (orderedOptions.correctPosition() >= 0) {
+                previousCorrectPosition = orderedOptions.correctPosition();
+                choiceOrdinal++;
+            }
+            List<LessonResult.OptionNode> options = orderedOptions.options().stream()
                     // Cố ý chỉ lấy id + nhãn: isCorrect không bao giờ rời khỏi server
-                    .map(option -> new LessonResult.OptionNode(
-                            option.getId(), option.getLabelText(), null))
+                    .map(option -> {
+                        SignVideo optionVideo = optionVideos.get(option.getSignVideoId());
+                        return new LessonResult.OptionNode(
+                                option.getId(),
+                                option.getLabelText(),
+                                optionVideo == null ? null : mediaUrlService.resolveVideoUrl(optionVideo));
+                    })
                     .toList();
 
             nodes.add(new LessonResult.ExerciseNode(

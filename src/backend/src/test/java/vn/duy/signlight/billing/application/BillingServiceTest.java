@@ -65,7 +65,7 @@ class BillingServiceTest {
         Plan plan = Plan.builder()
                 .id("PREMIUM_6M")
                 .name("SignLight Premium 6 Thang")
-                .priceVnd(499000)
+                .priceVnd(100000)
                 .durationDays(180)
                 .active(true)
                 .build();
@@ -91,7 +91,7 @@ class BillingServiceTest {
         Plan plan = Plan.builder()
                 .id("PREMIUM_6M")
                 .name("SignLight Premium 6 Thang")
-                .priceVnd(499000)
+                .priceVnd(100000)
                 .durationDays(180)
                 .active(true)
                 .build();
@@ -102,7 +102,7 @@ class BillingServiceTest {
                 .planId("PREMIUM_6M")
                 .orderCode(orderCode)
                 .orderRef("SL-" + orderCode)
-                .amount(499000)
+                .amount(100000)
                 .status("PENDING")
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
@@ -136,7 +136,7 @@ class BillingServiceTest {
                 .planId("PREMIUM_6M")
                 .orderCode(orderCode)
                 .orderRef("SL-" + orderCode)
-                .amount(499000)
+                .amount(100000)
                 .status("PENDING")
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
@@ -164,7 +164,7 @@ class BillingServiceTest {
         Plan plan = Plan.builder()
                 .id("PREMIUM_1M")
                 .name("SignLight Premium 1 Thang")
-                .priceVnd(99000)
+                .priceVnd(29000)
                 .durationDays(30)
                 .active(true)
                 .build();
@@ -175,7 +175,7 @@ class BillingServiceTest {
                 .planId("PREMIUM_1M")
                 .orderCode(orderCode)
                 .orderRef("SL-" + orderCode)
-                .amount(99000)
+                .amount(29000)
                 .status("PENDING")
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
@@ -196,5 +196,37 @@ class BillingServiceTest {
         assertNotNull(syncedTx.getPaidAt());
         verify(subscriptionRepository).save(any(Subscription.class));
         verify(authService).upgradeToPremium(userId);
+    }
+
+    @Test
+    @DisplayName("confirmPayment không kích hoạt Premium khi số tiền payOS lệch với đơn")
+    void confirmPaymentRejectsMismatchedAmount() {
+        UUID userId = UUID.randomUUID();
+        long orderCode = 1726912345999L;
+        PaymentTransaction tx = PaymentTransaction.builder()
+                .id(UUID.randomUUID())
+                .userId(userId)
+                .planId("PREMIUM_1M")
+                .orderCode(orderCode)
+                .orderRef("SL-" + orderCode)
+                .amount(29000)
+                .status("PENDING")
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .build();
+
+        when(transactionRepository.findByOrderCode(orderCode)).thenReturn(Optional.of(tx));
+        when(payOsClient.getPaymentLinkInformation(orderCode)).thenReturn(Optional.of(
+                new PayOsClient.PayOsPaymentResult(
+                        "payos-id", "https://pay.payos.vn/...", "qr-data", "PAID",
+                        null, null, null, null, 100)));
+
+        vn.duy.signlight.common.error.BusinessException ex = assertThrows(
+                vn.duy.signlight.common.error.BusinessException.class,
+                () -> billingService.confirmPayment(orderCode, userId));
+
+        assertEquals(vn.duy.signlight.common.error.ErrorCode.PAYMENT_AMOUNT_MISMATCH.getCode(), ex.getErrorCode());
+        verify(subscriptionRepository, never()).save(any());
+        verify(authService, never()).upgradeToPremium(any());
     }
 }

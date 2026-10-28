@@ -113,10 +113,15 @@ public class GamificationQueryService {
         int expBalance = profile != null ? profile.getExpBalance() : 0;
         int aiBonusQuota = profile != null ? profile.getAiBonusQuota() : 0;
 
-        List<String> ownedBadges = userInventoryRepository.findByUserId(userId).stream()
+        List<UserInventory> inventory = userInventoryRepository.findByUserId(userId);
+        List<String> ownedBadges = inventory.stream()
                 .filter(i -> "BADGE".equals(i.getItemType()))
                 .map(UserInventory::getItemKey)
                 .toList();
+        int unlockTicketCount = (int) inventory.stream()
+                .filter(i -> "UNLOCK_TICKET".equals(i.getItemType()))
+                .filter(i -> "LESSON_UNLOCK_TICKET".equals(i.getItemKey()))
+                .count();
 
         return new GamificationSummaryResult(
                 streakSnapshot.current(),
@@ -131,6 +136,7 @@ public class GamificationQueryService {
                 activityDtos,
                 expBalance,
                 aiBonusQuota,
+                unlockTicketCount,
                 ownedBadges
         );
     }

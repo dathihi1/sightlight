@@ -14,6 +14,9 @@ public interface SignRepository extends JpaRepository<Sign, UUID> {
 
     List<Sign> findByStatusOrderByWordAsc(String status);
 
+    org.springframework.data.domain.Page<Sign> findByTopicAndStatusOrderByWordAsc(
+            String topic, String status, Pageable pageable);
+
     List<Sign> findByIdInAndStatus(Collection<UUID> ids, String status);
 
     Optional<Sign> findByIdAndStatus(UUID id, String status);
@@ -48,12 +51,15 @@ public interface SignRepository extends JpaRepository<Sign, UUID> {
             + "group by s.topic order by s.topic asc")
     List<TopicCount> countByTopic();
 
-    @Query("SELECT s FROM Sign s WHERE (:topic IS NULL OR :topic = '' OR s.topic = :topic) "
-            + "AND (:search IS NULL OR :search = '' OR LOWER(s.word) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(s.meaning) LIKE LOWER(CONCAT('%', :search, '%'))) "
-            + "ORDER BY s.word ASC")
+    @Query("SELECT s FROM Sign s WHERE (:topic IS NULL OR s.topic = :topic) "
+            + "AND (:status IS NULL OR s.status = :status) "
+            + "AND (:level IS NULL OR s.cefrLevel = :level) "
+            + "AND (CAST(:search AS string) IS NULL OR LOWER(s.word) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR LOWER(s.meaning) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))")
     org.springframework.data.domain.Page<Sign> adminSearch(
             @Param("search") String search,
             @Param("topic") String topic,
+            @Param("status") String status,
+            @Param("level") String level,
             Pageable pageable);
 
     @Query("SELECT DISTINCT s.topic FROM Sign s WHERE s.topic IS NOT NULL AND s.topic != '' ORDER BY s.topic ASC")

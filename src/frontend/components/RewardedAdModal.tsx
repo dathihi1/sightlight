@@ -16,7 +16,7 @@ export interface AdRewardResult {
 interface RewardedAdModalProps {
   isOpen: boolean;
   onClose: () => void;
-  rewardType: "AI_QUOTA" | "EXP";
+  rewardType: "AI_QUOTA";
   placement?: string;
   onSuccess?: (result: AdRewardResult) => void;
 }
@@ -114,10 +114,7 @@ export function RewardedAdModal({
     }
   };
 
-  const rewardLabel =
-    rewardType === "AI_QUOTA"
-      ? "+1 Lượt Camera AI"
-      : "+30 EXP";
+  const rewardLabel = "+1 Lượt Camera AI";
 
   const progressPercent = Math.min(
     100,

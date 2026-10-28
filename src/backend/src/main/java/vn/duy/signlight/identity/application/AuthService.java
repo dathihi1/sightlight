@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import vn.duy.signlight.billing.repository.SubscriptionRepository;
 import vn.duy.signlight.common.error.BusinessException;
 import vn.duy.signlight.common.error.ErrorCode;
 import vn.duy.signlight.content.application.ContentCatalogService;
@@ -65,6 +66,7 @@ public class AuthService {
     private final GoogleTokenVerifier googleTokenVerifier;
     private final EmailVerificationService emailVerificationService;
     private final TokenService tokenService;
+    private final SubscriptionRepository subscriptionRepository;
 
     public AuthService(AppUserRepository userRepository,
             UserProfileRepository profileRepository,
@@ -75,7 +77,8 @@ public class AuthService {
             AuthIdentityRepository authIdentityRepository,
             GoogleTokenVerifier googleTokenVerifier,
             EmailVerificationService emailVerificationService,
-            TokenService tokenService) {
+            TokenService tokenService,
+            SubscriptionRepository subscriptionRepository) {
         this.userRepository = userRepository;
         this.profileRepository = profileRepository;
         this.preferenceRepository = preferenceRepository;
@@ -86,6 +89,7 @@ public class AuthService {
         this.googleTokenVerifier = googleTokenVerifier;
         this.emailVerificationService = emailVerificationService;
         this.tokenService = tokenService;
+        this.subscriptionRepository = subscriptionRepository;
     }
 
     // ------------------------------------------------------------------ đăng ký
@@ -209,7 +213,7 @@ public class AuthService {
         UUID activeCourseId = preferenceRepository.findById(user.getId())
                 .map(UserPreference::getActiveCourseId)
                 .orElse(null);
-        List<String> roles = List.copyOf(user.getRoles());
+        List<String> roles = effectiveRoles(user);
         TokenService.TokenPair tokenPair = tokenService.issueTokenPair(user.getId(), roles);
 
         return new LoginResult(
@@ -329,7 +333,7 @@ public class AuthService {
         UUID activeCourseId = preferenceRepository.findById(user.getId())
                 .map(UserPreference::getActiveCourseId)
                 .orElse(null);
-        List<String> roles = List.copyOf(user.getRoles());
+        List<String> roles = effectiveRoles(user);
         TokenService.TokenPair tokenPair = tokenService.issueTokenPair(user.getId(), roles);
 
         return new LoginResult(
@@ -379,16 +383,32 @@ public class AuthService {
                         preference.getDailyGoalMinutes(),
                         preference.getVideoSpeed().toPlainString(),
                         preference.getUiLocale()),
-                List.copyOf(user.getRoles()),
+                effectiveRoles(user),
                 user.getEmailVerifiedAt() != null);
     }
 
     /** Người dùng Premium không bị trừ hạn mức luyện AI (BR-A108). */
     @Transactional(readOnly = true)
     public boolean isPremium(UUID userId) {
-        return userRepository.findById(userId)
-                .map(user -> user.getRoles().contains(ROLE_LEARNER_PREMIUM))
-                .orElse(false);
+        return subscriptionRepository.existsByUserIdAndStatusAndExpiresAtAfter(
+                userId, "ACTIVE", Instant.now());
+    }
+
+    /** Subscription còn hạn là nguồn sự thật; đồng bộ role cũ để token/UI không giữ Premium quá hạn. */
+    private List<String> effectiveRoles(AppUser user) {
+        boolean activePremium = subscriptionRepository.existsByUserIdAndStatusAndExpiresAtAfter(
+                user.getId(), "ACTIVE", Instant.now());
+        boolean changed;
+        if (activePremium) {
+            changed = user.getRoles().add(ROLE_LEARNER_PREMIUM);
+        } else {
+            changed = user.getRoles().remove(ROLE_LEARNER_PREMIUM);
+        }
+        if (changed) {
+            user.setUpdatedAt(Instant.now());
+            userRepository.save(user);
+        }
+        return List.copyOf(user.getRoles());
     }
 
     @Transactional(readOnly = true)

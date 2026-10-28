@@ -94,7 +94,8 @@ public class PayOsClient {
                         response.data().accountNumber(),
                         response.data().accountName(),
                         response.data().bin(),
-                        response.data().description() != null ? response.data().description() : safeDescription
+                        response.data().description() != null ? response.data().description() : safeDescription,
+                        response.data().amount()
                 );
             }
             throw new IllegalStateException("payOS rejected payment link creation");
@@ -179,7 +180,8 @@ public class PayOsClient {
                         response.data().accountNumber(),
                         response.data().accountName(),
                         response.data().bin(),
-                        response.data().description()
+                        response.data().description(),
+                        response.data().amount()
                 ));
             }
         } catch (Exception ex) {
@@ -196,10 +198,11 @@ public class PayOsClient {
             String accountNumber,
             String accountName,
             String bin,
-            String description) {
+            String description,
+            Integer amount) {
 
         public PayOsPaymentResult(String paymentLinkId, String checkoutUrl, String qrCode, String status) {
-            this(paymentLinkId, checkoutUrl, qrCode, status, null, null, null, null);
+            this(paymentLinkId, checkoutUrl, qrCode, status, null, null, null, null, null);
         }
     }
 
@@ -220,7 +223,8 @@ public class PayOsClient {
             String accountNumber,
             String accountName,
             String bin,
-            String description) {
+            String description,
+            Integer amount) {
         public String effectivePaymentLinkId() {
             return paymentLinkId != null && !paymentLinkId.isBlank() ? paymentLinkId : id;
         }

@@ -62,8 +62,8 @@ function SuccessContent() {
         <p className="text-sm text-ink-600">
           {isPaid
             ? t(
-                "Tài khoản của bạn đã được nâng cấp thành công lên gói Premium. Toàn bộ 17 Units và tính năng luyện AI không giới hạn đã sẵn sàng!",
-                "Your account has been upgraded to Premium. All 17 Units and unlimited AI camera practice are now unlocked!",
+                "Tài khoản của bạn đã được nâng cấp Premium. Bạn có thể luyện Camera AI không giới hạn; toàn bộ 17 chủ đề học vẫn miễn phí cho mọi người.",
+                "Your account is now Premium with unlimited AI camera practice. All 17 learning units remain free for everyone.",
               )
             : t(
                 "Hệ thống đang đồng bộ giao dịch từ ngân hàng. Nếu bạn vừa chuyển khoản, vui lòng đợi trong giây lát hoặc quay lại trang thanh toán để quét mã QR.",
@@ -108,7 +108,7 @@ function SuccessContent() {
               href="/hoc"
               className="btn btn-primary"
             >
-              {t("Khám phá 17 Units ngay", "Explore 17 Units now")}
+              {t("Tiếp tục lộ trình học", "Continue learning")}
             </Link>
             <Link
               href="/luyen-ai"

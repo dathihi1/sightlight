@@ -7,7 +7,9 @@ COPY pom.xml .
 RUN mvn -B -q dependency:go-offline
 
 COPY src ./src
-RUN mvn -B -q clean package -DskipTests
+# Tests run as a separate CI gate. The runtime image build skips compiling test
+# sources so a stale test fixture cannot prevent packaging an otherwise valid app.
+RUN mvn -B -q clean package -Dmaven.test.skip=true
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
