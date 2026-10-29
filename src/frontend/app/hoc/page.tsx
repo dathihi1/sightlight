@@ -307,16 +307,9 @@ function UnitSection({
             <h3 className="mb-2 text-sm font-semibold text-ink-500">{chapter.title}</h3>
             <ol>
               {chapter.lessons.map((lesson, lessonIndex) => {
-                const urls = preparationUrls(lesson);
                 return (
                   <Fragment key={lesson.id}>
-                    {(lesson.preparationItems ?? []).map((item) => (
-                      <PreparationRow
-                        key={`${lesson.id}-${item.signId}`}
-                        item={item}
-                        href={urls.get(item.signId) ?? "/hoc"}
-                      />
-                    ))}
+                    <PreparationGroup lesson={lesson} />
                     <LessonRow
                       lesson={lesson}
                       isNext={lesson.id === nextLessonId}
@@ -400,46 +393,98 @@ function LessonRow({
   );
 }
 
-function PreparationRow({ item, href }: { item: PreparationNode; href: string }) {
-  const done = item.status === "COMPLETED";
-  const body = (
-    <div className={`flex flex-1 items-center justify-between gap-3 rounded-2xl px-4 py-3 ${done ? "bg-success-50/70" : item.locked ? "bg-ink-50" : "bg-grape-50"}`}>
-      <div className="min-w-0">
-        <p className="truncate text-sm font-bold uppercase tracking-wide text-grape-600">
-          Luyện thêm · Từ {item.orderIndex + 1}
-        </p>
-        <p className="truncate text-base font-medium text-ink-900">{item.title}</p>
-        <p className="text-sm text-ink-600">
-          {done ? "Đã luyện với Camera AI" : item.locked ? "Hoàn thành lesson trước để mở" : "Không bắt buộc · Xem video và luyện với Camera AI"}
-        </p>
-      </div>
-      {!done && !item.locked && <span className="btn btn-grape btn-sm pointer-events-none">Luyện thêm</span>}
-    </div>
-  );
+function PreparationGroup({ lesson }: { lesson: LessonNode }) {
+  const items = [...(lesson.preparationItems ?? [])].sort((a, b) => a.orderIndex - b.orderIndex);
+  if (items.length === 0) return null;
+
+  const urls = preparationUrls(lesson);
+  const completed = items.filter((item) => item.status === "COMPLETED").length;
+  const locked = items.every((item) => item.locked);
+  const allDone = completed === items.length;
 
   return (
     <li className="relative flex gap-3">
       <span className="absolute bottom-0 left-4 top-11 w-px -translate-x-1/2 bg-ink-200" aria-hidden="true" />
       <div className="pt-3.5">
-        {done ? (
+        {allDone ? (
           <span className="grid h-8 w-8 place-items-center rounded-full bg-success-500 text-white">
             <IconCheck className="h-4 w-4" />
           </span>
-        ) : item.locked ? (
+        ) : locked ? (
           <span className="grid h-8 w-8 place-items-center rounded-full bg-ink-100 text-ink-400">
             <IconLock className="h-3.5 w-3.5" />
           </span>
         ) : (
-          <span className="grid h-8 w-8 place-items-center rounded-full border-2 border-grape-500 bg-white">
+          <span className="grid h-8 w-8 place-items-center rounded-full border-2 border-grape-400 bg-white">
             <span className="h-3 w-3 rounded-full bg-grape-500" />
           </span>
         )}
       </div>
-      {item.locked || done ? (
-        <div className="flex flex-1 rounded-2xl pb-1" aria-disabled="true">{body}</div>
-      ) : (
-        <Link href={href} className="flex flex-1 rounded-2xl pb-1">{body}</Link>
-      )}
+
+      <details className="group/practice mb-1 min-w-0 flex-1 rounded-2xl border border-grape-100 bg-grape-50/60 open:bg-white">
+        <summary className="flex cursor-pointer list-none items-center gap-3 rounded-2xl px-4 py-3 transition-colors hover:bg-grape-50 [&::-webkit-details-marker]:hidden">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="truncate font-semibold text-ink-900">Luyện thêm với Camera AI</p>
+              <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-grape-600 ring-1 ring-inset ring-grape-200">
+                Tùy chọn
+              </span>
+            </div>
+            <p className="mt-0.5 text-sm text-ink-600">
+              {locked ? "Hoàn thành lesson trước để mở" : `${completed}/${items.length} từ đã luyện`}
+            </p>
+          </div>
+          <span className="hidden shrink-0 text-sm font-semibold text-grape-600 sm:inline">{items.length} từ</span>
+          <svg
+            className="h-5 w-5 shrink-0 text-grape-500 transition-transform group-open/practice:rotate-180"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </summary>
+
+        <div className="border-t border-grape-100 p-3">
+          <div className="grid gap-2 sm:grid-cols-2">
+            {items.map((item, index) => {
+              const done = item.status === "COMPLETED";
+              const content = (
+                <>
+                  <span
+                    className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs font-bold ${
+                      done ? "bg-success-100 text-success-700" : item.locked ? "bg-ink-100 text-ink-500" : "bg-grape-100 text-grape-700"
+                    }`}
+                  >
+                    {done ? <IconCheck className="h-3.5 w-3.5" /> : item.locked ? <IconLock className="h-3 w-3" /> : index + 1}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-ink-900">{item.title}</span>
+                    <span className="block text-xs text-ink-500">{done ? "Đã luyện" : item.locked ? "Chưa mở" : "Xem video và luyện tập"}</span>
+                  </span>
+                  {!done && !item.locked && <IconArrowRight className="h-4 w-4 shrink-0 text-grape-500" />}
+                </>
+              );
+
+              return item.locked || done ? (
+                <div key={item.signId} className="flex items-center gap-2 rounded-xl border border-ink-100 bg-ink-50/70 px-3 py-2" aria-disabled="true">
+                  {content}
+                </div>
+              ) : (
+                <Link
+                  key={item.signId}
+                  href={urls.get(item.signId) ?? "/hoc"}
+                  className="flex items-center gap-2 rounded-xl border border-grape-100 bg-white px-3 py-2 transition-colors hover:border-grape-300 hover:bg-grape-50"
+                >
+                  {content}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </details>
     </li>
   );
 }
