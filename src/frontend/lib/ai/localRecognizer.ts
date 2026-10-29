@@ -24,8 +24,9 @@ class LocalRecognizer {
   private session: ort.InferenceSession | null = null;
   private labels: string[] = [];
   private inputName: string = "";
-  private isLoading = false;
   private currentModelType: string | null = null;
+  private loadingModelType: string | null = null;
+  private loadPromise: Promise<boolean> | null = null;
 
   async load(modelType: "vsl_mvp400_v2_lite_transformer" | "vsl_mvp30_v2_lite_transformer" | string = "vsl_mvp400_v2_lite_transformer"): Promise<boolean> {
     const normalizedType = modelType.includes("30")
@@ -33,9 +34,29 @@ class LocalRecognizer {
       : "vsl_mvp400_v2_lite_transformer";
 
     if (this.session && this.currentModelType === normalizedType) return true;
-    if (this.isLoading) return false;
 
-    this.isLoading = true;
+    // Trang thanh toán có thể tải nóng model trong khi người dùng chuyển thẳng sang
+    // Camera AI. Các lời gọi trùng model phải dùng chung một Promise thay vì báo lỗi giả.
+    if (this.loadPromise) {
+      if (this.loadingModelType === normalizedType) return this.loadPromise;
+      await this.loadPromise;
+      return this.load(normalizedType);
+    }
+
+    const promise = this.loadModel(normalizedType);
+    this.loadingModelType = normalizedType;
+    this.loadPromise = promise;
+    try {
+      return await promise;
+    } finally {
+      if (this.loadPromise === promise) {
+        this.loadPromise = null;
+        this.loadingModelType = null;
+      }
+    }
+  }
+
+  private async loadModel(normalizedType: string): Promise<boolean> {
     try {
       if (this.session && this.currentModelType !== normalizedType) {
         this.session = null;
@@ -69,8 +90,6 @@ class LocalRecognizer {
     } catch (err) {
       console.warn("Không thể nạp mô hình ONNX tại client, sẽ rơi về backend API:", err);
       return false;
-    } finally {
-      this.isLoading = false;
     }
   }
 

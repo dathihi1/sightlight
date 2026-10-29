@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { apiCall, tokenStore } from "@/lib/api";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -19,6 +19,7 @@ interface CheckoutResult {
 function SuccessContent() {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
+  const aiWarmupStartedRef = useRef(false);
   const searchParams = useSearchParams();
   const orderCodeStr = searchParams.get("orderCode");
   const orderCode = orderCodeStr ? parseInt(orderCodeStr, 10) : null;
@@ -39,8 +40,34 @@ function SuccessContent() {
 
   useEffect(() => {
     if (!isPaid || !tokenStore.get()) return;
-    void queryClient.invalidateQueries({ queryKey: ["me"] });
-    void queryClient.invalidateQueries({ queryKey: ["path"] });
+    if (aiWarmupStartedRef.current) return;
+    aiWarmupStartedRef.current = true;
+
+    // Quyền Premium và model AI phải được làm mới ngay, không chờ cache mặc định 30 giây.
+    queryClient.removeQueries({ queryKey: ["ai-practice-session"] });
+    void Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["me"] }),
+      queryClient.invalidateQueries({ queryKey: ["path"] }),
+      queryClient.invalidateQueries({ queryKey: ["ai-capabilities"] }),
+      queryClient.invalidateQueries({ queryKey: ["dictionary-ai-capabilities"] }),
+    ]);
+
+    // Tải nóng trong lúc người dùng còn ở màn hình thành công. Không xin quyền camera;
+    // khi bấm "Luyện Camera AI", MediaPipe, ONNX và model 400 đã sẵn sàng hoặc đang tải.
+    void Promise.all([
+      import("@/lib/holistic/extractor"),
+      import("@/lib/ai/localRecognizer"),
+    ])
+      .then(([{ loadHolisticLandmarker }, { localRecognizer }]) =>
+        Promise.all([
+          loadHolisticLandmarker(),
+          localRecognizer.load("vsl_mvp400_v2_lite_transformer"),
+        ]),
+      )
+      .catch((error) => {
+        // Tải nóng chỉ là tối ưu; màn Camera AI vẫn có thể tự thử lại như bình thường.
+        console.warn("Không thể tải nóng Camera AI sau thanh toán:", error);
+      });
   }, [isPaid, queryClient]);
 
   return (
