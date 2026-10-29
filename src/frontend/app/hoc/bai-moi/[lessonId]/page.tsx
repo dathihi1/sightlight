@@ -12,7 +12,6 @@ import { IconCheck, IconFlame, IconStar } from "@/components/ui/Icons";
 import { LessonIntro } from "@/components/lesson/LessonIntro";
 import { ExerciseHeader } from "@/components/lesson/ExerciseHeader";
 import { ExerciseRenderer } from "@/components/lesson/ExerciseRenderer";
-import { SignVideoPlayer } from "@/components/SignVideoPlayer";
 import { ApiError, apiCall } from "@/lib/api";
 import { LessonResult, AnswerResult, CompleteResult, MatchPair } from "@/lib/lesson-types";
 import { trackEvent, AnalyticsEvents } from "@/lib/analytics";
@@ -60,7 +59,7 @@ function ActionFooter({ children }: { children: React.ReactNode }) {
 /**
  * Lesson page mới với hỗ trợ:
  * - Lesson metadata (summary, topic, level)
- * - Content blocks (intro, SIGN_CARD với video teaching)
+ * - Content blocks giới thiệu; các SIGN_CARD đã được tách thành bài luyện riêng trên lộ trình
  * - Exercise types: SIGN_TO_MEANING, MEANING_TO_SIGN, TYPE_WHAT_YOU_SEE, SIGN_VIDEO_RECALL, SENTENCE_ORDER, MATCH_SIGN_MEANING
  */
 export default function NewLessonPage() {
@@ -74,7 +73,6 @@ export default function NewLessonPage() {
   });
 
   const [showIntro, setShowIntro] = useState(true);
-  const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [index, setIndex] = useState(0);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [typedAnswer, setTypedAnswer] = useState("");
@@ -113,8 +111,7 @@ export default function NewLessonPage() {
   const exercises = lesson.data.exercises;
   const blocks = lesson.data.blocks || [];
   const hasIntro = blocks.some((b) => b.blockType === "INTRO");
-  const signCards = blocks.filter((b) => b.blockType === "SIGN_CARD");
-  const totalSteps = signCards.length + (exercises?.length ?? 0) || 1;
+  const totalSteps = exercises?.length || 1;
 
   if (showIntro && hasIntro) {
     return (
@@ -126,57 +123,8 @@ export default function NewLessonPage() {
         estimatedMinutes={lesson.data.estimatedMinutes}
         learningObjectives={lesson.data.learningObjectives}
         blocks={lesson.data.blocks}
-        onStart={() => {
-          setShowIntro(false);
-          if (signCards.length > 0) setCurrentBlockIndex(0);
-        }}
+        onStart={() => setShowIntro(false)}
       />
-    );
-  }
-
-  // Thẻ ký hiệu mới — dạy trước khi làm bài tập
-  if (currentBlockIndex < signCards.length) {
-    const card = signCards[currentBlockIndex];
-    const isLast = currentBlockIndex === signCards.length - 1;
-
-    return (
-      <div className="flex min-h-screen flex-col">
-        <LessonTopBar percent={Math.round((currentBlockIndex / totalSteps) * 100)} />
-
-        <main className="mx-auto w-full max-w-4xl flex-1 px-4 pt-8">
-          <span className="chip bg-grape-100 text-grape-700">
-            Ký hiệu mới · {currentBlockIndex + 1}/{signCards.length}
-          </span>
-          {card.title && <h1 className="mt-3 text-4xl font-bold tracking-tight text-ink-900 sm:text-5xl">{card.title}</h1>}
-
-          <div className="mt-6">
-            {card.mediaRef ? (
-              <SignVideoPlayer videoUrl={card.mediaRef} title={card.title || undefined} autoPlay={true} loop={true} />
-            ) : (
-              <div className="grid aspect-video place-items-center rounded-3xl border border-ink-200 bg-ink-50 text-base font-bold text-ink-500">
-                Đang tải video mẫu…
-              </div>
-            )}
-          </div>
-
-          <p className="mt-6 text-base text-ink-600">
-            Mẹo: chú ý hình dạng bàn tay, hướng lòng bàn tay và biểu cảm khuôn mặt.
-          </p>
-        </main>
-
-        <ActionFooter>
-          <div className="flex gap-3">
-            {currentBlockIndex > 0 && (
-              <button type="button" onClick={() => setCurrentBlockIndex(currentBlockIndex - 1)} className="btn btn-secondary" aria-label="Ký hiệu trước">
-                ←
-              </button>
-            )}
-            <button type="button" onClick={() => setCurrentBlockIndex(currentBlockIndex + 1)} className="btn btn-primary flex-1">
-              {isLast ? "Luyện tập" : "Tiếp tục"}
-            </button>
-          </div>
-        </ActionFooter>
-      </div>
     );
   }
 
@@ -236,8 +184,8 @@ export default function NewLessonPage() {
 
         <div className="mt-10 w-full">
           {summary.nextLessonId ? (
-            <button onClick={() => router.push(`/hoc/bai-moi/${summary.nextLessonId}`)} className="btn btn-primary btn-lg w-full">
-              Bài tiếp theo
+            <button onClick={() => router.push("/hoc")} className="btn btn-primary btn-lg w-full">
+              Tiếp tục lộ trình
             </button>
           ) : (
             <Link href="/hoc" className="btn btn-primary btn-lg w-full">
@@ -342,7 +290,7 @@ export default function NewLessonPage() {
     }
   };
 
-  const done = signCards.length + index + (feedback ? 1 : 0);
+  const done = index + (feedback ? 1 : 0);
 
   return (
     <div className="flex min-h-screen flex-col">

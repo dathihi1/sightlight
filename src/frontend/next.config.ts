@@ -30,6 +30,13 @@ const nextConfig: NextConfig = {
         headers: [{ key: "Cache-Control", value: "public, max-age=3600, must-revalidate" }],
       },
       {
+        source: "/firebase-messaging-sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+      {
         source: "/(.*)",
         headers: [
           // MediaPipe chạy WASM trong worker; các header này cũng là yêu cầu bảo mật chung (NFR-07).

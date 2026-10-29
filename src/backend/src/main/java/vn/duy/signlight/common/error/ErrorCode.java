@@ -43,6 +43,7 @@ public enum ErrorCode {
     // ------------------------------------------------------------- learning (03)
     EXERCISE_NOT_IN_LESSON("03101"),
     ANSWER_TYPE_MISMATCH("03102"),
+    SIGN_PRACTICE_INVALID("03103"),
     LESSON_LOCKED("03201"),
 
     // ------------------------------------------------------------- dictionary (04)

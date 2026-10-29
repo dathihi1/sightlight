@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { apiCall } from "@/lib/api";
 import Link from "next/link";
 import { IconBell } from "@/components/ui/Icons";
+import { FCM_MESSAGE_EVENT } from "@/lib/firebase/events";
 
 export interface NotificationItem {
   id: string;
@@ -170,8 +171,18 @@ export function NotificationDropdown() {
 
   useEffect(() => {
     fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 40000); // 40s polling
-    return () => clearInterval(interval);
+    const refresh = () => void fetchUnreadCount();
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    const interval = setInterval(refresh, 5 * 60 * 1000); // FCM là chính, polling chỉ để tự phục hồi.
+    window.addEventListener(FCM_MESSAGE_EVENT, refresh);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener(FCM_MESSAGE_EVENT, refresh);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   const handleToggle = () => {

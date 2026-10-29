@@ -24,14 +24,17 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final AppUserRepository userRepository;
     private final EmailService emailService;
+    private final PushOutboxService pushOutboxService;
 
     public NotificationService(
             NotificationRepository notificationRepository,
             AppUserRepository userRepository,
-            EmailService emailService) {
+            EmailService emailService,
+            PushOutboxService pushOutboxService) {
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
         this.emailService = emailService;
+        this.pushOutboxService = pushOutboxService;
     }
 
     @Transactional
@@ -47,6 +50,7 @@ public class NotificationService {
                 .createdAt(Instant.now())
                 .build();
         Notification saved = notificationRepository.save(notification);
+        pushOutboxService.enqueue(saved);
         log.info("notification_created user_id={} notif_id={} type={}", userId, saved.getId(), type);
         return saved;
     }

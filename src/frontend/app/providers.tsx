@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { PushNotificationBridge } from "@/components/PushNotificationBridge";
 
 /** TanStack Query lo cache và đồng bộ dữ liệu server (techstack §Quản lý trạng thái). */
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -32,7 +33,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <LanguageProvider>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        {children}
+        <PushNotificationBridge />
+      </QueryClientProvider>
     </LanguageProvider>
   );
 }

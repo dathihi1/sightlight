@@ -151,6 +151,12 @@ public class AiRecognitionService {
                 .filter(java.util.Objects::nonNull)
                 .toList();
 
+        // Khi màn bài học yêu cầu đúng một từ, không được âm thầm thay bằng từ khác trong model.
+        // Trả danh sách rỗng để UI báo rõ Camera AI chưa hỗ trợ và cho người học tiếp tục.
+        if (preferredSignId != null && !recognizableSignIds.contains(preferredSignId)) {
+            return new AiPracticeSessionResult(UUID.randomUUID(), version.getVersionCode(), List.of());
+        }
+
         List<UUID> orderedSignIds = new ArrayList<>();
         if (preferredSignId != null && recognizableSignIds.contains(preferredSignId)) {
             orderedSignIds.add(preferredSignId);

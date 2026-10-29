@@ -106,3 +106,9 @@ services:
         value: "30"
       - key: NEXT_PUBLIC_APP_URL
         sync: false
+      - key: FIREBASE_ENABLED
+        value: "false"
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON_BASE64
+        sync: false

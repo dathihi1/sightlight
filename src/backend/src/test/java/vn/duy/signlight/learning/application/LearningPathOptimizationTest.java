@@ -147,6 +147,23 @@ class LearningPathOptimizationTest {
     }
 
     @Test
+    void optionalCameraPracticeDoesNotBlockTheMainLesson() {
+        UUID lessonId = UUID.randomUUID();
+        Lesson lesson = Lesson.builder().id(lessonId).chapterId(chapterId).status("PUBLISHED").build();
+        LessonPreparationService optionalPreparation = mock(LessonPreparationService.class);
+        LearningPathService serviceWithPreparation = new LearningPathService(
+                contentCatalog, contentTree, lessonStateRepository, authService,
+                null, null, learnerQueries, optionalPreparation);
+        when(learnerQueries.lessonAccess(userId, lessonId))
+                .thenReturn(Optional.of(new LessonAccessView(courseId, true, false)));
+
+        LearningPathService.Access access = serviceWithPreparation.accessTo(userId, lesson);
+
+        assertTrue(access.unlocked());
+        verify(optionalPreparation, never()).allCompleted(userId, lessonId);
+    }
+
+    @Test
     void nextLessonUsesDirectBoundedLookup() {
         UUID nextLessonId = UUID.randomUUID();
         when(learnerQueries.nextLesson(userId, courseId)).thenReturn(Optional.of(
