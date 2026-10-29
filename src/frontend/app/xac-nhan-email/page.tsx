@@ -160,6 +160,12 @@ function OtpVerificationContent() {
             <p className="text-sm font-medium text-ink-900 mb-3 text-center">
               {t("Nhập mã xác nhận 6 chữ số", "Enter 6-digit code")}
             </p>
+            <p className="mb-4 rounded-xl border border-sun-200 bg-sun-50 px-3 py-2 text-center text-xs leading-relaxed text-sun-800">
+              {t(
+                "Nếu chưa thấy mã, hãy kiểm tra kỹ thư mục Thư rác/Spam hoặc Quảng cáo trong email của bạn.",
+                "If you cannot find the code, please check your Spam/Junk or Promotions folder.",
+              )}
+            </p>
             <div className="flex justify-center gap-2" onPaste={handleOtpPaste}>
               {otp.map((digit, index) => (
                 <input

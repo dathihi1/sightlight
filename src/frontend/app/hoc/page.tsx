@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { ErrorNotice } from "@/components/ErrorNotice";
@@ -35,9 +35,19 @@ interface LessonNode {
   title: string;
   status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
   locked: boolean;
+  lockedReason?: "PREVIOUS_LESSON" | null;
   premiumLocked: boolean;
   // Backend cấu hình Jackson bỏ hẳn field null, nên field vắng mặt về tới đây là `undefined`.
   bestScorePercent?: number | null;
+  preparationItems: PreparationNode[];
+}
+
+interface PreparationNode {
+  signId: string;
+  title: string;
+  status: "NOT_STARTED" | "COMPLETED";
+  locked: boolean;
+  orderIndex: number;
 }
 
 /** GET /api/v1/gamification/summary — GamificationSummaryResult. */
@@ -56,6 +66,21 @@ interface Summary {
 }
 
 const lessonsOf = (u: UnitNode) => u.chapters.flatMap((c) => c.lessons);
+
+function preparationUrls(lesson: LessonNode) {
+  const urls = new Map<string, string>();
+  let returnTo = `/hoc/bai-moi/${lesson.id}`;
+  for (const item of [...(lesson.preparationItems ?? [])].reverse()) {
+    const url = `/luyen-ai?signId=${encodeURIComponent(item.signId)}&mode=lesson&lessonId=${encodeURIComponent(lesson.id)}&returnTo=${encodeURIComponent(returnTo)}`;
+    urls.set(item.signId, url);
+    returnTo = url;
+  }
+  return urls;
+}
+
+function lessonStartHref(lesson: LessonNode) {
+  return `/hoc/bai-moi/${lesson.id}`;
+}
 const isoDay = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const WEEKDAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
@@ -236,7 +261,7 @@ function ContinueCard({ unit, index, nextLessonId }: { unit: UnitNode; index: nu
         <span>{pct}%</span>
       </div>
       {target ? (
-        <Link href={`/hoc/bai-moi/${target.id}`} className="mt-4 inline-flex items-center gap-1.5 font-semibold text-brand-600 hover:underline">
+        <Link href={lessonStartHref(target)} className="mt-4 inline-flex items-center gap-1.5 font-semibold text-brand-600 hover:underline">
           {target.status === "IN_PROGRESS" ? "Học tiếp" : "Bắt đầu"}: {target.title}
           <IconArrowRight className="h-4 w-4" />
         </Link>
@@ -281,15 +306,26 @@ function UnitSection({
           <div key={chapter.id} className="mb-4 last:mb-0">
             <h3 className="mb-2 text-sm font-semibold text-ink-500">{chapter.title}</h3>
             <ol>
-              {chapter.lessons.map((lesson, i) => (
-                <LessonRow
-                  key={lesson.id}
-                  lesson={lesson}
-                  isNext={lesson.id === nextLessonId}
-                  isLast={i === chapter.lessons.length - 1}
-                  onUnlock={onUnlock}
-                />
-              ))}
+              {chapter.lessons.map((lesson, lessonIndex) => {
+                const urls = preparationUrls(lesson);
+                return (
+                  <Fragment key={lesson.id}>
+                    {(lesson.preparationItems ?? []).map((item) => (
+                      <PreparationRow
+                        key={`${lesson.id}-${item.signId}`}
+                        item={item}
+                        href={urls.get(item.signId) ?? "/hoc"}
+                      />
+                    ))}
+                    <LessonRow
+                      lesson={lesson}
+                      isNext={lesson.id === nextLessonId}
+                      isLast={lessonIndex === chapter.lessons.length - 1}
+                      onUnlock={onUnlock}
+                    />
+                  </Fragment>
+                );
+              })}
             </ol>
           </div>
         ))}
@@ -310,6 +346,7 @@ function LessonRow({
   onUnlock: (lesson: { id: string; title: string }) => void;
 }) {
   const reason = lesson.locked ? "Học xong bài trước để mở" : null;
+  const canUnlock = lesson.lockedReason === "PREVIOUS_LESSON";
   const done = lesson.status === "COMPLETED";
   const current = !reason && (isNext || lesson.status === "IN_PROGRESS");
   const status = reason ?? (done ? "Đã hoàn thành" : lesson.status === "IN_PROGRESS" ? "Đang học" : "Chưa học");
@@ -338,7 +375,7 @@ function LessonRow({
         </p>
       </div>
       {current && <span className="btn btn-primary btn-sm pointer-events-none">{lesson.status === "IN_PROGRESS" ? "Tiếp tục" : "Bắt đầu"}</span>}
-      {reason && (
+      {reason && canUnlock && (
         <button type="button" onClick={() => onUnlock({ id: lesson.id, title: lesson.title })} className="btn btn-secondary btn-sm shrink-0">
           Mở khóa
         </button>
@@ -358,6 +395,50 @@ function LessonRow({
         <Link href={`/hoc/bai-moi/${lesson.id}`} className="group flex flex-1 rounded-2xl pb-1" aria-label={`${lesson.title} — ${status}`}>
           {body}
         </Link>
+      )}
+    </li>
+  );
+}
+
+function PreparationRow({ item, href }: { item: PreparationNode; href: string }) {
+  const done = item.status === "COMPLETED";
+  const body = (
+    <div className={`flex flex-1 items-center justify-between gap-3 rounded-2xl px-4 py-3 ${done ? "bg-success-50/70" : item.locked ? "bg-ink-50" : "bg-grape-50"}`}>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-bold uppercase tracking-wide text-grape-600">
+          Luyện thêm · Từ {item.orderIndex + 1}
+        </p>
+        <p className="truncate text-base font-medium text-ink-900">{item.title}</p>
+        <p className="text-sm text-ink-600">
+          {done ? "Đã luyện với Camera AI" : item.locked ? "Hoàn thành lesson trước để mở" : "Không bắt buộc · Xem video và luyện với Camera AI"}
+        </p>
+      </div>
+      {!done && !item.locked && <span className="btn btn-grape btn-sm pointer-events-none">Luyện thêm</span>}
+    </div>
+  );
+
+  return (
+    <li className="relative flex gap-3">
+      <span className="absolute bottom-0 left-4 top-11 w-px -translate-x-1/2 bg-ink-200" aria-hidden="true" />
+      <div className="pt-3.5">
+        {done ? (
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-success-500 text-white">
+            <IconCheck className="h-4 w-4" />
+          </span>
+        ) : item.locked ? (
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-ink-100 text-ink-400">
+            <IconLock className="h-3.5 w-3.5" />
+          </span>
+        ) : (
+          <span className="grid h-8 w-8 place-items-center rounded-full border-2 border-grape-500 bg-white">
+            <span className="h-3 w-3 rounded-full bg-grape-500" />
+          </span>
+        )}
+      </div>
+      {item.locked || done ? (
+        <div className="flex flex-1 rounded-2xl pb-1" aria-disabled="true">{body}</div>
+      ) : (
+        <Link href={href} className="flex flex-1 rounded-2xl pb-1">{body}</Link>
       )}
     </li>
   );

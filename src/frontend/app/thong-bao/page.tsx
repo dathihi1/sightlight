@@ -10,6 +10,8 @@ import {
   NotificationTypeBadge,
   NotificationTypeIcon,
 } from "@/components/NotificationDropdown";
+import { PushNotificationSettings } from "@/components/PushNotificationSettings";
+import { FCM_MESSAGE_EVENT } from "@/lib/firebase/events";
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -34,6 +36,16 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     loadNotifications();
+    const handleRefresh = () => void loadNotifications();
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") void loadNotifications();
+    };
+    window.addEventListener(FCM_MESSAGE_EVENT, handleRefresh);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      window.removeEventListener(FCM_MESSAGE_EVENT, handleRefresh);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   const handleMarkAsRead = async (id: string) => {
@@ -133,6 +145,8 @@ export default function NotificationsPage() {
           </div>
         </div>
       </div>
+
+      <PushNotificationSettings />
 
       {/* Control Bar & Filter Tabs */}
       <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

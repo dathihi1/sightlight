@@ -72,6 +72,8 @@ export function useAuthSession() {
 
   const logout = useCallback(async () => {
     try {
+      const { revokePushNotifications } = await import("./firebase/messaging");
+      await revokePushNotifications().catch(() => undefined);
       await apiCall("/api/v1/auth/logout", {
         method: "POST",
         body: { refreshToken: tokenStore.getRefreshToken() || undefined },

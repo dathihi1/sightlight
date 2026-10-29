@@ -30,7 +30,17 @@ public record LearningPathResult(
             String title,
             String status,
             boolean locked,
+            String lockedReason,
             boolean premiumLocked,
-            Short bestScorePercent) {
+            Short bestScorePercent,
+            List<PreparationNode> preparationItems) {
+    }
+
+    public record PreparationNode(
+            UUID signId,
+            String title,
+            String status,
+            boolean locked,
+            int orderIndex) {
     }
 }

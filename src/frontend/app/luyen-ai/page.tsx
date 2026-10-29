@@ -76,6 +76,12 @@ export default function AiPracticePage() {
 function AiPracticeContent() {
   const searchParams = useSearchParams();
   const requestedSignId = searchParams.get("signId");
+  const requestedLessonId = searchParams.get("lessonId");
+  const requestedReturnTo = searchParams.get("returnTo");
+  const returnTo = safeInternalPath(requestedReturnTo);
+  const mainLessonUrl = requestedLessonId ? `/hoc/bai-moi/${encodeURIComponent(requestedLessonId)}` : "/hoc";
+  const lessonPractice = searchParams.get("mode") === "lesson"
+    && Boolean(requestedSignId && requestedLessonId && returnTo);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const recorderRef = useRef<import("@/lib/holistic/extractor").SignSequenceRecorder | null>(null);
@@ -90,6 +96,8 @@ function AiPracticeContent() {
   const [error, setError] = useState<string | null>(null);
   const [videoRatio, setVideoRatio] = useState<number>(16 / 9);
   const [showAdModal, setShowAdModal] = useState(false);
+  const [preparationSave, setPreparationSave] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const savedAttemptRef = useRef<string | null>(null);
 
   const capabilities = useQuery({
     queryKey: ["ai-capabilities"],
@@ -97,16 +105,32 @@ function AiPracticeContent() {
   });
 
   const session = useQuery({
-    queryKey: ["ai-practice-session", requestedSignId],
+    queryKey: ["ai-practice-session", requestedSignId, lessonPractice],
     queryFn: () => {
       const url = requestedSignId
-        ? `/api/v1/ai/practice/session?size=400&signId=${encodeURIComponent(requestedSignId)}`
+        ? `/api/v1/ai/practice/session?size=${lessonPractice ? 1 : 400}&signId=${encodeURIComponent(requestedSignId)}`
         : "/api/v1/ai/practice/session?size=400";
       return apiCall<PracticeSession>(url);
     },
   });
 
   const item = session.data?.items[itemIndex] ?? null;
+
+  useEffect(() => {
+    if (!lessonPractice || !requestedLessonId || !requestedSignId || !result?.verified) return;
+    if (savedAttemptRef.current === result.attemptId) return;
+    savedAttemptRef.current = result.attemptId;
+    setPreparationSave("saving");
+    void apiCall(
+      `/api/v1/lessons/${encodeURIComponent(requestedLessonId)}/preparation/${encodeURIComponent(requestedSignId)}/complete`,
+      { method: "POST", body: { attemptId: result.attemptId } },
+    )
+      .then(() => setPreparationSave("saved"))
+      .catch(() => {
+        savedAttemptRef.current = null;
+        setPreparationSave("error");
+      });
+  }, [lessonPractice, requestedLessonId, requestedSignId, result]);
 
   /** Dọn camera khi rời trang — không để đèn camera sáng sau khi người dùng đã đi. */
   const stopCamera = useCallback(() => {
@@ -162,6 +186,7 @@ function AiPracticeContent() {
   async function startRecording() {
     if (!videoRef.current || !item || !capabilities.data) return;
     setResult(null);
+    setPreparationSave("idle");
     setLocalInference(null);
     setError(null);
     if (!recorderRef.current) {
@@ -352,7 +377,23 @@ function AiPracticeContent() {
   }
 
   if (!item) {
-    return <EmptyState title="Chưa có ký hiệu để luyện" body="Phiên này chưa có ký hiệu nào được hỗ trợ chấm tự động." mood="sad" />;
+    return (
+      <EmptyState
+        title="Camera AI chưa hỗ trợ từ này"
+        body="Bạn vẫn có thể xem video mẫu và tiếp tục bài học. Từ này sẽ được bổ sung vào model nhận dạng sau."
+        mood="sad"
+      >
+        {lessonPractice ? (
+          <Link href={mainLessonUrl} className="btn btn-primary">
+            Bỏ qua · Vào lesson chính
+          </Link>
+        ) : (
+          <Link href="/hoc" className="btn btn-primary">
+            Về lộ trình
+          </Link>
+        )}
+      </EmptyState>
+    );
   }
 
   const total = session.data?.items.length ?? 1;
@@ -363,26 +404,32 @@ function AiPracticeContent() {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="eyebrow text-grape-600">
-            Luyện camera · {itemIndex + 1}/{total}
+            {lessonPractice ? "Luyện thêm không bắt buộc · Camera AI" : `Luyện camera · ${itemIndex + 1}/${total}`}
           </p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-ink-900 sm:text-4xl">
             Làm ký hiệu “<span className="text-brand-500">{item.label}</span>”
           </h1>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setItemIndex((current) => Math.min(current + 1, total - 1));
-            setResult(null);
-          }}
-          disabled={itemIndex >= total - 1}
-          className="btn btn-secondary btn-sm self-start sm:self-auto"
-        >
-          Bỏ qua
-        </button>
+        {lessonPractice ? (
+          <Link href={mainLessonUrl} className="btn btn-secondary btn-sm self-start sm:self-auto">
+            Bỏ qua · Vào lesson chính
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setItemIndex((current) => Math.min(current + 1, total - 1));
+              setResult(null);
+            }}
+            disabled={itemIndex >= total - 1}
+            className="btn btn-secondary btn-sm self-start sm:self-auto"
+          >
+            Bỏ qua
+          </button>
+        )}
       </header>
 
-      <section className="mt-5 rounded-3xl border border-grape-200 bg-grape-50 p-4 sm:flex sm:items-end sm:justify-between sm:gap-5">
+      {!lessonPractice && <section className="mt-5 rounded-3xl border border-grape-200 bg-grape-50 p-4 sm:flex sm:items-end sm:justify-between sm:gap-5">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <label htmlFor="practice-sign" className="text-sm font-bold text-grape-800">
@@ -422,7 +469,7 @@ function AiPracticeContent() {
             Mở khóa 400 từ
           </Link>
         )}
-      </section>
+      </section>}
 
       {capabilities.data?.stubMode && (
         // Không để ai nhầm kết quả giả lập với độ chính xác thật của mô hình.
@@ -521,7 +568,7 @@ function AiPracticeContent() {
             </p>
 
             {/* Banner xem video quảng cáo nhận lượt AI */}
-            <div className="mt-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 p-4 border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+            {!lessonPractice && <div className="mt-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 p-4 border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
               <div className="flex items-center gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-500/10 text-xl text-amber-700">
                   🎁
@@ -542,7 +589,7 @@ function AiPracticeContent() {
               >
                 Xem video (+1 lượt)
               </button>
-            </div>
+            </div>}
           </div>
         </section>
       </div>
@@ -552,7 +599,34 @@ function AiPracticeContent() {
           <ErrorNotice message={error} />
         </div>
       )}
-      {result && <AttemptFeedback result={result} targetLabel={item.label} onOpenAd={() => setShowAdModal(true)} />}
+      {result && <AttemptFeedback result={result} targetLabel={item.label} onOpenAd={lessonPractice ? undefined : () => setShowAdModal(true)} />}
+
+      {lessonPractice && result?.verified && preparationSave === "error" && (
+        <div className="mt-6">
+          <ErrorNotice message="Đã nhận diện đúng nhưng chưa lưu được tiến độ bài luyện. Vui lòng thử lại khi Backend hoạt động ổn định." />
+        </div>
+      )}
+
+      {lessonPractice && returnTo && result?.verified && preparationSave !== "error" && (
+        <div className="mt-6 rounded-3xl border border-success-200 bg-success-50 p-5 text-center">
+          <p className="text-lg font-bold text-success-800">
+            {preparationSave === "saved" ? `Bạn đã hoàn thành từ “${item.label}”` : "Đang lưu tiến độ bài luyện…"}
+          </p>
+          <p className="mt-1 text-sm text-success-700">Bài luyện này là tùy chọn và giúp bạn ghi nhớ ký hiệu tốt hơn.</p>
+          {preparationSave === "saved" ? (
+            <div className="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
+              <Link href={returnTo} className="btn btn-primary w-full sm:w-auto">
+                Luyện từ tiếp theo →
+              </Link>
+              <Link href={mainLessonUrl} className="btn btn-secondary w-full sm:w-auto">
+                Vào lesson chính
+              </Link>
+            </div>
+          ) : (
+            <span className="btn btn-secondary mt-4 w-full cursor-wait sm:w-auto">Đang lưu…</span>
+          )}
+        </div>
+      )}
 
       <div className="mt-8 space-y-1 text-sm text-ink-600">
         {capabilities.data?.disclaimerText && <p>{capabilities.data.disclaimerText}</p>}
@@ -567,6 +641,10 @@ function AiPracticeContent() {
       />
     </div>
   );
+}
+
+function safeInternalPath(path: string | null) {
+  return path && path.startsWith("/") && !path.startsWith("//") && !path.includes("\\") ? path : null;
 }
 
 function AttemptFeedback({

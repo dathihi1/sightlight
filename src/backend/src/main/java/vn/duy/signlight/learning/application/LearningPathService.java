@@ -27,6 +27,7 @@ import vn.duy.signlight.learning.repository.UserUnlockedLessonRepository;
 import vn.duy.signlight.learning.web.dto.ChapterLessonsResult;
 import vn.duy.signlight.learning.web.dto.CourseOverviewResult;
 import vn.duy.signlight.learning.web.dto.LearningPathResult;
+import vn.duy.signlight.learning.web.dto.LessonPreparationResult;
 
 /**
  * Dựng lộ trình học kèm tiến độ (FR-09, api-spec §3.4).
@@ -45,6 +46,7 @@ public class LearningPathService {
     private final UserInventoryRepository userInventoryRepository;
     private final UserUnlockedLessonRepository unlockedLessonRepository;
     private final LearnerCourseQueryRepository learnerQueries;
+    private final LessonPreparationService preparationService;
 
     @Autowired
     public LearningPathService(ContentCatalogService contentCatalog,
@@ -53,7 +55,8 @@ public class LearningPathService {
             AuthService authService,
             @Autowired(required = false) UserInventoryRepository userInventoryRepository,
             @Autowired(required = false) UserUnlockedLessonRepository unlockedLessonRepository,
-            @Autowired(required = false) LearnerCourseQueryRepository learnerQueries) {
+            @Autowired(required = false) LearnerCourseQueryRepository learnerQueries,
+            @Autowired(required = false) LessonPreparationService preparationService) {
         this.contentCatalog = contentCatalog;
         this.contentTree = contentTree;
         this.lessonStateRepository = lessonStateRepository;
@@ -61,13 +64,14 @@ public class LearningPathService {
         this.userInventoryRepository = userInventoryRepository;
         this.unlockedLessonRepository = unlockedLessonRepository;
         this.learnerQueries = learnerQueries;
+        this.preparationService = preparationService;
     }
 
     public LearningPathService(ContentCatalogService contentCatalog,
             ContentTreeService contentTree,
             UserLessonStateRepository lessonStateRepository,
             AuthService authService) {
-        this(contentCatalog, contentTree, lessonStateRepository, authService, null, null, null);
+        this(contentCatalog, contentTree, lessonStateRepository, authService, null, null, null, null);
     }
 
     public LearningPathService(ContentCatalogService contentCatalog,
@@ -77,7 +81,18 @@ public class LearningPathService {
             UserInventoryRepository userInventoryRepository,
             UserUnlockedLessonRepository unlockedLessonRepository) {
         this(contentCatalog, contentTree, lessonStateRepository, authService,
-                userInventoryRepository, unlockedLessonRepository, null);
+                userInventoryRepository, unlockedLessonRepository, null, null);
+    }
+
+    public LearningPathService(ContentCatalogService contentCatalog,
+            ContentTreeService contentTree,
+            UserLessonStateRepository lessonStateRepository,
+            AuthService authService,
+            UserInventoryRepository userInventoryRepository,
+            UserUnlockedLessonRepository unlockedLessonRepository,
+            LearnerCourseQueryRepository learnerQueries) {
+        this(contentCatalog, contentTree, lessonStateRepository, authService,
+                userInventoryRepository, unlockedLessonRepository, learnerQueries, null);
     }
 
     @Transactional(readOnly = true)
@@ -191,14 +206,25 @@ public class LearningPathService {
                     UserLessonState state = progress.get(lesson.getId());
                     String status = state == null ? UserLessonState.NOT_STARTED : state.getStatus();
                     boolean completed = UserLessonState.COMPLETED.equals(status);
-                    boolean locked = !unitLessonPreviousCompleted
-                            && !manuallyUnlockedLessonIds.contains(lesson.getId());
+                    boolean sequenceUnlocked = unitLessonPreviousCompleted
+                            || manuallyUnlockedLessonIds.contains(lesson.getId());
+                    LessonPreparationResult preparation = preparationService == null
+                            ? new LessonPreparationResult(lesson.getId(), lesson.getTitle(), true, List.of())
+                            : preparationService.preparation(userId, lesson.getId());
+                    // Bài luyện Camera AI là nội dung bổ trợ, không tham gia điều kiện mở lesson.
+                    boolean locked = !sequenceUnlocked;
+                    String lockedReason = !sequenceUnlocked ? "PREVIOUS_LESSON" : null;
+                    List<LearningPathResult.PreparationNode> preparationNodes = preparation.items().stream()
+                            .map(item -> new LearningPathResult.PreparationNode(
+                                    item.signId(), item.title(), item.status(),
+                                    !sequenceUnlocked || item.locked(), item.orderIndex()))
+                            .toList();
 
                     lessonNodes.add(new LearningPathResult.LessonNode(
-                            lesson.getId(), lesson.getTitle(), status, locked, premiumLocked,
-                            state == null ? null : state.getBestScorePercent()));
+                            lesson.getId(), lesson.getTitle(), status, locked, lockedReason, premiumLocked,
+                            state == null ? null : state.getBestScorePercent(), preparationNodes));
 
-                    if (nextLessonId == null && !completed && !locked && !premiumLocked) {
+                    if (nextLessonId == null && !completed && sequenceUnlocked && !premiumLocked) {
                         nextLessonId = lesson.getId();
                     }
                     unitLessonPreviousCompleted = completed;
@@ -216,13 +242,22 @@ public class LearningPathService {
     /** Bài học có mở khoá cho người này không — truy vấn đúng một quyết định quyền truy cập. */
     @Transactional(readOnly = true)
     public Access accessTo(UUID userId, Lesson lesson) {
-        if (userId != null && unlockedLessonRepository != null
-                && unlockedLessonRepository.findActiveUnlock(userId, lesson.getId(), Instant.now()).isPresent()) {
+        boolean alreadyCompleted = userId != null && lessonStateRepository
+                .findByUserIdAndLessonId(userId, lesson.getId())
+                .map(state -> UserLessonState.COMPLETED.equals(state.getStatus()))
+                .orElse(false);
+        if (alreadyCompleted) {
             return new Access(true, false);
         }
-        return requireOptimizedQueries().lessonAccess(userId, lesson.getId())
-                .map(view -> new Access(view.unlocked(), false))
-                .orElse(new Access(false, false));
+        boolean manuallyUnlocked = userId != null && unlockedLessonRepository != null
+                && unlockedLessonRepository.findActiveUnlock(userId, lesson.getId(), Instant.now()).isPresent();
+        boolean sequenceUnlocked = manuallyUnlocked || requireOptimizedQueries().lessonAccess(userId, lesson.getId())
+                .map(LearnerCourseQueryRepository.LessonAccessView::unlocked)
+                .orElse(false);
+        if (!sequenceUnlocked) {
+            return new Access(false, false);
+        }
+        return new Access(true, false);
     }
 
     /** Kết quả kiểm quyền truy cập một bài học. */

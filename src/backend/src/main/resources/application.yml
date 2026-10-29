@@ -131,4 +131,11 @@ signlight:
       api-key: ${RESEND_API_KEY:}
       from: ${RESEND_MAIL_FROM:SignLight <onboarding@resend.dev>}
       reply-to: ${RESEND_REPLY_TO:signlight.forwork@gmail.com}
+  firebase:
+    enabled: ${FIREBASE_ENABLED:false}
+    project-id: ${FIREBASE_PROJECT_ID:}
+    service-account-json-base64: ${FIREBASE_SERVICE_ACCOUNT_JSON_BASE64:}
+    worker-delay-ms: ${FIREBASE_WORKER_DELAY_MS:5000}
+    batch-size: ${FIREBASE_WORKER_BATCH_SIZE:50}
+    max-attempts: ${FIREBASE_WORKER_MAX_ATTEMPTS:5}
 

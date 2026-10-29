@@ -17,11 +17,14 @@ import vn.duy.signlight.common.web.CurrentUser;
 import vn.duy.signlight.common.web.RequestIdFilter;
 import vn.duy.signlight.common.web.TransactionResponse;
 import vn.duy.signlight.learning.application.LessonService;
+import vn.duy.signlight.learning.application.LessonPreparationService;
 import vn.duy.signlight.learning.web.dto.AnswerRequest;
 import vn.duy.signlight.learning.web.dto.AnswerResult;
 import vn.duy.signlight.learning.web.dto.CompleteLessonRequest;
 import vn.duy.signlight.learning.web.dto.CompleteLessonResult;
+import vn.duy.signlight.learning.web.dto.CompleteSignPracticeRequest;
 import vn.duy.signlight.learning.web.dto.LessonResult;
+import vn.duy.signlight.learning.web.dto.LessonPreparationResult;
 
 /** api-spec §3.5–§3.7 — nội dung bài học, nộp câu trả lời, hoàn thành bài. */
 @RestController
@@ -30,9 +33,31 @@ import vn.duy.signlight.learning.web.dto.LessonResult;
 public class LessonController {
 
     private final LessonService lessonService;
+    private final LessonPreparationService preparationService;
 
-    public LessonController(LessonService lessonService) {
+    public LessonController(LessonService lessonService, LessonPreparationService preparationService) {
         this.lessonService = lessonService;
+        this.preparationService = preparationService;
+    }
+
+    @GetMapping("/{lessonId}/preparation")
+    @Operation(summary = "Danh sách bài luyện từng từ trước lesson chính")
+    public ResponseEntity<TransactionResponse<LessonPreparationResult>> preparation(
+            @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId,
+            @PathVariable UUID lessonId) {
+        return ResponseEntity.ok(ApiResponses.ok(requestId,
+                preparationService.preparation(CurrentUser.id(), lessonId)));
+    }
+
+    @PostMapping("/{lessonId}/preparation/{signId}/complete")
+    @Operation(summary = "Hoàn thành một bài luyện từ bằng lượt Camera AI đã được chấm")
+    public ResponseEntity<TransactionResponse<LessonPreparationResult>> completePreparation(
+            @PathVariable UUID lessonId,
+            @PathVariable UUID signId,
+            @Valid @RequestBody CompleteSignPracticeRequest request) {
+        LessonPreparationResult result = preparationService.complete(
+                CurrentUser.id(), lessonId, signId, request.getAttemptId());
+        return ResponseEntity.ok(ApiResponses.ok(request.getRequestId(), result));
     }
 
     @GetMapping("/{lessonId}")

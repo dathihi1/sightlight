@@ -55,6 +55,8 @@ public class SecurityConfig {
             "/api/v1/dictionary/topics",
             "/api/v1/dictionary/topics/**",
             "/api/v1/billing/plans",
+            "/api/v1/billing/appreciation-status",
+            "/api/v1/billing/feedback",
             "/api/v1/billing/ipn/**",
             "/api/v1/billing/return/**",
             "/api/v1/certificates/verify/**",

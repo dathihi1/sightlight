@@ -272,6 +272,12 @@ public class LessonService {
             }
         }
 
+        // SIGN_CARD đã trở thành các bài luyện Camera AI độc lập trên lộ trình.
+        // Lesson chính chỉ trả intro và nội dung bài tập để không dạy lại cùng một từ hai lần.
+        blocks = blocks.stream()
+                .filter(block -> !"SIGN_CARD".equals(block.blockType()))
+                .toList();
+
         UserLessonState state = touchState(userId, lessonId);
         return new LessonResult(
                 lesson.getId(),
