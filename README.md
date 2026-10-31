@@ -1,107 +1,267 @@
-# SignLight
+# SignLight Flutter App
 
-Nền tảng học **Ngôn ngữ Ký hiệu Việt Nam (VSL)** trực tuyến, với **AI nhận diện ký hiệu động** cho phản hồi
-tức thì — người học thực hiện trọn một ký hiệu trước camera và biết ngay mình làm đúng hay chưa.
-
-> Dự án cá nhân. Tham chiếu tập tính năng: **Lingvano ASL**. Nền tảng AI tái dùng từ repo
-> [`dathihi1/EXE101`](https://github.com/dathihi1/EXE101).
-> Toàn bộ nội dung dạy học, giao diện và nhận diện thương hiệu **do đội tự sản xuất** — xem ràng buộc pháp
-> lý ở [`docs/ba/BRD.md`](docs/ba/BRD.md) §6.
-
-## Trạng thái
-
-**Giai đoạn:** đã hoàn tất **bộ tài liệu B1→B6 phiên bản v0.3** — ✅ **đã chốt toàn bộ câu hỏi mở**. **Chưa có mã nguồn.**
-Cổng đang chờ: **GATE-1 (duyệt BRD)**.
-
-👉 Đọc [`PROJECT_STATE.md`](PROJECT_STATE.md) trước mỗi phiên làm việc.
-👉 Bản đồ tài liệu: [`docs/README.md`](docs/README.md).
-
-## Điểm khác biệt cốt lõi
-
-Các app học ngôn ngữ ký hiệu hiện có dạy bằng video, nhưng **không ai sửa sai cho người học**. Người học tự
-làm theo mà không biết mình đúng hay sai — rồi hoặc bỏ cuộc, hoặc học sai và giữ cái sai đó.
-
-SignLight giải quyết đúng chỗ đó: **AI nhận diện ký hiệu động**.
-
-| | Lingvano (tham chiếu) | **SignLight** |
-|---|---|---|
-| Ngôn ngữ | ASL, BSL, ÖGS | **VSL — Ngôn ngữ Ký hiệu Việt Nam** |
-| Nhận dạng qua camera | Bảng chữ cái (hình tay **tĩnh**) | **Ký hiệu ĐỘNG trọn vẹn** + bảng chữ cái |
-| Phản hồi khi sai | Đúng/sai | **Nêu rõ "hệ thống thấy bạn đang ký hiệu X"** + top-3 + gợi ý sửa |
-
-**Nền tảng kỹ thuật đã được kiểm chứng** (từ repo EXE101): mô hình `vsl_mvp30_v2_lite_transformer` —
-**30 ký hiệu VSL**, **top1 = 0.901 · top3 = 1.000**, ONNX INT8 chỉ **0,40 MB**, phân lớp **~0,52 ms**.
-
-## Sản phẩm làm gì
-
-| Nhóm | Nội dung |
-|------|----------|
-| Học | **17 chủ đề miễn phí**; trong từng chủ đề phải hoàn thành bài trước mới mở bài sau; bài học là **chuỗi bước** (dạy · giải thích · bài tập) |
-| 🤖 **AI luyện ký hiệu động** | Quay ~2 giây → AI chấm → phản hồi + gợi ý sửa. Khởi điểm 30 ký hiệu, lộ trình lên 100 |
-| Luyện tập | Lặp lại ngắt quãng: từ vựng · bảng chữ cái · số. **Mở khoá theo tiến độ học**, không theo gói |
-| Từ điển | Tra không dấu, gợi ý sai chính tả, biến thể vùng miền, **báo thiếu ký hiệu** |
-| Động lực | Chuỗi ngày · Freeze · 6 huy hiệu có cấp bậc · Khám phá văn hoá Điếc · chứng chỉ PDF |
-| Thanh toán | Premium **1 tháng / 6 tháng / vĩnh viễn** qua **payOS/VietQR** — mua một lần, không tự động trừ tiền. [Mô hình giá hiện hành](docs/PRICING_AND_ACCESS_MODEL.md) |
-| Quản trị | CMS soạn & duyệt nội dung (**bắt buộc người Điếc duyệt**), quản lý vốn ký hiệu AI |
+Flutter mobile app gọi API backend SignLight (Spring Boot).
 
 ## Kiến trúc
 
-**Modular monolith + một dịch vụ AI tách riêng:**
-Next.js 15 · Spring Boot 3.5 (Java 21) · PostgreSQL 17 · Redis · object storage/CDN ·
-**dịch vụ AI Python (FastAPI + ONNX Runtime)**.
-
-Trích đặc trưng chuyển động (MediaPipe Holistic) chạy **trong trình duyệt** → chỉ **tensor số** rời thiết
-bị, **không pixel nào**. Lý do chọn và các phương án đã loại: [`docs/sa/HLD.md`](docs/sa/HLD.md) §1 và 10 ADR.
-
-## Bảy bất biến — không được vi phạm ở bất kỳ đâu
-
-1. Hình ảnh camera **không bao giờ được lưu**; không pixel nào rời thiết bị.
-2. Chấm bài **luôn ở server**; API không lộ đáp án đúng trước khi chấm.
-3. Paywall chặn **ở backend**, không chỉ ẩn nút.
-4. Không phân biệt được email tồn tại / không tồn tại.
-5. Không có dữ liệu thẻ/ví và không có PII trong log.
-6. **`returnUrl` không bao giờ tự cấp Premium** — chỉ trạng thái payOS đã xác thực, đúng mã đơn và đúng số tiền mới được kích hoạt.
-7. **Lỗi của dịch vụ AI không bị tính là lỗi của người học.**
-
-## Cấu trúc thư mục
+**Clean Architecture** với 3 layers:
 
 ```
-.
-├── PROJECT_STATE.md              # Trạng thái dự án — đọc đầu tiên
-├── docs/
-│   ├── README.md                 # Bản đồ tài liệu
-│   ├── ba/                       # BRD, SRS, function-map, FSD, user-guide
-│   ├── sa/                       # techstack, HLD, architecture, LLD, api-spec
-│   ├── design/                   # design.md
-│   ├── qa/                       # test-plan, test-cases, test-report
-│   └── security/                 # pentest-report
-├── deploy/                       # docker-compose UAT (api·web·ai·db·cache·storage), .env.example, runbook
-├── src/                          # (chưa có — dựng ở B3)
-│   ├── backend/  frontend/       #   Java · Next.js
-│   └── ai/                       #   Python — tái dùng src/vsl_mvp/ của EXE101
-└── training-skill-software/      # Bộ skill SDLC dùng để sinh tài liệu
+lib/
+├── core/                    # Cross-cutting concerns
+│   ├── constants/          # API endpoints, storage keys
+│   ├── network/            # Dio client, interceptors
+│   └── storage/            # Token storage (SecureStorage)
+├── data/                   # Data layer
+│   ├── datasources/        # Remote API calls
+│   ├── models/             # DTOs with JSON serialization
+│   └── repositories/       # Repository implementations
+├── domain/                 # Business logic
+│   ├── entities/           # Pure Dart domain models
+│   └── repositories/       # Repository interfaces
+└── presentation/           # UI layer
+    ├── pages/              # Screens
+    ├── providers/          # Riverpod state management
+    └── widgets/            # Reusable components
 ```
 
-## Trạng thái quyết định & việc còn lại
+## Tech Stack
 
-> ✅ **Không còn câu hỏi nào đang chặn.** Toàn bộ Q1→Q11, R-07, R-11 đã được chốt ngày **2026-09-20**.
+- **State Management:** Riverpod 2.6
+- **HTTP Client:** Dio 5.7
+- **Code Generation:** Freezed + JSON Serializable
+- **Storage:** 
+  - `flutter_secure_storage` cho tokens (JWT)
+  - `shared_preferences` cho settings
 
-**Đã chốt:** Q1 (duyệt cả bảng version) · Q2 (**port `18080–18090`**) · Q3 (VNPay + MoMo) · Q4 (VSL) ·
-Q5 (hoãn nguồn video tới sau GATE-4) · Q6 (**không** làm B2B/tutor ở GĐ1) · Q7 (có module AI) ·
-**Q8 = phương án B** (trình duyệt trích landmark, server phân lớp) · **Q9 = CÓ** (bật góp dữ liệu tự nguyện) ·
-**Q10 = nội dung giả lập trước** · **Q11 = tăng độ chính xác MVP-30 trước** · R-07 (tuổi tối thiểu **16**) ·
-R-11 (đã có tài khoản merchant/sandbox).
+## API Backend
 
-**Việc còn lại — không phải câu hỏi, mà là việc phải làm:**
+Backend: `http://localhost:8080` (dev) hoặc `https://uat.signlight.local` (UAT)
 
-| # | Việc | Chặn |
-|---|------|------|
-| **V-2** | **Đo độ chính xác AI trên webcam thật** (≥ 5 người, ≥ 3 điều kiện ánh sáng) — **rủi ro R-02, lớn nhất còn lại** | GATE-2 |
-| **V-1** | Lấy 5 khoá VNPay/MoMo đặt vào `deploy/.env` *(không commit)* | GATE-3 |
-| **V-3** | Thêm `POST /api/infer/features`; **xoá** `/api/infer/frames` + `/api/attempt` khỏi bản triển khai | GATE-3 |
-| **V-4/V-5** | Script seed idempotent + cờ `is_seed`; 3 nhóm test case mới | GATE-4 |
-| **V-6** | Chặn tuổi < 16 cho góp dữ liệu **ở backend** | GATE-5 |
-| **V-7** | **Mở lại Q5** ngay sau GATE-4 — R-01 mới chỉ được *dời*, chưa gỡ | GATE-6 |
+**Envelope format:**
+```json
+{
+  "requestId": "uuid-v4",
+  "errorCode": "00000",
+  "errorMessage": null,
+  "result": { ... }
+}
+```
 
-Chi tiết: [`PROJECT_STATE.md`](PROJECT_STATE.md).
+- `errorCode = "00000"` → success
+- Mọi request gửi `requestId` (UUID v4) + `version: "1.0"`
+- Auth: `Authorization: Bearer <JWT>` header
 
+## Setup
+
+### 1. Cài dependencies
+
+```bash
+flutter pub get
+```
+
+### 2. Generate code (Freezed + JSON)
+
+```bash
+flutter pub run build_runner build --delete-conflicting-outputs
+```
+
+### 3. Cấu hình backend URL
+
+Sửa `lib/core/constants/api_constants.dart`:
+
+```dart
+static const String baseUrl = 'http://10.0.2.2:8080';  // Android emulator
+// static const String baseUrl = 'http://localhost:8080';  // iOS simulator
+```
+
+### 4. Chạy app
+
+```bash
+flutter run
+```
+
+## Các tính năng đã implement
+
+### ✅ Authentication Module
+
+- **Login:** `POST /api/v1/auth/login`
+  - Email + password
+  - Lưu access_token + refresh_token vào SecureStorage
+  - Auto-inject Bearer token vào mọi request
+
+**Files liên quan:**
+```
+lib/data/models/auth/login_request.dart
+lib/data/models/auth/login_response.dart
+lib/data/datasources/auth_remote_datasource.dart
+lib/data/repositories/auth_repository_impl.dart
+lib/domain/repositories/auth_repository.dart
+lib/presentation/providers/auth_provider.dart
+lib/presentation/pages/login_page.dart
+```
+
+### 🔄 Cần thêm
+
+1. **Register:** `POST /api/v1/auth/register`
+2. **Google OAuth:** `POST /api/v1/auth/google`
+3. **Refresh Token:** `POST /api/v1/auth/refresh` (khi 401)
+4. **Courses:** `GET /api/v1/courses`
+5. **Lessons:** `GET /api/v1/lessons/{id}`
+6. **Dictionary:** `GET /api/v1/dictionary/search`
+7. **Practice:** Vocabulary, Fingerspell, Numbers
+8. **Payment:** payOS integration
+
+## Code Generation Commands
+
+```bash
+# Watch mode (auto-generate khi file thay đổi)
+flutter pub run build_runner watch --delete-conflicting-outputs
+
+# Build một lần
+flutter pub run build_runner build --delete-conflicting-outputs
+
+# Clean
+flutter pub run build_runner clean
+```
+
+## Testing
+
+```bash
+# Unit tests
+flutter test
+
+# Integration tests
+flutter test integration_test/
+
+# Coverage
+flutter test --coverage
+lcov --summary coverage/lcov.info
+```
+
+## Quy tắc code
+
+### 1. Immutability
+
+```dart
+// ✅ GOOD
+final user = user.copyWith(isPremium: true);
+
+// ❌ BAD
+user.isPremium = true;
+```
+
+### 2. Null Safety
+
+```dart
+// ✅ GOOD
+final name = user?.displayName ?? 'Unknown';
+
+// ❌ BAD (tránh ! operator)
+final name = user!.displayName;
+```
+
+### 3. Error Handling
+
+```dart
+// ✅ GOOD
+try {
+  await repository.login(email, password);
+} on DioException catch (e) {
+  if (e.response?.statusCode == 401) {
+    // Handle unauthorized
+  }
+}
+
+// ❌ BAD
+catch (e) {
+  // Too generic
+}
+```
+
+### 4. Async/Await
+
+```dart
+// ✅ GOOD
+await fetchData();
+
+// ✅ GOOD (fire-and-forget với ý định rõ ràng)
+unawaited(fetchData());
+
+// ❌ BAD (bỏ qua Future)
+fetchData();
+```
+
+## Security
+
+### ❌ KHÔNG được
+
+1. Hardcode API keys, tokens trong code
+2. Log sensitive data (passwords, tokens)
+3. Lưu tokens trong `SharedPreferences` (dùng `SecureStorage`)
+4. Trust user input mà không validate
+
+### ✅ BẮT BUỘC
+
+1. Tokens lưu trong `flutter_secure_storage`
+2. Validate input ở client trước khi gửi
+3. Handle 401 → refresh token hoặc logout
+4. HTTPS trong production
+
+## Troubleshooting
+
+### Lỗi: "Connection refused" khi gọi localhost
+
+**Android Emulator:**
+```dart
+// Dùng 10.0.2.2 thay vì localhost
+static const String baseUrl = 'http://10.0.2.2:8080';
+```
+
+**iOS Simulator:**
+```dart
+static const String baseUrl = 'http://localhost:8080';
+```
+
+### Lỗi code generation
+
+```bash
+# Clean và build lại
+flutter pub run build_runner clean
+flutter pub run build_runner build --delete-conflicting-outputs
+```
+
+### Lỗi "part of" không tìm thấy
+
+File `*.freezed.dart` và `*.g.dart` chưa generate. Chạy:
+```bash
+flutter pub run build_runner build --delete-conflicting-outputs
+```
+
+## API Endpoints
+
+Xem đầy đủ: `../sightlight-PRM393-develope/docs/sa/api-spec.md`
+
+**Auth:**
+- `POST /api/v1/auth/register`
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/refresh`
+- `POST /api/v1/auth/logout`
+
+**User:**
+- `GET /api/v1/me`
+- `PATCH /api/v1/me/profile`
+
+**Content:**
+- `GET /api/v1/courses`
+- `GET /api/v1/courses/{id}/path`
+- `GET /api/v1/lessons/{id}`
+- `POST /api/v1/lessons/{id}/complete`
+
+**Dictionary:**
+- `GET /api/v1/dictionary/search?q={query}`
+- `GET /api/v1/dictionary/signs/{id}`
+
+## License
+
+Private project.

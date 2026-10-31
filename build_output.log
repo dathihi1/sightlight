@@ -1,0 +1,70 @@
+  Generating the build script.
+  Compiling the build script.
+  Reading the asset graph.
+  Creating the asset graph.
+  Doing initial build cleanup.
+  Updating the asset graph.
+  Building, full build because there is no valid asset graph.
+  0s riverpod_generator on 18 inputs; lib/core/constants/api_constants.dart
+W SDK language version 3.13.0 is newer than `analyzer` language version 3.9.0. Run `flutter packages upgrade`.
+  0s riverpod_generator on 18 inputs: 1 no-op; lib/core/constants/storage_keys.dart
+  2s riverpod_generator on 18 inputs: 8 no-op; spent 1s analyzing; lib/data/models/auth/login_response.dart
+  2s riverpod_generator on 18 inputs: 18 no-op; spent 1s analyzing
+  0s freezed on 18 inputs; lib/core/constants/api_constants.dart
+  0s freezed on 18 inputs: 5 output, 13 no-op
+  0s json_serializable on 36 inputs; lib/core/constants/api_constants.dart
+E riverpod_generator on lib/core/constants/api_constants.dart:
+  Exception: Missing implementation of visitDotShorthandPropertyAccess
+  #0      ThrowingAstVisitor._throw (package:analyzer/dart/ast/visitor.dart:2971:5)
+  #1      ThrowingAstVisitor.visitDotShorthandPropertyAccess (package:analyzer/dart/ast/visitor.dart:2542:7)
+  #2      DotShorthandPropertyAccessImpl.accept (package:analyzer/src/dart/ast/ast.dart:5536:15)
+  #3      ResolutionSink._writeNode (package:analyzer/src/summary2/bundle_writer.dart:955:10)
+  #4      ResolutionSink._writeOptionalNode (package:analyzer/src/summary2/bundle_writer.dart:972:7)
+  #5      BundleWriter._writeParameterElement.<anonymous closure> (package:analyzer/src/summary2/bundle_writer.dart:528:25)
+  #6      BundleWriter._writeTypeParameters.<anonymous closure> (package:analyzer/src/summary2/bundle_writer.dart:640:8)
+  #7      _LocalElementIndexer.withElements (package:analyzer/src/summary2/bundle_writer.dart:1218:6)
+  #8      BundleWriter._writeTypeParameters (package:analyzer/src/summary2/bundle_writer.dart:638:35)
+  #9      BundleWriter._writeParameterElement (package:analyzer/src/summary2/bundle_writer.dart:522:5)
+  #10     BundleWriter._writeList (package:analyzer/src/summary2/bundle_writer.dart:430:19)
+  #11     BundleWriter._writeMethodElement.<anonymous closure> (package:analyzer/src/summary2/bundle_writer.dart:450:7)
+  #12     BundleWriter._writeTypeParameters.<anonymous closure> (package:analyzer/src/summary2/bundle_writer.dart:640:8)
+  #13     _LocalElementIndexer.withElements (package:analyzer/src/summary2/bundle_writer.dart:1218:6)
+  #14     BundleWriter._writeTypeParameters (package:analyzer/src/summary2/bundle_writer.dart:638:35)
+  #15     BundleWriter._writeMethodElement (package:analyzer/src/summary2/bundle_writer.dart:449:5)
+  #16     BundleWriter._writeList (package:analyzer/src/summary2/bundle_writer.dart:430:19)
+  #17     BundleWriter._writeClassElement.<anonymous closure> (package:analyzer/src/summary2/bundle_writer.dart:156:9)
+  #18     BundleWriter._writeTypeParameters.<anonymous closure> (package:analyzer/src/summary2/bundle_writer.dart:640:8)
+  #19     _LocalElementIndexer.withElements (package:analyzer/src/summary2/bundle_writer.dart:1218:6)
+  #20     BundleWriter._writeTypeParameters (package:analyzer/src/summary2/bundle_writer.dart:638:35)
+  #21     BundleWriter._writeClassElement (package:analyzer/src/summary2/bundle_writer.dart:140:5)
+  #22     BundleWriter._writeList (package:analyzer/src/summary2/bundle_writer.dart:430:19)
+  #23     BundleWriter._writeUnitElement (package:analyzer/src/summary2/bundle_writer.dart:657:5)
+  #24     BundleWriter.writeLibraryElement (package:analyzer/src/summary2/bundle_writer.dart:112:5)
+  #25     Linker._writeLibraries (package:analyzer/src/summary2/link.dart:374:20)
+  #26     Linker.link.<anonymous closure> (package:analyzer/src/summary2/link.dart:122:7)
+  #27     OperationPerformanceImpl.run (package:analyzer/src/util/performance/operation_performance.dart:155:23)
+  #28     Linker.link (package:analyzer/src/summary2/link.dart:121:17)
+  #29     link (package:analyzer/src/summary2/link.dart:43:10)
+  #30     LibraryContext.load.loadBundle.<anonymous closure> (package:analyzer/src/dart/analysis/library_context.dart:263:22)
+  #31     OperationPerformanceImpl.run (package:analyzer/src/util/performance/operation_performance.dart:155:23)
+  #32     LibraryContext.load.loadBundle (package:analyzer/src/dart/analysis/library_context.dart:262:42)
+  #33     LibraryContext.load.loadBundle (package:analyzer/src/dart/analysis/library_context.dart:153:9)
+  #34     LibraryContext.load.loadBundle (package:analyzer/src/dart/analysis/library_context.dart:153:9)
+  #35     LibraryContext.load.loadBundle (package:analyzer/src/dart/analysis/library_context.dart:153:9)
+  #36     LibraryContext.load.loadBundle (package:analyzer/src/dart/analysis/library_context.dart:153:9)
+  #37     LibraryContext.load.loadBundle (package:analyzer/src/dart/analysis/library_context.dart:153:9)
+  #38     LibraryContext.load.loadBundle (package:analyzer/src/dart/analysis/library_context.dart:153:9)
+  #39     LibraryContext.load.loadBundle (package:analyzer/src/dart/analysis/library_context.dart:153:9)
+  #40     LibraryContext.load.<anonymous closure> (package:analyzer/src/dart/analysis/library_context.dart:344:7)
+  #41     PerformanceLog.run (package:analyzer/src/dart/analysis/performance_logger.dart:38:15)
+  #42     LibraryContext.load (package:analyzer/src/dart/analysis/library_context.dart:343:12)
+  #43     AnalysisDriver._getUnitElement.<anonymous closure>.<anonymous closure> (package:analyzer/src/dart/analysis/driver.dart:1957:26)
+  #44     OperationPerformanceImpl.run (package:analyzer/src/util/performance/operation_performance.dart:155:23)
+  #45     AnalysisDriver._getUnitElement.<anonymous closure> (package:analyzer/src/dart/analysis/driver.dart:1956:21)
+  #46     OperationPerformanceImpl.run (package:analyzer/src/util/performance/operation_performance.dart:155:23)
+  #47     AnalysisDriver._getUnitElement (package:analyzer/src/dart/analysis/driver.dart:1947:38)
+  #48     AnalysisDriver.performWork (package:analyzer/src/dart/analysis/driver.dart:1241:7)
+  #49     AnalysisDriverScheduler._run (package:analyzer/src/dart/analysis/driver.dart:2659:24)
+  <asynchronous suspension>
+  
+  

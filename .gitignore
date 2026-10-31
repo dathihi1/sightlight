@@ -1,37 +1,26 @@
-# OS
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-.DS_Store
+# Ignore generated files
+*.freezed.dart
+*.g.dart
+*.gr.dart
 
-# Editors / IDE
-.vscode/
+# Standard Flutter ignores
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+
+# IDE
 .idea/
+.vscode/
 *.swp
+*.iml
 
-# Logs & temporary
-*.log
-logs/
-backups/
-.claude/
-*.tsbuildinfo
-code.html
-screen.png
-
-# Env
+# Env files
 .env
 .env.local
 
-# Build output
-target/
-node_modules/
-.next/
-__pycache__/
-*.pyc
-.pytest_cache/
-
-# Trọng số mô hình AI — không commit nhị phân vào repo này
-src/ai/runs/**/*.onnx
-# Các bản INT8 nhỏ là artifact production cho gói Free/Premium.
-!src/ai/runs/vsl_mvp30_v2_lite_transformer/model.int8.onnx
-!src/ai/runs/vsl_mvp400_v2_lite_transformer/model.int8.onnx
+# macOS
+.DS_Store
