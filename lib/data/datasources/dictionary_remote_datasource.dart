@@ -10,8 +10,8 @@ class DictionaryRemoteDataSource {
   Future<List<Sign>> searchSigns(String query) async {
     final trimmed = query.trim();
     if (trimmed.isEmpty) {
-      // Default initial signs when query is empty
-      return getSignsByTopic('Chào hỏi');
+      // Default initial signs when query is empty: 'Gia đình & Xưng hô' (20 video signs)
+      return getSignsByTopic('Gia đình & Xưng hô');
     }
 
     final response = await _dio.get(
@@ -51,14 +51,15 @@ class DictionaryRemoteDataSource {
     );
   }
 
-  Future<List<String>> getTopics() async {
+  Future<List<TopicItem>> getTopics() async {
     final response = await _dio.get(ApiConstants.dictionaryTopics);
     final data = response.data as Map<String, dynamic>;
     final result = data['result'] as List<dynamic>?;
     if (result == null) return [];
 
     return result
-        .map((e) => (e as Map<String, dynamic>)['topic'] as String)
+        .map((e) => TopicItem.fromJson(e as Map<String, dynamic>))
+        .where((t) => t.signCount > 0 && t.topic != 'Chào hỏi')
         .toList();
   }
 
@@ -66,6 +67,7 @@ class DictionaryRemoteDataSource {
     final encoded = Uri.encodeComponent(topic);
     final response = await _dio.get(
       '${ApiConstants.apiPrefix}/dictionary/topics/$encoded/signs',
+      queryParameters: {'size': 100},
     );
     final data = response.data as Map<String, dynamic>;
     final result = data['result'] as Map<String, dynamic>?;

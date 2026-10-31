@@ -2,18 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../presentation/pages/courses_page.dart';
 import '../../presentation/pages/dictionary/dictionary_page.dart';
 import '../../presentation/pages/forgot_password_page.dart';
 import '../../presentation/pages/home_page.dart';
 import '../../presentation/pages/login_page.dart';
-import '../../presentation/pages/notifications_page.dart';
 import '../../presentation/pages/payment_result_page.dart';
 import '../../presentation/pages/practice/practice_page.dart';
 import '../../presentation/pages/profile/profile_page.dart';
 import '../../presentation/pages/profile/settings_page.dart';
 import '../../presentation/pages/gamification/progress_page.dart';
 import '../../presentation/pages/gamification/awards_page.dart';
+import '../../presentation/pages/referral_page.dart';
+import '../../presentation/pages/shop_page.dart';
 import '../../presentation/pages/register_page.dart';
 import '../../presentation/pages/splash_page.dart';
 import '../../presentation/pages/upgrade_page.dart';
@@ -50,7 +50,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoading = authState.isLoading;
 
       final location = state.matchedLocation;
-      final isAuthRoute = location == '/login' ||
+      final isAuthRoute =
+          location == '/login' ||
           location == '/register' ||
           location == '/forgot-password';
       final isSplashRoute = location == '/splash';
@@ -93,14 +94,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Standalone full-screen routes
       GoRoute(
-        path: '/courses',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const CoursesPage(),
-      ),
-      GoRoute(
         path: '/upgrade',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const UpgradePage(),
+        redirect: (context, state) => '/profile/premium',
       ),
       GoRoute(
         path: '/payment-result',
@@ -115,24 +110,27 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/notifications',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const NotificationsPage(),
-      ),
-      GoRoute(
         path: '/settings',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const SettingsPage(),
+        redirect: (context, state) => '/profile/settings',
       ),
       GoRoute(
         path: '/progress',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const ProgressPage(),
+        redirect: (context, state) => '/profile/progress',
       ),
       GoRoute(
         path: '/awards',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const AwardsPage(),
+      ),
+      GoRoute(
+        path: '/shop',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const ShopPage(),
+      ),
+      GoRoute(
+        path: '/referral',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const ReferralPage(),
       ),
 
       // App Shell with Stateful Navigation
@@ -141,14 +139,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           return AppShell(navigationShell: navigationShell);
         },
         branches: [
-          // Branch 0: Home
+          // Branch 0: Tổng quan (Home)
           StatefulShellBranch(
             routes: [
               GoRoute(path: '/', builder: (context, state) => const HomePage()),
             ],
           ),
 
-          // Branch 1: Dictionary
+          // Branch 1: Từ điển (Dictionary)
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -158,7 +156,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
 
-          // Branch 2: Practice
+          // Branch 2: Luyện tập (Practice)
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -168,12 +166,30 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
 
-          // Branch 3: Profile
+          // Branch 3: Hồ sơ (Profile)
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/profile',
                 builder: (context, state) => const ProfilePage(),
+                routes: [
+                  GoRoute(
+                    path: 'progress',
+                    builder: (context, state) => const ProgressPage(),
+                  ),
+                  GoRoute(
+                    path: 'premium',
+                    builder: (context, state) => const UpgradePage(),
+                  ),
+                  GoRoute(
+                    path: 'upgrade',
+                    builder: (context, state) => const UpgradePage(),
+                  ),
+                  GoRoute(
+                    path: 'settings',
+                    builder: (context, state) => const SettingsPage(),
+                  ),
+                ],
               ),
             ],
           ),

@@ -26,6 +26,7 @@ class StreakTrackerWidget extends StatelessWidget {
           children: [
             // Streak Header with Flame & Freeze Action
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
@@ -46,7 +47,10 @@ class StreakTrackerWidget extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 4,
                         children: [
                           Text(
                             '${stats.streakDays} ngày',
@@ -54,10 +58,11 @@ class StreakTrackerWidget extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                               color: isMetToday
                                   ? Colors.deepOrange
-                                  : Colors.black87,
+                                  : (theme.brightness == Brightness.dark
+                                      ? Colors.white
+                                      : Colors.black87),
                             ),
                           ),
-                          const SizedBox(width: 8),
                           if (isMetToday)
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -75,38 +80,53 @@ class StreakTrackerWidget extends StatelessWidget {
                                 'Đã hoàn thành',
                                 style: TextStyle(
                                   color: Colors.green,
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
                         ],
                       ),
+                      const SizedBox(height: 2),
                       Text(
-                        'Kỷ lục: ${stats.longestStreak} ngày liên tục',
+                        stats.longestStreak > 0
+                            ? 'Kỷ lục: ${stats.longestStreak} ngày liên tục'
+                            : 'Mục tiêu: Học ít nhất 10 phút mỗi ngày',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.grey.shade600,
+                          color: Colors.grey.shade500,
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
                 // Freeze Streak Button
-                OutlinedButton.icon(
-                  onPressed: onFreezePressed,
-                  icon: const Icon(Icons.ac_unit, size: 16, color: Colors.blue),
-                  label: Text(
-                    'Đóng băng (${stats.freezeCount})',
-                    style: const TextStyle(fontSize: 12, color: Colors.blue),
-                  ),
-                  style: OutlinedButton.styleFrom(
+                InkWell(
+                  onTap: onFreezePressed,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
                       vertical: 6,
                     ),
-                    side: const BorderSide(color: Colors.blue),
-                    shape: RoundedRectangleBorder(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.blue.withAlpha(160)),
                       borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.ac_unit, size: 14, color: Colors.blue),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Đóng băng (${stats.freezeCount})',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.blue,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

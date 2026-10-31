@@ -33,6 +33,33 @@ class PracticeRepositoryImpl implements PracticeRepository {
       _remoteDataSource.getNumbersSession();
 
   @override
+  Future<AiPracticeSessionResponse> getAiPracticeSession({
+    int size = 400,
+    String? signId,
+  }) =>
+      _remoteDataSource.getAiPracticeSession(size: size, signId: signId);
+
+  @override
+  Future<AiAttemptResponse?> submitAiAttempt({
+    required String targetSignId,
+    required String modelVersion,
+    required List<List<double>> features,
+    required int frameCount,
+    required int durationMs,
+    required double handFrameRatio,
+    required String sessionId,
+  }) =>
+      _remoteDataSource.submitAiAttempt(
+        targetSignId: targetSignId,
+        modelVersion: modelVersion,
+        features: features,
+        frameCount: frameCount,
+        durationMs: durationMs,
+        handFrameRatio: handFrameRatio,
+        sessionId: sessionId,
+      );
+
+  @override
   PracticeStats getPracticeStats() => _localDataSource.getPracticeStats();
 
   @override

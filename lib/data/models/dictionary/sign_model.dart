@@ -151,3 +151,25 @@ class SignDetail {
     );
   }
 }
+
+class TopicItem {
+  final String topic;
+  final int signCount;
+
+  const TopicItem({
+    required this.topic,
+    required this.signCount,
+  });
+
+  factory TopicItem.fromJson(Map<String, dynamic> json) {
+    return TopicItem(
+      topic: (json['topic'] ?? '') as String,
+      signCount: (json['signCount'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'topic': topic,
+        'signCount': signCount,
+      };
+}

@@ -196,7 +196,7 @@ class PracticeStats {
     required int correct,
   }) {
     final now = DateTime.now();
-    final todayStr = '${now.year}-${now.month}-${now.day}';
+    final todayStr = now.toIso8601String().substring(0, 10);
 
     int newStreak = streakDays;
     if (lastSessionDate == null) {
@@ -240,3 +240,133 @@ class PracticeStats {
         'lastSessionDate': lastSessionDate,
       };
 }
+
+class AiPracticeItem {
+  const AiPracticeItem({
+    required this.signId,
+    required this.label,
+    this.topic = '',
+    this.videoUrl = '',
+    this.placeholderVideo = false,
+    this.hint = '',
+  });
+
+  final String signId;
+  final String label;
+  final String topic;
+  final String videoUrl;
+  final bool placeholderVideo;
+  final String hint;
+
+  factory AiPracticeItem.fromJson(Map<String, dynamic> json) {
+    return AiPracticeItem(
+      signId: (json['signId'] ?? '') as String,
+      label: (json['label'] ?? '') as String,
+      topic: (json['topic'] ?? '') as String,
+      videoUrl: (json['videoUrl'] ?? '') as String,
+      placeholderVideo: (json['placeholderVideo'] ?? false) as bool,
+      hint: (json['hint'] ?? '') as String,
+    );
+  }
+}
+
+class AiPracticeSessionResponse {
+  const AiPracticeSessionResponse({
+    required this.sessionId,
+    required this.modelVersion,
+    required this.items,
+  });
+
+  final String sessionId;
+  final String modelVersion;
+  final List<AiPracticeItem> items;
+
+  factory AiPracticeSessionResponse.fromJson(Map<String, dynamic> json) {
+    final list = (json['items'] as List<dynamic>?)
+            ?.map((e) => AiPracticeItem.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        const [];
+    return AiPracticeSessionResponse(
+      sessionId: (json['sessionId'] ?? '') as String,
+      modelVersion: (json['modelVersion'] ?? 'vsl-mvp30-v2-lite-transformer')
+          as String,
+      items: list,
+    );
+  }
+}
+
+class AiCandidateDto {
+  const AiCandidateDto({
+    this.signId,
+    required this.label,
+    required this.confidence,
+  });
+
+  final String? signId;
+  final String label;
+  final double confidence;
+
+  factory AiCandidateDto.fromJson(Map<String, dynamic> json) {
+    return AiCandidateDto(
+      signId: json['signId'] as String?,
+      label: (json['label'] ?? '') as String,
+      confidence: (json['confidence'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+}
+
+class AiAttemptResponse {
+  const AiAttemptResponse({
+    required this.attemptId,
+    required this.verified,
+    required this.status,
+    this.confidence,
+    this.predictedSignId,
+    this.predictedLabel,
+    this.top3 = const [],
+    this.qualityHints = const [],
+    this.countedAgainstQuota = false,
+    this.quotaRemaining,
+    this.consecutiveFailures = 0,
+    this.stubMode = false,
+  });
+
+  final String attemptId;
+  final bool verified;
+  final String status;
+  final double? confidence;
+  final String? predictedSignId;
+  final String? predictedLabel;
+  final List<AiCandidateDto> top3;
+  final List<String> qualityHints;
+  final bool countedAgainstQuota;
+  final int? quotaRemaining;
+  final int consecutiveFailures;
+  final bool stubMode;
+
+  factory AiAttemptResponse.fromJson(Map<String, dynamic> json) {
+    final top3List = (json['top3'] as List<dynamic>?)
+            ?.map((e) => AiCandidateDto.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        const [];
+    final hintsList = (json['qualityHints'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        const [];
+    return AiAttemptResponse(
+      attemptId: (json['attemptId'] ?? '') as String,
+      verified: (json['verified'] ?? false) as bool,
+      status: (json['status'] ?? 'unknown') as String,
+      confidence: (json['confidence'] as num?)?.toDouble(),
+      predictedSignId: json['predictedSignId'] as String?,
+      predictedLabel: json['predictedLabel'] as String?,
+      top3: top3List,
+      qualityHints: hintsList,
+      countedAgainstQuota: (json['countedAgainstQuota'] ?? false) as bool,
+      quotaRemaining: json['quotaRemaining'] as int?,
+      consecutiveFailures: (json['consecutiveFailures'] ?? 0) as int,
+      stubMode: (json['stubMode'] ?? false) as bool,
+    );
+  }
+}
+

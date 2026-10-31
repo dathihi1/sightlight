@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sightlight_flutter/data/models/dictionary/sign_model.dart';
-import 'package:sightlight_flutter/presentation/pages/practice/vocabulary_practice_page.dart';
 import 'package:sightlight_flutter/presentation/providers/dictionary_provider.dart';
 import 'package:sightlight_flutter/presentation/widgets/sign_video_player.dart';
 
 class SignDetailPage extends ConsumerStatefulWidget {
-  const SignDetailPage({
-    super.key,
-    required this.signId,
-    this.initialSign,
-  });
+  const SignDetailPage({super.key, required this.signId, this.initialSign});
 
   final String signId;
   final Sign? initialSign;
@@ -43,8 +38,8 @@ class _SignDetailPageState extends ConsumerState<SignDetailPage> {
             ),
             tooltip: isFav ? 'Bỏ lưu' : 'Lưu ký hiệu',
             onPressed: () {
-              final sign = widget.initialSign ??
-                  detailAsync.valueOrNull?.toSign();
+              final sign =
+                  widget.initialSign ?? detailAsync.valueOrNull?.toSign();
               if (sign != null) {
                 favNotifier.toggleFavorite(sign);
                 setState(() {});
@@ -119,13 +114,17 @@ class _SignDetailPageState extends ConsumerState<SignDetailPage> {
 
     // Current video URL from selected variant
     String currentVideoUrl = '';
+    bool isPlaceholder = false;
     if (detail.variants.isNotEmpty) {
       final safeIndex = _selectedVariantIndex < detail.variants.length
           ? _selectedVariantIndex
           : 0;
-      currentVideoUrl = detail.variants[safeIndex].videoUrl;
+      final variant = detail.variants[safeIndex];
+      currentVideoUrl = variant.videoUrl;
+      isPlaceholder = variant.placeholderVideo || currentVideoUrl.trim().isEmpty;
     } else {
       currentVideoUrl = widget.initialSign?.videoUrl ?? '';
+      isPlaceholder = currentVideoUrl.trim().isEmpty;
     }
 
     return SingleChildScrollView(
@@ -137,7 +136,9 @@ class _SignDetailPageState extends ConsumerState<SignDetailPage> {
           SignVideoPlayer(
             videoUrl: currentVideoUrl,
             height: 250,
-            placeholderText: 'Ký hiệu "${detail.word}"\n(Đang tải video...)',
+            isPlaceholder: isPlaceholder,
+            placeholderText:
+                'Video mẫu của "${detail.word}" sẽ được bổ sung cùng giáo trình chuẩn',
           ),
           const SizedBox(height: 16),
 
@@ -197,7 +198,9 @@ class _SignDetailPageState extends ConsumerState<SignDetailPage> {
           // Word Header (Vietnamese & English)
           Card(
             elevation: 0,
-            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.5,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -270,10 +273,7 @@ class _SignDetailPageState extends ConsumerState<SignDetailPage> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      Text(
-                        detail.topic,
-                        style: theme.textTheme.bodyMedium,
-                      ),
+                      Text(detail.topic, style: theme.textTheme.bodyMedium),
                     ],
                   ),
                 ],
@@ -330,32 +330,6 @@ class _SignDetailPageState extends ConsumerState<SignDetailPage> {
                   ),
                 ],
               ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Action Button: Practice this sign
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.school_outlined),
-              label: const Text(
-                'Luyện tập từ vựng ngay',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const VocabularyPracticePage(),
-                  ),
-                );
-              },
             ),
           ),
         ],

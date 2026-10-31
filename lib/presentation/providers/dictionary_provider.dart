@@ -16,6 +16,16 @@ final dictionaryRepositoryProvider = Provider<DictionaryRepository>((ref) {
   return DictionaryRepositoryImpl(remote, local);
 });
 
+// Selected topic provider
+final selectedTopicProvider =
+    StateProvider<String>((ref) => 'Gia đình & Xưng hô');
+
+// Topics list provider
+final dictionaryTopicsProvider = FutureProvider<List<TopicItem>>((ref) async {
+  final repo = ref.watch(dictionaryRepositoryProvider);
+  return repo.getTopics();
+});
+
 // Search query
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
@@ -23,18 +33,20 @@ final searchQueryProvider = StateProvider<String>((ref) => '');
 final searchResultsProvider = FutureProvider<List<Sign>>((ref) async {
   final query = ref.watch(searchQueryProvider);
   final repo = ref.watch(dictionaryRepositoryProvider);
+  final selectedTopic = ref.watch(selectedTopicProvider);
 
   // Debounce 300ms if query changed
-  if (query.isNotEmpty) {
+  if (query.trim().isNotEmpty) {
     await Future.delayed(const Duration(milliseconds: 300));
+    // Check if query is still current
+    if (ref.state.isLoading && query != ref.read(searchQueryProvider)) {
+      throw Exception('Cancelled by newer search');
+    }
+    return repo.search(query.trim());
   }
 
-  // Check if query is still current
-  if (ref.state.isLoading && query != ref.read(searchQueryProvider)) {
-    throw Exception('Cancelled by newer search');
-  }
-
-  return repo.search(query);
+  // When query is empty, return signs from the currently selected topic
+  return repo.getSignsByTopic(selectedTopic);
 });
 
 // Search history

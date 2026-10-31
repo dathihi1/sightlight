@@ -95,16 +95,6 @@ class AppShell extends ConsumerWidget {
               ref.read(themeModeProvider.notifier).toggleTheme();
             },
           ),
-
-          // Notifications Button
-          IconButton(
-            tooltip: l10n.notifications,
-            icon: const Badge(
-              smallSize: 8,
-              child: Icon(Icons.notifications_outlined, size: 24),
-            ),
-            onPressed: () => context.push('/notifications'),
-          ),
           const SizedBox(width: 4),
         ],
       ),
@@ -214,6 +204,15 @@ class AppShell extends ConsumerWidget {
               },
             ),
 
+            ListTile(
+              leading: const Icon(Icons.storefront_outlined),
+              title: const Text('Cửa hàng EXP'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/shop');
+              },
+            ),
+
             const Divider(),
 
             // Upgrade Tile
@@ -232,15 +231,6 @@ class AppShell extends ConsumerWidget {
               onTap: () {
                 Navigator.pop(context);
                 context.push('/upgrade');
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.notifications_outlined),
-              title: Text(l10n.notifications),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/notifications');
               },
             ),
 

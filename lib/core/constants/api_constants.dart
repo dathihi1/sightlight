@@ -42,6 +42,11 @@ class ApiConstants {
   static const String billingPlans = '$apiPrefix/billing/plans';
   static String billingVerify(String orderCode) => '$apiPrefix/billing/verify/$orderCode';
 
+  // Referral
+  static const String referralSummary = '$apiPrefix/referral/summary';
+  static const String referralClaimCode = '$apiPrefix/referral/claim-code';
+  static const String referralClaimReward = '$apiPrefix/referral/claim-reward';
+
   // Courses
   static const String courses = '$apiPrefix/courses';
   static String coursePath(String courseId) => '$apiPrefix/courses/$courseId/path';
@@ -58,9 +63,12 @@ class ApiConstants {
   static const String fingerspellAttempt = '$apiPrefix/practice/fingerspell/attempt';
   static const String numbersSession = '$apiPrefix/practice/numbers/session';
   static const String aiPracticeSession = '$apiPrefix/ai/practice/session';
+  static const String aiAttempts = '$apiPrefix/ai/attempts';
+  static const String aiQuota = '$apiPrefix/ai/quota';
+  static const String aiCapabilities = '$apiPrefix/ai/capabilities';
 
   // Timeouts
-  static const Duration connectTimeout = Duration(seconds: 10);
-  static const Duration receiveTimeout = Duration(seconds: 30);
-  static const Duration sendTimeout = Duration(seconds: 30);
+  static const Duration connectTimeout = Duration(seconds: 30);
+  static const Duration receiveTimeout = Duration(seconds: 90);
+  static const Duration sendTimeout = Duration(seconds: 60);
 }

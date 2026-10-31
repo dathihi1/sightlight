@@ -3,7 +3,7 @@ import '../../data/models/dictionary/sign_model.dart';
 abstract interface class DictionaryRepository {
   Future<List<Sign>> search(String query);
   Future<SignDetail> getSignDetail(String signId);
-  Future<List<String>> getTopics();
+  Future<List<TopicItem>> getTopics();
   Future<List<Sign>> getSignsByTopic(String topic);
   List<String> getSearchHistory();
   Future<void> addSearchQuery(String query);

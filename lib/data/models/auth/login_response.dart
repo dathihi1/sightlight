@@ -60,8 +60,10 @@ class UserInfo {
     return UserInfo(
       id: json['id'] as String? ?? '',
       email: json['email'] as String? ?? '',
-      displayName: json['displayName'] as String?,
-      avatarUrl: json['avatarUrl'] as String?,
+      displayName: (json['displayName'] ?? json['name'] ?? json['fullName'])
+          as String?,
+      avatarUrl: (json['avatarUrl'] ?? json['picture'] ?? json['avatar'])
+          as String?,
       isPremium: json['isPremium'] as bool? ?? false,
     );
   }

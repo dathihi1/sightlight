@@ -16,37 +16,35 @@ class GamificationRepositoryImpl implements GamificationRepository {
     final now = DateTime.now();
     final activities = List.generate(30, (index) {
       final date = now.subtract(Duration(days: 29 - index));
-      final hasStudied = (index % 7 != 2 && index % 5 != 0) || index >= 24;
-      final minutes = hasStudied ? (15.0 + (index % 4) * 8.0) : 0.0;
       return ActivityDay(
         date: date,
-        minutes: minutes,
-        goalMinutes: 20,
-        goalMet: minutes >= 20,
+        minutes: 0.0,
+        goalMinutes: 10,
+        goalMet: false,
       );
     });
 
     return _cachedStats ??
         ProgressStats(
-          streakDays: 7,
-          longestStreak: 14,
-          freezeCount: 2,
-          goalMetToday: true,
-          dailyGoalMinutes: 20,
-          totalMinutesLearned: 385.0,
-          completedLessons: 24,
-          signsMastered: 86,
-          averageScore: 92,
-          expBalance: 1450,
+          streakDays: 0,
+          longestStreak: 0,
+          freezeCount: 0,
+          goalMetToday: false,
+          dailyGoalMinutes: 10,
+          totalMinutesLearned: 0.0,
+          completedLessons: 0,
+          signsMastered: 0,
+          averageScore: 0,
+          expBalance: 0,
           aiBonusQuota: 5,
-          unlockTicketCount: 3,
+          unlockTicketCount: 0,
           recentActivities: activities,
         );
   }
 
   List<BadgeItem> _getFallbackBadges() {
     return _cachedBadges ??
-        [
+        const [
           BadgeItem(
             code: 'first_step',
             title: 'Bước Đầu Tiên',
@@ -54,11 +52,10 @@ class GamificationRepositoryImpl implements GamificationRepository {
             category: 'Học tập',
             level: 1,
             maxLevel: 1,
-            currentValue: 1,
+            currentValue: 0,
             targetValue: 1,
-            isUnlocked: true,
-            isCelebrated: true,
-            unlockedAt: DateTime.now().subtract(const Duration(days: 10)),
+            isUnlocked: false,
+            isCelebrated: false,
             expReward: 50,
           ),
           BadgeItem(
@@ -66,23 +63,22 @@ class GamificationRepositoryImpl implements GamificationRepository {
             title: 'Ngọn Lửa Kiên Trì',
             description: 'Duy trì chuỗi học tập 7 ngày liên tiếp',
             category: 'Streak',
-            level: 2,
+            level: 1,
             maxLevel: 3,
-            currentValue: 7,
+            currentValue: 0,
             targetValue: 7,
-            isUnlocked: true,
+            isUnlocked: false,
             isCelebrated: false,
-            unlockedAt: DateTime.now().subtract(const Duration(hours: 4)),
             expReward: 100,
           ),
-          const BadgeItem(
+          BadgeItem(
             code: 'streak_legend_30',
             title: 'Huyền Thoại Kỷ Luật',
             description: 'Đạt chuỗi streak học tập 30 ngày liên tục',
             category: 'Streak',
             level: 1,
             maxLevel: 3,
-            currentValue: 7,
+            currentValue: 0,
             targetValue: 30,
             isUnlocked: false,
             isCelebrated: false,
@@ -93,23 +89,22 @@ class GamificationRepositoryImpl implements GamificationRepository {
             title: 'Bậc Thầy Từ Vựng',
             description: 'Thành thạo 50 ký hiệu cử chỉ tay VSL',
             category: 'Từ vựng',
-            level: 2,
+            level: 1,
             maxLevel: 3,
-            currentValue: 86,
+            currentValue: 0,
             targetValue: 50,
-            isUnlocked: true,
-            isCelebrated: true,
-            unlockedAt: DateTime.now().subtract(const Duration(days: 3)),
+            isUnlocked: false,
+            isCelebrated: false,
             expReward: 150,
           ),
-          const BadgeItem(
+          BadgeItem(
             code: 'ai_perfect_score',
             title: 'Độ Chính Xác Tuyệt Đối',
             description: 'Đạt điểm AI chấm ký hiệu 100/100 trong 5 bài tập',
             category: 'Thực hành',
             level: 1,
             maxLevel: 3,
-            currentValue: 3,
+            currentValue: 0,
             targetValue: 5,
             isUnlocked: false,
             isCelebrated: false,
@@ -122,34 +117,33 @@ class GamificationRepositoryImpl implements GamificationRepository {
             category: 'Thực hành',
             level: 1,
             maxLevel: 2,
-            currentValue: 1,
+            currentValue: 0,
             targetValue: 1,
-            isUnlocked: true,
-            isCelebrated: true,
-            unlockedAt: DateTime.now().subtract(const Duration(days: 1)),
+            isUnlocked: false,
+            isCelebrated: false,
             expReward: 80,
           ),
-          const BadgeItem(
+          BadgeItem(
             code: 'early_bird',
             title: 'Chú Chim Sớm',
             description: 'Luyện tập vào buổi sáng trước 8:00 trong 5 ngày',
             category: 'Thói quen',
             level: 1,
             maxLevel: 2,
-            currentValue: 2,
+            currentValue: 0,
             targetValue: 5,
             isUnlocked: false,
             isCelebrated: false,
             expReward: 90,
           ),
-          const BadgeItem(
+          BadgeItem(
             code: 'sign_polyglot_200',
             title: 'Đại Sứ Ký Hiệu',
             description: 'Nắm vững 200 ký hiệu trong từ điển VSL',
             category: 'Từ vựng',
             level: 1,
             maxLevel: 3,
-            currentValue: 86,
+            currentValue: 0,
             targetValue: 200,
             isUnlocked: false,
             isCelebrated: false,

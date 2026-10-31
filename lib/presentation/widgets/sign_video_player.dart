@@ -9,6 +9,7 @@ class SignVideoPlayer extends StatefulWidget {
     this.looping = true,
     this.height = 240,
     this.placeholderText,
+    this.isPlaceholder = false,
   });
 
   final String videoUrl;
@@ -16,6 +17,7 @@ class SignVideoPlayer extends StatefulWidget {
   final bool looping;
   final double height;
   final String? placeholderText;
+  final bool isPlaceholder;
 
   @override
   State<SignVideoPlayer> createState() => _SignVideoPlayerState();
@@ -46,10 +48,7 @@ class _SignVideoPlayerState extends State<SignVideoPlayer> {
   }
 
   Future<void> _initializeVideo() async {
-    if (widget.videoUrl.trim().isEmpty) {
-      setState(() {
-        _hasError = true;
-      });
+    if (widget.isPlaceholder || widget.videoUrl.trim().isEmpty) {
       return;
     }
 
@@ -65,6 +64,7 @@ class _SignVideoPlayerState extends State<SignVideoPlayer> {
       if (mounted) {
         setState(() {
           _isInitialized = true;
+          _hasError = false;
         });
       }
     } catch (_) {
@@ -97,29 +97,93 @@ class _SignVideoPlayerState extends State<SignVideoPlayer> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    if (_hasError || widget.videoUrl.trim().isEmpty) {
+    if (widget.isPlaceholder || widget.videoUrl.trim().isEmpty) {
       return Container(
         height: widget.height,
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
+          color: theme.colorScheme.surfaceContainerHighest.withAlpha(128),
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: theme.colorScheme.outlineVariant.withAlpha(128),
+          ),
         ),
         alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withAlpha(25),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.play_circle_outline_rounded,
+                size: 32,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Video ký hiệu mẫu',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              widget.placeholderText ??
+                  'Video mẫu sẽ được bổ sung cùng giáo trình chuẩn',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_hasError) {
+      return Container(
+        height: widget.height,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withAlpha(128),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: theme.colorScheme.error.withAlpha(76),
+          ),
+        ),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.videocam_off_outlined,
-              size: 48,
-              color: theme.colorScheme.onSurfaceVariant,
+              Icons.error_outline_rounded,
+              size: 40,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Không thể phát video này',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
-            Text(
-              widget.placeholderText ?? 'Ký hiệu mẫu (Video đang chuẩn bị)',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
+            TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  _hasError = false;
+                  _isInitialized = false;
+                });
+                _initializeVideo();
+              },
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Thử lại'),
             ),
           ],
         ),

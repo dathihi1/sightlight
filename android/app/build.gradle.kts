@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "vn.duy.signlight.sightlight_flutter"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

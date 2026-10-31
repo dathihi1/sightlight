@@ -285,4 +285,128 @@ class PracticeRemoteDataSource {
       ],
     );
   }
+
+  Future<AiPracticeSessionResponse> getAiPracticeSession({
+    int size = 400,
+    String? signId,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{'size': size};
+      if (signId != null && signId.isNotEmpty) {
+        queryParams['signId'] = signId;
+      }
+
+      final response = await _dio.get(
+        ApiConstants.aiPracticeSession,
+        queryParameters: queryParams,
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final result = data['result'] as Map<String, dynamic>? ?? data;
+      return AiPracticeSessionResponse.fromJson(result);
+    } catch (_) {
+      return _defaultAiPracticeSession();
+    }
+  }
+
+  Future<AiAttemptResponse?> submitAiAttempt({
+    required String targetSignId,
+    required String modelVersion,
+    required List<List<double>> features,
+    required int frameCount,
+    required int durationMs,
+    required double handFrameRatio,
+    required String sessionId,
+  }) async {
+    try {
+      final reqId = DateTime.now().millisecondsSinceEpoch.toRadixString(16).padLeft(16, '0');
+      final payload = <String, dynamic>{
+        'requestId': reqId,
+        'version': '1.0',
+        'targetSignId': targetSignId,
+        'modelVersion': modelVersion,
+        'features': features,
+        'frameCount': frameCount.clamp(8, 32),
+        'durationMs': durationMs.clamp(500, 6000),
+        'clientQuality': {
+          'handFrameRatio': handFrameRatio.clamp(0.1, 1.0),
+          'bothHandsRatio': 0.88,
+          'poseDetected': true,
+        },
+      };
+
+      final uuidRegex = RegExp(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+      );
+      if (uuidRegex.hasMatch(sessionId)) {
+        payload['sessionId'] = sessionId;
+      }
+
+      final response = await _dio.post(
+        ApiConstants.aiAttempts,
+        data: payload,
+        options: Options(
+          headers: {'X-Request-Id': reqId},
+        ),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final result = data['result'] as Map<String, dynamic>? ?? data;
+      return AiAttemptResponse.fromJson(result);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  AiPracticeSessionResponse _defaultAiPracticeSession() {
+    return const AiPracticeSessionResponse(
+      sessionId: 'default-ai-session',
+      modelVersion: 'vsl-mvp30-v2-lite-transformer',
+      items: [
+        AiPracticeItem(
+          signId: '5abc8ccc-ceda-4314-ba95-795d358f13a1',
+          label: 'Anh',
+          topic: 'Gia đình & Xưng hô',
+          videoUrl:
+              'https://pub-22f6ba1572c34ec9b4667ae82ffee124.r2.dev/web/Anh__000000.mp4',
+          hint:
+              'Đưa bàn tay phải về phía trước, lòng bàn tay hướng vào trong ngực.',
+        ),
+        AiPracticeItem(
+          signId: 'd2587487-8173-4fb0-9563-5f6e83746349',
+          label: 'Chị',
+          topic: 'Gia đình & Xưng hô',
+          videoUrl:
+              'https://pub-22f6ba1572c34ec9b4667ae82ffee124.r2.dev/web/Ch%E1%BB%8B__000002.mp4',
+          hint:
+              'Khép các ngón tay, đặt cạnh thái dương và nhẹ nhàng chuyển động nhẹ.',
+        ),
+        AiPracticeItem(
+          signId: '70e112f8-349b-4590-98b1-8fd9ac7d0049',
+          label: 'Em',
+          topic: 'Gia đình & Xưng hô',
+          videoUrl:
+              'https://pub-22f6ba1572c34ec9b4667ae82ffee124.r2.dev/web/Em__000004.mp4',
+          hint:
+              'Đặt bàn tay ngang tầm ngực, hướng bàn tay xuống và hạ nhẹ xuống.',
+        ),
+        AiPracticeItem(
+          signId: '5d4233a0-c9fa-43a4-917c-84daa218794e',
+          label: 'Chú',
+          topic: 'Gia đình & Xưng hô',
+          videoUrl:
+              'https://pub-22f6ba1572c34ec9b4667ae82ffee124.r2.dev/web/Ch%C3%BA__000006.mp4',
+          hint: 'Đưa bàn tay lên gần tai, gập nhẹ các ngón tay.',
+        ),
+        AiPracticeItem(
+          signId: '6b90db7c-4740-4fe7-8ae3-aa3570267252',
+          label: 'Cháu',
+          topic: 'Gia đình & Xưng hô',
+          videoUrl:
+              'https://pub-22f6ba1572c34ec9b4667ae82ffee124.r2.dev/web/Ch%C3%A1u__000008.mp4',
+          hint: 'Đặt tay thấp ngang thắt lưng biểu thị người nhỏ tuổi.',
+        ),
+      ],
+    );
+  }
 }

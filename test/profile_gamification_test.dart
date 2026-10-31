@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sightlight_flutter/data/models/gamification/award_dto.dart';
 import 'package:sightlight_flutter/data/models/gamification/progress_stats_dto.dart';
@@ -6,6 +7,8 @@ import 'package:sightlight_flutter/data/models/user/user_profile_dto.dart';
 import 'package:sightlight_flutter/domain/entities/award.dart';
 import 'package:sightlight_flutter/domain/entities/progress_stats.dart';
 import 'package:sightlight_flutter/domain/entities/user_profile.dart';
+import 'package:sightlight_flutter/presentation/pages/gamification/progress_page.dart';
+import 'package:sightlight_flutter/presentation/providers/gamification_provider.dart';
 import 'package:sightlight_flutter/presentation/widgets/activity_chart_widget.dart';
 import 'package:sightlight_flutter/presentation/widgets/badge_celebration_dialog.dart';
 import 'package:sightlight_flutter/presentation/widgets/streak_tracker_widget.dart';
@@ -279,4 +282,82 @@ void main() {
       expect(find.text('CHÚC MỪNG!'), findsNothing);
     });
   });
+
+  group('ProgressPage Journey Enhancement Test', () {
+    testWidgets('renders all 4 journey elements and stats summary', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1200, 3000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      const stats = ProgressStats(
+        streakDays: 8,
+        longestStreak: 15,
+        freezeCount: 2,
+        totalMinutesLearned: 150.0,
+        completedLessons: 6,
+        signsMastered: 35,
+        averageScore: 94,
+        expBalance: 850,
+        goalMetToday: true,
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            progressStatsProvider.overrideWith(
+              (ref) => _MockProgressStatsNotifier(stats),
+            ),
+          ],
+          child: const MaterialApp(home: ProgressPage()),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Title
+      expect(find.text('Hành trình học tập'), findsOneWidget);
+
+      // 1. Stats summary (hero + 2x2 grid)
+      expect(find.textContaining('bài học'), findsWidgets);
+      expect(find.text('8 ngày'), findsWidgets);
+      expect(find.text('850 EXP'), findsOneWidget);
+      expect(find.text('35'), findsOneWidget);
+      expect(find.text('94%'), findsOneWidget);
+
+      // 2. Calendar with practice days marked
+      expect(find.textContaining('Lịch luyện tập tháng'), findsOneWidget);
+
+      // 3. Completed units visualization
+      expect(find.text('Tiến độ theo Unit (Chương)'), findsOneWidget);
+      expect(find.textContaining('hoàn thành'), findsWidgets);
+
+      // 4. Learning journey timeline
+      expect(find.text('Cột mốc đáng nhớ trong hành trình'), findsOneWidget);
+      expect(find.text('Khởi đầu hành trình VSL'), findsOneWidget);
+      expect(find.text('Thành thạo Bảng chữ cái ngón tay'), findsOneWidget);
+      expect(find.text('Chinh phục AI Camera tương tác'), findsOneWidget);
+
+      // 5. Existing components preserved
+      expect(find.text('Thời gian học tập'), findsOneWidget);
+      expect(
+        find.textContaining('Điểm chính xác AI trung bình'),
+        findsOneWidget,
+      );
+    });
+  });
+}
+
+class _MockProgressStatsNotifier
+    extends StateNotifier<AsyncValue<ProgressStats>>
+    implements ProgressStatsNotifier {
+  _MockProgressStatsNotifier(ProgressStats stats)
+    : super(AsyncValue.data(stats));
+
+  @override
+  Future<void> loadStats() async {}
+
+  @override
+  Future<bool> freezeStreak() async => true;
 }

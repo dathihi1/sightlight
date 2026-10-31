@@ -26,7 +26,7 @@ class DictionaryRepositoryImpl implements DictionaryRepository {
       _remoteDataSource.getSignDetail(signId);
 
   @override
-  Future<List<String>> getTopics() => _remoteDataSource.getTopics();
+  Future<List<TopicItem>> getTopics() => _remoteDataSource.getTopics();
 
   @override
   Future<List<Sign>> getSignsByTopic(String topic) =>

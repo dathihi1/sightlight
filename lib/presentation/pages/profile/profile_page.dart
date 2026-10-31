@@ -6,6 +6,7 @@ import '../../providers/user_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../gamification/progress_page.dart';
 import '../gamification/awards_page.dart';
+import '../referral_page.dart';
 import 'settings_page.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
@@ -372,6 +373,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (_) => const AwardsPage(),
+                            ),
+                          );
+                        },
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.card_giftcard, color: Colors.purple),
+                        title: const Text('Mời bạn bè (Nhận 1 tháng Premium)'),
+                        subtitle: const Text('Huy hiệu Đại sứ & 30 ngày Premium miễn phí'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const ReferralPage(),
                             ),
                           );
                         },

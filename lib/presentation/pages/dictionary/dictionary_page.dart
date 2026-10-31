@@ -6,6 +6,26 @@ import 'package:sightlight_flutter/presentation/providers/dictionary_provider.da
 import 'package:sightlight_flutter/presentation/widgets/sign_card.dart';
 import 'sign_detail_page.dart';
 
+const _shortTopicLabels = {
+  'Gia đình & Xưng hô': 'Xưng hô & gia đình',
+  'Đồ dùng, Thiết bị & Gia dụng': 'Đồ vật & gia dụng',
+  'Động từ hành động & Sinh hoạt': 'Hành động',
+  'Tính từ & Miêu tả đặc điểm': 'Trạng thái & đặc điểm',
+  'Cảm xúc, Nhu cầu & Trạng thái tâm lý': 'Cảm xúc & tâm lý',
+  'Ẩm thực (Món ăn & Đồ uống)': 'Ăn uống',
+  'Thời gian, Lịch & Mùa': 'Thời gian & mùa',
+  'Địa điểm & Công trình': 'Địa điểm',
+  'Phương tiện giao thông': 'Phương tiện',
+  'Quốc gia & Ngày lễ': 'Quốc gia & lễ hội',
+  'Thể thao & Giải trí': 'Thể thao & giải trí',
+  'Trang phục & Phụ kiện': 'Trang phục',
+  'Nghề nghiệp & Xã hội': 'Nghề nghiệp',
+  'Trái cây (Hoa quả)': 'Hoa quả',
+  'Trợ từ & Cụm phủ định': 'Trợ từ',
+  'Màu sắc': 'Màu sắc',
+  'Động vật': 'Động vật',
+};
+
 class DictionaryPage extends ConsumerStatefulWidget {
   const DictionaryPage({super.key});
 
@@ -54,6 +74,8 @@ class _DictionaryPageState extends ConsumerState<DictionaryPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final searchAsync = ref.watch(searchResultsProvider);
+    final topicsAsync = ref.watch(dictionaryTopicsProvider);
+    final selectedTopic = ref.watch(selectedTopicProvider);
     final history = ref.watch(searchHistoryProvider);
     final favorites = ref.watch(favoriteSignsProvider);
     final favNotifier = ref.read(favoriteSignsProvider.notifier);
@@ -132,6 +154,60 @@ class _DictionaryPageState extends ConsumerState<DictionaryPage> {
               ],
             ),
           ),
+
+          // Topic categories (when in All tab)
+          if (_selectedTab == 0)
+            topicsAsync.when(
+              data: (topics) {
+                if (topics.isEmpty) return const SizedBox.shrink();
+                return Container(
+                  height: 38,
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: topics.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final item = topics[index];
+                      final isSelected =
+                          query.isEmpty && item.topic == selectedTopic;
+                      final label =
+                          _shortTopicLabels[item.topic] ?? item.topic;
+                      return FilterChip(
+                        label: Text(
+                          '$label (${item.signCount})',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                        selected: isSelected,
+                        onSelected: (_) {
+                          _searchController.clear();
+                          ref.read(searchQueryProvider.notifier).state = '';
+                          ref.read(selectedTopicProvider.notifier).state =
+                              item.topic;
+                        },
+                      );
+                    },
+                  ),
+                );
+              },
+              loading: () => const SizedBox(
+                height: 38,
+                child: Center(
+                  child: SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ),
+              error: (_, _) => const SizedBox.shrink(),
+            ),
 
           // Search History Chips (when tab is All and history exists)
           if (_selectedTab == 0 && query.isEmpty && history.isNotEmpty)
