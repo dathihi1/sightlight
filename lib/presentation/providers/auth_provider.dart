@@ -24,6 +24,10 @@ final authStateProvider =
     });
 
 class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
+  static const _googleWebClientId =
+      '701794322092-f9k658h8vgrftuv8t4mfk50ctnk7vc50.apps.googleusercontent.com';
+  static Future<void>? _googleInitialization;
+
   AuthNotifier(this._repository) : super(const AsyncValue.loading()) {
     checkAuthStatus();
   }
@@ -72,22 +76,18 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
     try {
       final googleSignIn = GoogleSignIn.instance;
 
-      // Initialize with client ID
-      await googleSignIn.initialize(
-        clientId: '701794322092-f9k658h8vgrftuv8t4mfk50ctnk7vc50.apps.googleusercontent.com',
-        serverClientId: '701794322092-f9k658h8vgrftuv8t4mfk50.apps.googleusercontent.com',
-      );
+      // Android xác thực package + SHA-1 bằng OAuth client loại Android, nhưng
+      // ID token gửi về backend phải dùng OAuth Web client làm audience.
+      await (_googleInitialization ??= googleSignIn.initialize(
+        serverClientId: _googleWebClientId,
+      ));
 
       // Check if authenticate() is supported
       if (googleSignIn.supportsAuthenticate()) {
         // Use authenticate() method - returns GoogleSignInAccount directly
         final account = await googleSignIn.authenticate();
 
-        if (account == null) {
-          throw Exception('Đăng nhập Google bị hủy');
-        }
-
-        final auth = await account.authentication;
+        final auth = account.authentication;
         final idToken = auth.idToken;
         if (idToken == null || idToken.isEmpty) {
           throw Exception('Không nhận được Google ID Token');
