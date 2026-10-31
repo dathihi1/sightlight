@@ -115,7 +115,12 @@ public class AiRecognitionService {
 
     @Transactional(readOnly = true)
     public AiCapabilitiesResult capabilities(UUID userId) {
-        AiModelVersion version = versionForUser(userId);
+        return capabilities(userId, null);
+    }
+
+    @Transactional(readOnly = true)
+    public AiCapabilitiesResult capabilities(UUID userId, Integer requestedModelSize) {
+        AiModelVersion version = versionForSelection(userId, requestedModelSize);
         List<UUID> recognizable = modelSyncService.enabledLabels(version.getId()).stream()
                 .map(AiSignLabel::getSignId)
                 .filter(java.util.Objects::nonNull)
@@ -129,6 +134,7 @@ public class AiRecognitionService {
                 FeatureSchema.MIN_FRAMES,
                 FeatureSchema.MAX_FRAMES,
                 recognizable,
+                availableModelSizes(userId),
                 new AiCapabilitiesResult.LandmarkSpec(
                         FeatureSchema.POSE_LANDMARK_INDICES, FeatureSchema.SLICES),
                 FeatureSchema.ATTRIBUTION_TEXT,
@@ -138,12 +144,18 @@ public class AiRecognitionService {
 
     @Transactional(readOnly = true)
     public AiPracticeSessionResult practiceSession(UUID userId, int size) {
-        return practiceSession(userId, null, size);
+        return practiceSession(userId, null, size, null);
     }
 
     @Transactional(readOnly = true)
     public AiPracticeSessionResult practiceSession(UUID userId, UUID preferredSignId, int size) {
-        AiModelVersion version = versionForUser(userId);
+        return practiceSession(userId, preferredSignId, size, null);
+    }
+
+    @Transactional(readOnly = true)
+    public AiPracticeSessionResult practiceSession(UUID userId, UUID preferredSignId, int size,
+            Integer requestedModelSize) {
+        AiModelVersion version = versionForSelection(userId, requestedModelSize);
         List<AiSignLabel> enabledLabels = modelSyncService.enabledLabels(version.getId());
 
         List<UUID> recognizableSignIds = enabledLabels.stream()
@@ -217,10 +229,7 @@ public class AiRecognitionService {
         }
 
         boolean premium = authService.isPremium(userId);
-        AiModelVersion version = versionForPlan(premium);
-        if (!version.getVersionCode().equals(request.getModelVersion())) {
-            throw new BusinessException(ErrorCode.AI_MODEL_VERSION_UNSUPPORTED);
-        }
+        AiModelVersion version = versionForAttempt(userId, request.getModelVersion());
 
         AiSignLabel targetLabel = labelRepository
                 .findByModelVersionIdAndSignIdAndEnabledTrue(version.getId(), request.getTargetSignId())
@@ -477,6 +486,37 @@ public class AiRecognitionService {
     /** Free chạy model 30 thật; Premium chạy model 400 thật. */
     private AiModelVersion versionForUser(UUID userId) {
         return versionForPlan(authService.isPremium(userId));
+    }
+
+    /**
+     * Model 30 luôn khả dụng. Model 400 vẫn là quyền Premium, nhưng Premium có thể chủ động
+     * quay về model 30 khi muốn luyện tập với tập nhãn hẹp hơn.
+     */
+    private AiModelVersion versionForSelection(UUID userId, Integer requestedModelSize) {
+        if (requestedModelSize == null) {
+            return versionForUser(userId);
+        }
+        if (requestedModelSize == 30) {
+            return versionForPlan(false);
+        }
+        if (requestedModelSize == 400 && authService.isPremium(userId)) {
+            return versionForPlan(true);
+        }
+        throw new BusinessException(ErrorCode.AI_MODEL_VERSION_UNSUPPORTED);
+    }
+
+    private AiModelVersion versionForAttempt(UUID userId, String requestedVersion) {
+        if (freeModelVersion.equals(requestedVersion)) {
+            return versionForPlan(false);
+        }
+        if (premiumModelVersion.equals(requestedVersion) && authService.isPremium(userId)) {
+            return versionForPlan(true);
+        }
+        throw new BusinessException(ErrorCode.AI_MODEL_VERSION_UNSUPPORTED);
+    }
+
+    private List<Integer> availableModelSizes(UUID userId) {
+        return authService.isPremium(userId) ? List.of(30, 400) : List.of(30);
     }
 
     private AiModelVersion versionForPlan(boolean premium) {

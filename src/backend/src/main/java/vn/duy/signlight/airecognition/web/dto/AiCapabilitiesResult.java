@@ -18,6 +18,7 @@ public record AiCapabilitiesResult(
         int minFrames,
         int maxFrames,
         List<UUID> recognizableSignIds,
+        List<Integer> availableModelSizes,
         LandmarkSpec landmarkSpec,
         String attributionText,
         String disclaimerText,

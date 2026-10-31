@@ -39,9 +39,11 @@ public class AiController {
     @GetMapping("/capabilities")
     @Operation(summary = "Vốn ký hiệu AI + thông số schema (FR-41, FR-44)")
     public ResponseEntity<TransactionResponse<AiCapabilitiesResult>> capabilities(
-            @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId) {
+            @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId,
+            @RequestParam(required = false) Integer modelSize) {
         return ResponseEntity.ok(
-                ApiResponses.ok(requestId, recognitionService.capabilities(CurrentUser.id())));
+                ApiResponses.ok(requestId,
+                        recognitionService.capabilities(CurrentUser.id(), modelSize)));
     }
 
     @PostMapping("/attempts")
@@ -65,11 +67,13 @@ public class AiController {
     public ResponseEntity<TransactionResponse<AiPracticeSessionResult>> practiceSession(
             @RequestHeader(value = RequestIdFilter.HEADER, required = false) String requestId,
             @RequestParam(required = false) java.util.UUID signId,
+            @RequestParam(required = false) Integer modelSize,
             @RequestParam(defaultValue = "" + DEFAULT_SESSION_SIZE) int size) {
         // Tối đa 400 để màn luyện có thể hiển thị toàn bộ vốn từ và cho người dùng tự chọn.
         int bounded = Math.clamp(size, 1, 400);
         return ResponseEntity.ok(
                 ApiResponses.ok(requestId,
-                        recognitionService.practiceSession(CurrentUser.id(), signId, bounded)));
+                        recognitionService.practiceSession(CurrentUser.id(), signId, bounded,
+                                modelSize)));
     }
 }

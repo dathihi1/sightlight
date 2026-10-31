@@ -26,6 +26,7 @@ interface Capabilities {
   minFrames: number;
   maxFrames: number;
   recognizableSignIds: string[];
+  availableModelSizes: number[];
   attributionText: string;
   disclaimerText: string;
   stubMode: boolean;
@@ -61,6 +62,7 @@ interface AttemptResult {
 }
 
 type Phase = "idle" | "loading-model" | "ready" | "recording" | "scoring";
+type ModelSize = 30 | 400;
 
 export default function AiPracticePage() {
   return (
@@ -97,19 +99,23 @@ function AiPracticeContent() {
   const [videoRatio, setVideoRatio] = useState<number>(16 / 9);
   const [showAdModal, setShowAdModal] = useState(false);
   const [preparationSave, setPreparationSave] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [selectedModelSize, setSelectedModelSize] = useState<ModelSize | null>(null);
   const savedAttemptRef = useRef<string | null>(null);
 
   const capabilities = useQuery({
-    queryKey: ["ai-capabilities"],
-    queryFn: () => apiCall<Capabilities>("/api/v1/ai/capabilities"),
+    queryKey: ["ai-capabilities", selectedModelSize],
+    queryFn: () => apiCall<Capabilities>(
+      `/api/v1/ai/capabilities${selectedModelSize ? `?modelSize=${selectedModelSize}` : ""}`,
+    ),
   });
 
   const session = useQuery({
-    queryKey: ["ai-practice-session", requestedSignId, lessonPractice],
+    queryKey: ["ai-practice-session", requestedSignId, lessonPractice, selectedModelSize],
     queryFn: () => {
-      const url = requestedSignId
-        ? `/api/v1/ai/practice/session?size=${lessonPractice ? 1 : 400}&signId=${encodeURIComponent(requestedSignId)}`
-        : "/api/v1/ai/practice/session?size=400";
+      const params = new URLSearchParams({ size: String(lessonPractice ? 1 : 400) });
+      if (requestedSignId) params.set("signId", requestedSignId);
+      if (selectedModelSize) params.set("modelSize", String(selectedModelSize));
+      const url = `/api/v1/ai/practice/session?${params.toString()}`;
       return apiCall<PracticeSession>(url);
     },
   });
@@ -142,6 +148,19 @@ function AiPracticeContent() {
 
   useEffect(() => stopCamera, [stopCamera]);
 
+  function selectModel(modelSize: ModelSize) {
+    if (modelSize === selectedModelSize || phase === "recording" || phase === "scoring") return;
+    stopCamera();
+    recorderRef.current = null;
+    setPhase("idle");
+    setSelectedModelSize(modelSize);
+    setItemIndex(0);
+    setResult(null);
+    setLocalInference(null);
+    setError(null);
+    setPreparationSave("idle");
+  }
+
   async function startCamera() {
     setError(null);
     setPhase("loading-model");
@@ -160,9 +179,7 @@ function AiPracticeContent() {
         import("@/lib/ai/localRecognizer"),
       ]);
       recorderRef.current ??= new SignSequenceRecorder();
-      const modelToLoad = capabilities.data?.modelVersion?.includes("30")
-        ? "vsl_mvp30_v2_lite_transformer"
-        : "vsl_mvp400_v2_lite_transformer";
+      const modelToLoad = modelAssetFor(capabilities.data?.modelVersion);
 
       const [landmarkerResult, recognizerResult] = await Promise.all([
         loadHolisticLandmarker(),
@@ -376,6 +393,17 @@ function AiPracticeContent() {
     return <EmptyState title="Đang chuẩn bị phiên luyện…" mood="wow" />;
   }
 
+  const activeModelSize = modelSizeFromVersion(capabilities.data?.modelVersion);
+  const canUse400 = capabilities.data?.availableModelSizes.includes(400) ?? false;
+  const modelSelector = (
+    <ModelSelector
+      activeModelSize={activeModelSize}
+      canUse400={canUse400}
+      disabled={phase === "recording" || phase === "scoring"}
+      onSelect={selectModel}
+    />
+  );
+
   if (!item) {
     return (
       <EmptyState
@@ -383,6 +411,7 @@ function AiPracticeContent() {
         body="Bạn vẫn có thể xem video mẫu và tiếp tục bài học. Từ này sẽ được bổ sung vào model nhận dạng sau."
         mood="sad"
       >
+        {modelSelector}
         {lessonPractice ? (
           <Link href={mainLessonUrl} className="btn btn-primary">
             Bỏ qua · Vào lesson chính
@@ -397,7 +426,6 @@ function AiPracticeContent() {
   }
 
   const total = session.data?.items.length ?? 1;
-  const isPremiumModel = capabilities.data?.modelVersion?.includes("400") ?? false;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
@@ -429,15 +457,15 @@ function AiPracticeContent() {
         )}
       </header>
 
-      {!lessonPractice && <section className="mt-5 rounded-3xl border border-grape-200 bg-grape-50 p-4 sm:flex sm:items-end sm:justify-between sm:gap-5">
+      <div className="mt-5">{modelSelector}</div>
+
+      {!lessonPractice && <section className="mt-4 rounded-3xl border border-grape-200 bg-grape-50 p-4 sm:flex sm:items-end sm:justify-between sm:gap-5">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <label htmlFor="practice-sign" className="text-sm font-bold text-grape-800">
               Chọn từ muốn luyện
             </label>
-            <span className="chip bg-white text-grape-700">
-              {isPremiumModel ? "Premium · model 400 từ" : "Free · model 30 từ"}
-            </span>
+            <span className="chip bg-white text-grape-700">Model {activeModelSize} từ</span>
           </div>
           <select
             id="practice-sign"
@@ -464,11 +492,6 @@ function AiPracticeContent() {
             Bạn đang có {session.data?.items.length ?? 0} từ khả dụng với gói hiện tại.
           </p>
         </div>
-        {!isPremiumModel && (
-          <Link href="/nang-cap" className="btn btn-secondary btn-sm mt-3 shrink-0 sm:mt-0">
-            Mở khóa 400 từ
-          </Link>
-        )}
       </section>}
 
       {capabilities.data?.stubMode && (
@@ -645,6 +668,64 @@ function AiPracticeContent() {
 
 function safeInternalPath(path: string | null) {
   return path && path.startsWith("/") && !path.startsWith("//") && !path.includes("\\") ? path : null;
+}
+
+function modelSizeFromVersion(modelVersion?: string): ModelSize {
+  return modelVersion?.includes("400") ? 400 : 30;
+}
+
+function modelAssetFor(modelVersion?: string) {
+  return modelSizeFromVersion(modelVersion) === 30
+    ? "vsl_mvp30_v2_lite_transformer"
+    : "vsl_mvp400_v2_lite_transformer";
+}
+
+function ModelSelector({
+  activeModelSize,
+  canUse400,
+  disabled,
+  onSelect,
+}: {
+  activeModelSize: ModelSize;
+  canUse400: boolean;
+  disabled: boolean;
+  onSelect: (modelSize: ModelSize) => void;
+}) {
+  return (
+    <section className="rounded-3xl border border-sky-200 bg-sky-50 p-4" aria-labelledby="ai-model-title">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 id="ai-model-title" className="text-sm font-bold text-sky-900">Chọn model nhận diện</h2>
+          <p className="mt-1 text-xs text-sky-700">
+            30 từ có phạm vi hẹp; 400 từ có vốn từ rộng hơn. Bạn có thể đổi model nếu kết quả chưa ổn định.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Model nhận diện Camera AI">
+          <button
+            type="button"
+            aria-pressed={activeModelSize === 30}
+            disabled={disabled}
+            onClick={() => onSelect(30)}
+            className={activeModelSize === 30 ? "btn btn-primary btn-sm" : "btn btn-secondary btn-sm"}
+          >
+            Model 30 từ
+          </button>
+          <button
+            type="button"
+            aria-pressed={activeModelSize === 400}
+            disabled={disabled || !canUse400}
+            onClick={() => onSelect(400)}
+            className={activeModelSize === 400 ? "btn btn-grape btn-sm" : "btn btn-secondary btn-sm"}
+          >
+            Model 400 từ{!canUse400 ? " · Premium" : ""}
+          </button>
+          {!canUse400 && (
+            <Link href="/nang-cap" className="btn btn-secondary btn-sm">Mở khóa 400 từ</Link>
+          )}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function AttemptFeedback({
