@@ -6,9 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:sightlight_flutter/core/ai/local_recognizer.dart';
+import 'package:sightlight_flutter/core/ai/webview_mediapipe_extractor.dart';
 import 'package:sightlight_flutter/data/models/practice/practice_model.dart';
 import 'package:sightlight_flutter/presentation/providers/practice_provider.dart';
 import 'package:sightlight_flutter/presentation/widgets/sign_video_player.dart';
+import 'package:sightlight_flutter/presentation/widgets/pose_debug_painter.dart';
 
 /// Practice sign data representation matching web AI vocabulary items.
 class PracticeSignItem {
@@ -104,6 +106,9 @@ class _PracticePageState extends ConsumerState<PracticePage>
   double _motionAccumulator = 0.0;
   List<int>? _prevSample;
 
+  // MediaPipe extractor
+  WebViewMediaPipeExtractor? _extractor;
+
   late final AnimationController _scanController;
   late final Animation<double> _scanAnimation;
 
@@ -119,6 +124,9 @@ class _PracticePageState extends ConsumerState<PracticePage>
       parent: _scanController,
       curve: Curves.easeInOut,
     );
+
+    // Initialize MediaPipe extractor
+    _extractor = MediaPipeExtractor();
 
     _initCamera();
     _loadAiSession(size: 30);
@@ -282,17 +290,28 @@ class _PracticePageState extends ConsumerState<PracticePage>
     _motionAccumulator = 0.0;
     _prevSample = null;
 
+    // Start MediaPipe extraction
+    _extractor?.start();
+
     final controller = _cameraController;
     if (controller == null || !controller.value.isInitialized) return;
 
     try {
       _isStreaming = true;
-      controller.startImageStream((CameraImage image) {
+      controller.startImageStream((CameraImage image) async {
         if (!_isStreaming || image.planes.isEmpty) return;
         _motionSampleCount++;
-        // Lấy mẫu mỗi 4 khung hình để tránh tốn CPU
-        if (_motionSampleCount % 4 != 0) return;
 
+        // Extract MediaPipe landmarks
+        await _extractor?.addFrame(image);
+
+        // Trigger repaint for debug overlay (only every 4 frames to avoid performance hit)
+        if (_motionSampleCount % 4 == 0 && mounted) {
+          setState(() {});
+        }
+
+        // Keep simple motion tracking for UI feedback
+        if (_motionSampleCount % 4 != 0) return;
         final bytes = image.planes[0].bytes;
         final step = (bytes.length ~/ 100).clamp(1, 1000);
         final sample = <int>[];
@@ -327,12 +346,14 @@ class _PracticePageState extends ConsumerState<PracticePage>
   }
 
   @override
+  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _stopMotionTracking();
     _timer?.cancel();
     _scanController.dispose();
     _cameraController?.dispose();
+    _extractor?.dispose();
     super.dispose();
   }
 
@@ -401,23 +422,32 @@ class _PracticePageState extends ConsumerState<PracticePage>
         _isAnalyzing = true;
       });
 
-      // Chuẩn bị tensor đầu vào 64 khung × 327 đặc trưng chuẩn v2_holistic_subset
-      const sequenceLength = 64;
-      const actualFrameCount = 30;
-      final features = List.generate(sequenceLength, (fIdx) {
-        final t = fIdx / (sequenceLength - 1.0);
-        final energy = (_motionAccumulator / 100.0).clamp(0.0, 1.0);
-        return List.generate(327, (dim) => (t * energy * 0.05));
-      });
+      // Extract MediaPipe features (64 × 327)
+      final extraction = _extractor!.finish();
 
-      final durationMs = (_elapsedSeconds * 1000).round().clamp(500, 6000);
-      final handRatio = (_motionAccumulator / 100.0).clamp(0.65, 0.98);
+      // Quality gate: check minimum useful frames
+      if (extraction.frameCount < 8) {
+        setState(() {
+          _isAnalyzing = false;
+          _phase = PracticePhase.scored;
+          _lastAssessment = AiAssessmentResult(
+            isCorrect: false,
+            statusTitle: 'Không đủ khung hình',
+            confidencePercent: 0,
+            targetWord: sign.label,
+            feedbackNote: 'Không phát hiện đủ chuyển động tay. Vui lòng thử lại với cử chỉ rõ ràng hơn.',
+            candidates: const [],
+            hasMotion: true,
+          );
+        });
+        return;
+      }
 
       // 1. Chạy suy luận on-device cục bộ với ONNX INT8 (giống web localRecognizer)
       if (!LocalRecognizer.instance.isReady) {
         await LocalRecognizer.instance.load(modelSize: _selectedModelSize);
       }
-      final localInf = await LocalRecognizer.instance.infer(features);
+      final localInf = await LocalRecognizer.instance.infer(extraction.features);
 
       // 2. Gửi attempt lên backend API để ghi nhận lịch sử và hạn mức
       AiAttemptResponse? attemptRes;
@@ -428,10 +458,10 @@ class _PracticePageState extends ConsumerState<PracticePage>
             .submitAiAttempt(
               targetSignId: sign.id,
               modelVersion: _modelVersion,
-              features: features,
-              frameCount: actualFrameCount,
-              durationMs: durationMs,
-              handFrameRatio: handRatio,
+              features: extraction.features,
+              frameCount: extraction.frameCount,
+              durationMs: extraction.durationMs,
+              handFrameRatio: extraction.quality.handFrameRatio,
               sessionId: _sessionId,
             );
       } catch (error) {
@@ -1546,7 +1576,65 @@ class _PracticePageState extends ConsumerState<PracticePage>
       child: SizedBox(
         width: previewSize != null ? previewSize.height : 480,
         height: previewSize != null ? previewSize.width : 640,
-        child: CameraPreview(_cameraController!),
+        child: Stack(
+          children: [
+            CameraPreview(_cameraController!),
+            // Debug overlay - hiển thị luôn để test
+            if (_extractor != null) ...[
+              CustomPaint(
+                painter: PoseDebugPainter(
+                  poses: _extractor!.lastDetectedPoses,
+                  imageSize: _extractor!.lastImageSize ?? const Size(640, 480),
+                  previewSize: Size(
+                    previewSize?.height ?? 480,
+                    previewSize?.width ?? 640,
+                  ),
+                  error: _extractor!.lastError,
+                ),
+              ),
+              // Debug text overlay
+              Positioned(
+                top: 10,
+                left: 10,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black87,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'DEBUG',
+                        style: TextStyle(
+                          color: Colors.yellow,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Poses: ${_extractor!.lastDetectedPoses.length}',
+                        style: const TextStyle(color: Colors.white, fontSize: 10),
+                      ),
+                      Text(
+                        'Frames: ${_extractor!.usefulFrameCount}/64',
+                        style: const TextStyle(color: Colors.white, fontSize: 10),
+                      ),
+                      if (_extractor!.lastError != null)
+                        Text(
+                          'Err: ${_extractor!.lastError}',
+                          style: const TextStyle(color: Colors.red, fontSize: 9),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

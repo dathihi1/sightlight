@@ -8,7 +8,7 @@ import '../../presentation/pages/home_page.dart';
 import '../../presentation/pages/login_page.dart';
 import '../../presentation/pages/learning/lesson_page.dart';
 import '../../presentation/pages/payment_result_page.dart';
-import '../../presentation/pages/practice/practice_page.dart';
+import '../../presentation/pages/practice/webview_practice_page.dart';
 import '../../presentation/pages/profile/profile_page.dart';
 import '../../presentation/pages/profile/settings_page.dart';
 import '../../presentation/pages/gamification/progress_page.dart';
@@ -168,7 +168,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/practice',
-                builder: (context, state) => const PracticePage(),
+                builder: (context, state) => const WebViewPracticePage(),
               ),
             ],
           ),
