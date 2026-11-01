@@ -1,16 +1,16 @@
 import 'dart:async';
 
 import 'package:camera/camera.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:uuid/uuid.dart';
 
-import 'package:sightlight_flutter/core/ai/local_recognizer.dart';
-import 'package:sightlight_flutter/core/ai/webview_mediapipe_extractor.dart';
+import 'package:sightlight_flutter/core/constants/api_constants.dart';
 import 'package:sightlight_flutter/data/models/practice/practice_model.dart';
 import 'package:sightlight_flutter/presentation/providers/practice_provider.dart';
 import 'package:sightlight_flutter/presentation/widgets/sign_video_player.dart';
-import 'package:sightlight_flutter/presentation/widgets/pose_debug_painter.dart';
 
 /// Practice sign data representation matching web AI vocabulary items.
 class PracticeSignItem {
@@ -65,8 +65,107 @@ enum PracticePhase { idle, recording, scored }
 
 enum PracticeCallLayout { split, pictureInPicture }
 
+/// Chuyển lỗi hạ tầng thành thông báo ngắn gọn; không hiển thị nguyên
+/// DioException/stack trace cho người học.
+String friendlyPracticeNetworkError(Object error, {bool syncing = false}) {
+  if (error is DioException) {
+    final statusCode = error.response?.statusCode;
+    if (statusCode == 401 || statusCode == 403) {
+      return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+    }
+    if (statusCode == 429) {
+      return 'Bạn thao tác hơi nhanh. Vui lòng đợi một lát rồi thử lại.';
+    }
+    if (statusCode != null && statusCode >= 500) {
+      return syncing
+          ? 'Nhận diện trên thiết bị đã hoàn tất, nhưng máy chủ AI đang tạm bận nên lượt này chưa được đồng bộ. Vui lòng thử lại sau.'
+          : 'Máy chủ AI đang tạm bận. Vui lòng thử lại sau.';
+    }
+    if (error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.sendTimeout ||
+        error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.connectionError) {
+      return syncing
+          ? 'Nhận diện trên thiết bị đã hoàn tất, nhưng chưa thể đồng bộ do kết nối mạng không ổn định.'
+          : 'Kết nối mạng không ổn định. Vui lòng kiểm tra mạng và thử lại.';
+    }
+  }
+  return syncing
+      ? 'Nhận diện trên thiết bị đã hoàn tất, nhưng lượt này chưa được đồng bộ.'
+      : 'Chưa thể xử lý video. Vui lòng thử lại.';
+}
+
+/// Dựng kết quả giống bản web: luôn hiển thị nhãn top-1 mà AI nhận ra.
+/// Backend có thể ẩn `top3` ở trạng thái low_confidence/ok, nhưng vẫn trả
+/// `predictedLabel`, `predictedSignId` và `confidence`.
+AiAssessmentResult buildAiAssessment(
+  AiAttemptResponse attempt,
+  PracticeSignItem sign,
+) {
+  final confidence = attempt.confidence == null
+      ? (attempt.top3.isEmpty
+            ? 0
+            : (attempt.top3.first.confidence * 100).round())
+      : (attempt.confidence! * 100).round();
+  final candidates = attempt.top3
+      .map(
+        (candidate) => AiRecognitionCandidate(
+          word: candidate.label,
+          probability: (candidate.confidence * 100).round(),
+          isTarget:
+              candidate.signId == sign.id ||
+              candidate.label.trim().toLowerCase() ==
+                  sign.label.trim().toLowerCase(),
+        ),
+      )
+      .toList();
+
+  final predictedLabel = attempt.predictedLabel?.trim() ?? '';
+  final alreadyContainsPrediction = candidates.any(
+    (candidate) =>
+        candidate.word.trim().toLowerCase() == predictedLabel.toLowerCase(),
+  );
+  if (predictedLabel.isNotEmpty && !alreadyContainsPrediction) {
+    candidates.insert(
+      0,
+      AiRecognitionCandidate(
+        word: predictedLabel,
+        probability: confidence,
+        isTarget:
+            attempt.predictedSignId == sign.id ||
+            predictedLabel.toLowerCase() == sign.label.trim().toLowerCase(),
+      ),
+    );
+  }
+
+  final title = switch (attempt.status) {
+    'verified' || 'ok' when attempt.verified => 'Chính xác!',
+    'not_enough_frames' => 'Cử chỉ quá ngắn',
+    'no_hand' => 'Không phát hiện bàn tay',
+    'low_confidence' => 'Độ khớp thấp',
+    'wrong_target' => 'Chưa chính xác',
+    _ => attempt.verified ? 'Chính xác!' : 'Chưa chính xác',
+  };
+  final note = attempt.qualityHints.isNotEmpty
+      ? attempt.qualityHints.join('. ')
+      : (attempt.countedAgainstQuota
+            ? 'Đã ghi nhận nỗ lực (còn ${attempt.quotaRemaining ?? 0} lượt hôm nay).'
+            : 'Lượt này không tính vào hạn mức.');
+  return AiAssessmentResult(
+    isCorrect: attempt.verified,
+    statusTitle: title,
+    confidencePercent: confidence,
+    targetWord: sign.label,
+    feedbackNote: note,
+    candidates: candidates,
+    hasMotion: true,
+  );
+}
+
 class PracticePage extends ConsumerStatefulWidget {
-  const PracticePage({super.key});
+  const PracticePage({super.key, this.serverVideoEnabled});
+
+  final bool? serverVideoEnabled;
 
   @override
   ConsumerState<PracticePage> createState() => _PracticePageState();
@@ -82,6 +181,9 @@ class _PracticePageState extends ConsumerState<PracticePage>
   Timer? _timer;
   AiAssessmentResult? _lastAssessment;
   bool _isAnalyzing = false;
+  bool _isFinishing = false;
+  bool _serverVideoConsentGranted = false;
+  bool _serverVideoDeclined = false;
   bool _isLoading = false;
   String? _sessionError;
   int _selectedModelSize = 30;
@@ -92,6 +194,16 @@ class _PracticePageState extends ConsumerState<PracticePage>
   String _sessionId = 'ai-practice-session-001';
   String _modelVersion = 'vsl-mvp30-v2-lite-transformer';
 
+  // Chỉ bật lại khi Flutter đã có MediaPipe Holistic native và tạo đúng
+  // v2_holistic_subset 64x327. Không được dùng tensor tổng hợp từ pixel motion.
+  static const bool _onDeviceLandmarkPipelineReady = false;
+
+  bool get _serverVideoAvailable =>
+      widget.serverVideoEnabled ?? ApiConstants.useServerVideoProcessing;
+
+  bool get _useServerVideoForSession =>
+      _serverVideoAvailable && !_serverVideoDeclined;
+
   // Real Camera management
   List<CameraDescription> _cameras = [];
   CameraController? _cameraController;
@@ -99,15 +211,6 @@ class _PracticePageState extends ConsumerState<PracticePage>
   bool _isCameraInitialized = false;
   bool _isCameraLoading = true;
   String? _cameraErrorMessage;
-
-  // Motion analysis during recording
-  bool _isStreaming = false;
-  int _motionSampleCount = 0;
-  double _motionAccumulator = 0.0;
-  List<int>? _prevSample;
-
-  // MediaPipe extractor
-  WebViewMediaPipeExtractor? _extractor;
 
   late final AnimationController _scanController;
   late final Animation<double> _scanAnimation;
@@ -125,9 +228,6 @@ class _PracticePageState extends ConsumerState<PracticePage>
       curve: Curves.easeInOut,
     );
 
-    // Initialize MediaPipe extractor
-    _extractor = MediaPipeExtractor();
-
     _initCamera();
     _loadAiSession(size: 30);
   }
@@ -139,9 +239,6 @@ class _PracticePageState extends ConsumerState<PracticePage>
       _isLoading = true;
       _sessionError = null;
     });
-
-    // Tải trước mô hình ONNX INT8 cục bộ để dự phòng ngoại tuyến
-    unawaited(LocalRecognizer.instance.load(modelSize: targetSize));
 
     try {
       final repository = ref.read(practiceRepositoryProvider);
@@ -202,7 +299,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
     if (camera == null || !camera.value.isInitialized) return;
 
     if (state == AppLifecycleState.inactive) {
-      _stopMotionTracking();
+      _timer?.cancel();
       camera.dispose();
       _isCameraInitialized = false;
     } else if (state == AppLifecycleState.resumed) {
@@ -280,84 +377,56 @@ class _PracticePageState extends ConsumerState<PracticePage>
 
   Future<void> _toggleCameraLens() async {
     if (_cameras.length <= 1 || _phase == PracticePhase.recording) return;
-    await _stopMotionTracking();
     _selectedCameraIndex = (_selectedCameraIndex + 1) % _cameras.length;
     await _startCameraController(_cameras[_selectedCameraIndex]);
   }
 
-  void _startMotionTracking() {
-    _motionSampleCount = 0;
-    _motionAccumulator = 0.0;
-    _prevSample = null;
-
-    // Start MediaPipe extraction
-    _extractor?.start();
-
-    final controller = _cameraController;
-    if (controller == null || !controller.value.isInitialized) return;
-
-    try {
-      _isStreaming = true;
-      controller.startImageStream((CameraImage image) async {
-        if (!_isStreaming || image.planes.isEmpty) return;
-        _motionSampleCount++;
-
-        // Extract MediaPipe landmarks
-        await _extractor?.addFrame(image);
-
-        // Trigger repaint for debug overlay (only every 4 frames to avoid performance hit)
-        if (_motionSampleCount % 4 == 0 && mounted) {
-          setState(() {});
-        }
-
-        // Keep simple motion tracking for UI feedback
-        if (_motionSampleCount % 4 != 0) return;
-        final bytes = image.planes[0].bytes;
-        final step = (bytes.length ~/ 100).clamp(1, 1000);
-        final sample = <int>[];
-        for (int i = 0; i < bytes.length && sample.length < 100; i += step) {
-          sample.add(bytes[i]);
-        }
-
-        if (_prevSample != null && _prevSample!.length == sample.length) {
-          int diff = 0;
-          for (int i = 0; i < sample.length; i++) {
-            diff += (sample[i] - _prevSample![i]).abs();
-          }
-          _motionAccumulator += (diff / sample.length);
-        }
-        _prevSample = sample;
-      });
-    } catch (_) {
-      _isStreaming = false;
-    }
-  }
-
-  Future<void> _stopMotionTracking() async {
-    if (_isStreaming && _cameraController != null) {
-      try {
-        _isStreaming = false;
-        if (_cameraController!.value.isStreamingImages) {
-          await _cameraController!.stopImageStream();
-        }
-      } catch (_) {}
-    }
-    _isStreaming = false;
-  }
-
-  @override
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _stopMotionTracking();
     _timer?.cancel();
     _scanController.dispose();
     _cameraController?.dispose();
-    _extractor?.dispose();
     super.dispose();
   }
 
-  void _startPractice() {
+  Future<void> _startPractice() async {
+    if (_isFinishing || _isAnalyzing) return;
+    if (!_useServerVideoForSession && !_onDeviceLandmarkPipelineReady) {
+      _showMessage(
+        'Nhận diện trên thiết bị đang được hoàn thiện. Vui lòng chọn xử lý trên server.',
+      );
+      return;
+    }
+    final controller = _cameraController;
+    if (_useServerVideoForSession) {
+      if (controller == null || !controller.value.isInitialized) {
+        _showMessage('Camera chưa sẵn sàng. Vui lòng thử lại.');
+        return;
+      }
+      if (!_serverVideoConsentGranted) {
+        final consent = await _requestServerVideoConsent();
+        if (!mounted) return;
+        if (consent) {
+          _serverVideoConsentGranted = true;
+        } else {
+          setState(() => _serverVideoDeclined = true);
+          _showMessage(
+            'Video chưa được gửi. Nhận diện trên thiết bị hiện chưa khả dụng.',
+          );
+          return;
+        }
+      }
+      if (_useServerVideoForSession) {
+        try {
+          await controller.startVideoRecording();
+        } catch (error) {
+          _showMessage('Không thể bắt đầu quay video: $error');
+          return;
+        }
+      }
+    }
+
     setState(() {
       _phase = PracticePhase.recording;
       _elapsedSeconds = 0.0;
@@ -365,8 +434,6 @@ class _PracticePageState extends ConsumerState<PracticePage>
     });
 
     _scanController.repeat(reverse: true);
-    _startMotionTracking();
-
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       if (!mounted) {
@@ -383,198 +450,29 @@ class _PracticePageState extends ConsumerState<PracticePage>
   }
 
   Future<void> _finishRecording() async {
+    if (_isFinishing) return;
+    _isFinishing = true;
     _timer?.cancel();
     _scanController.stop();
-    await _stopMotionTracking();
 
     final sign = _signs[_currentIndex];
-    // Nếu người dùng không hề chuyển động tay trong khung hình (motion thấp)
-    // hoặc camera quay lên trần nhà / không có cử chỉ:
-    final bool hasSignificantMotion = _motionAccumulator >= 30.0;
-
-    AiAssessmentResult assessment;
-
-    if (!hasSignificantMotion) {
-      // Người dùng không làm gì hoặc không đưa tay vào khung hình
-      assessment = AiAssessmentResult(
-        isCorrect: false,
-        statusTitle: 'Không phát hiện cử chỉ',
-        confidencePercent: 0,
-        targetWord: sign.label,
-        feedbackNote: 'Không phát hiện chuyển động bàn tay trong khung hình. Vui lòng hướng camera vào bạn và làm theo video mẫu.',
-        candidates: const [],
-        hasMotion: false,
-      );
-    } else if (_elapsedSeconds < 1.0) {
-      // Người dùng có chuyển động nhưng dừng quá nhanh (< 1.0s)
-      assessment = AiAssessmentResult(
-        isCorrect: false,
-        statusTitle: 'Cử chỉ quá ngắn',
-        confidencePercent: 0,
-        targetWord: sign.label,
-        feedbackNote: 'Thời lượng làm ký hiệu quá ngắn (< 1s) để AI nhận diện trọn vẹn chuyển động.',
-        candidates: const [],
-        hasMotion: true,
-      );
-    } else {
-      // Người dùng thực hiện đầy đủ cử chỉ trước camera
-      setState(() {
-        _isAnalyzing = true;
-      });
-
-      // Extract MediaPipe features (64 × 327)
-      final extraction = _extractor!.finish();
-
-      // Quality gate: check minimum useful frames
-      if (extraction.frameCount < 8) {
-        setState(() {
-          _isAnalyzing = false;
-          _phase = PracticePhase.scored;
-          _lastAssessment = AiAssessmentResult(
-            isCorrect: false,
-            statusTitle: 'Không đủ khung hình',
-            confidencePercent: 0,
-            targetWord: sign.label,
-            feedbackNote: 'Không phát hiện đủ chuyển động tay. Vui lòng thử lại với cử chỉ rõ ràng hơn.',
-            candidates: const [],
-            hasMotion: true,
-          );
-        });
-        return;
-      }
-
-      // 1. Chạy suy luận on-device cục bộ với ONNX INT8 (giống web localRecognizer)
-      if (!LocalRecognizer.instance.isReady) {
-        await LocalRecognizer.instance.load(modelSize: _selectedModelSize);
-      }
-      final localInf = await LocalRecognizer.instance.infer(extraction.features);
-
-      // 2. Gửi attempt lên backend API để ghi nhận lịch sử và hạn mức
-      AiAttemptResponse? attemptRes;
-      String? syncError;
+    if (_useServerVideoForSession) {
       try {
-        attemptRes = await ref
-            .read(practiceRepositoryProvider)
-            .submitAiAttempt(
-              targetSignId: sign.id,
-              modelVersion: _modelVersion,
-              features: extraction.features,
-              frameCount: extraction.frameCount,
-              durationMs: extraction.durationMs,
-              handFrameRatio: extraction.quality.handFrameRatio,
-              sessionId: _sessionId,
-            );
-      } catch (error) {
-        attemptRes = null;
-        syncError = error.toString().replaceFirst('Exception: ', '');
+        await _finishServerVideoRecording(sign);
+      } finally {
+        _isFinishing = false;
       }
-
-      // 3. Phân giải kết quả: nếu backend trả về stubMode=true hoặc gặp lỗi mạng,
-      // ưu tiên kết quả on-device localInf thật theo đúng BR-A118 của web.
-      if (attemptRes != null && (!attemptRes.stubMode || localInf == null)) {
-        final candidates = attemptRes.top3
-            .map(
-              (c) => AiRecognitionCandidate(
-                word: c.label,
-                probability: (c.confidence * 100).round(),
-                isTarget:
-                    c.label.toLowerCase() == sign.label.toLowerCase() ||
-                    c.signId == sign.id,
-              ),
-            )
-            .toList();
-
-        final confPercent = attemptRes.confidence != null
-            ? (attemptRes.confidence! * 100).round()
-            : (candidates.isNotEmpty ? candidates.first.probability : 0);
-
-        String title;
-        if (attemptRes.verified) {
-          title = 'Chính xác!';
-        } else {
-          switch (attemptRes.status) {
-            case 'not_enough_frames':
-              title = 'Cử chỉ quá ngắn';
-              break;
-            case 'no_hand':
-              title = 'Không phát hiện bàn tay';
-              break;
-            case 'wrong_target':
-              title = 'Chưa chính xác';
-              break;
-            case 'low_confidence':
-              title = 'Độ khớp thấp';
-              break;
-            default:
-              title = 'Chưa chính xác';
-          }
-        }
-
-        final note = attemptRes.qualityHints.isNotEmpty
-            ? attemptRes.qualityHints.join('. ')
-            : (attemptRes.countedAgainstQuota
-                  ? 'Đã ghi nhận nỗ lực (còn ${attemptRes.quotaRemaining ?? 0} lượt hôm nay).'
-                  : 'Lượt này không tính vào hạn mức.');
-
-        assessment = AiAssessmentResult(
-          isCorrect: attemptRes.verified,
-          statusTitle: title,
-          confidencePercent: confPercent,
-          targetWord: sign.label,
-          feedbackNote: note,
-          candidates: candidates,
-          hasMotion: true,
-        );
-      } else if (localInf != null && localInf.top3.isNotEmpty) {
-        final isMatched =
-            localInf.predictedLabel.trim().toLowerCase() ==
-            sign.label.trim().toLowerCase();
-        final isCorrect = isMatched && localInf.confidence >= 0.50;
-        final confPercent = (localInf.confidence * 100).round();
-
-        final candidates = localInf.top3.map((c) {
-          final isTarget =
-              c.label.trim().toLowerCase() == sign.label.trim().toLowerCase();
-          return AiRecognitionCandidate(
-            word: c.label,
-            probability: (c.confidence * 100).round(),
-            isTarget: isTarget,
-          );
-        }).toList();
-
-        String title;
-        if (isCorrect) {
-          title = 'Chính xác! (On-device AI)';
-        } else if (isMatched) {
-          title = 'Khá tốt, hãy hoàn thiện thêm!';
-        } else {
-          title = 'Dự đoán: ${localInf.predictedLabel}';
-        }
-
-        assessment = AiAssessmentResult(
-          isCorrect: isCorrect,
-          statusTitle: title,
-          confidencePercent: confPercent,
-          targetWord: sign.label,
-          feedbackNote: syncError == null
-              ? 'Nhận diện on-device ($_selectedModelSize từ, ${localInf.latencyMs}ms). Cử chỉ: ${localInf.predictedLabel} ($confPercent%).'
-              : 'Nhận diện on-device nhưng chưa đồng bộ máy chủ: $syncError',
-          candidates: candidates,
-          hasMotion: true,
-        );
-      } else {
-        assessment = AiAssessmentResult(
-          isCorrect: false,
-          statusTitle: 'Lỗi nhận diện AI',
-          confidencePercent: 0,
-          targetWord: sign.label,
-          feedbackNote:
-              'Không thể kết nối máy chủ nhận diện. Vui lòng thử lại.',
-          candidates: const [],
-          hasMotion: true,
-        );
-      }
+      return;
     }
+    final assessment = AiAssessmentResult(
+      isCorrect: false,
+      statusTitle: 'On-device chưa sẵn sàng',
+      confidencePercent: 0,
+      targetWord: sign.label,
+      feedbackNote: 'Ứng dụng chưa có MediaPipe Holistic trên thiết bị nên không tạo kết quả giả. Vui lòng chọn xử lý trên server.',
+      candidates: const [],
+      hasMotion: false,
+    );
 
     if (mounted) {
       setState(() {
@@ -591,10 +489,98 @@ class _PracticePageState extends ConsumerState<PracticePage>
     } catch (_) {
       // Safe fallback when storage provider is not initialized
     }
+    _isFinishing = false;
+  }
+
+  Future<void> _finishServerVideoRecording(PracticeSignItem sign) async {
+    final controller = _cameraController;
+    AiAssessmentResult assessment;
+    try {
+      if (controller == null || !controller.value.isRecordingVideo) {
+        throw StateError('Camera không có video đang quay.');
+      }
+      final recording = await controller.stopVideoRecording();
+      if (!mounted) return;
+      setState(() => _isAnalyzing = true);
+      final bytes = await recording.readAsBytes();
+      if (bytes.isEmpty) throw StateError('Video vừa quay đang trống.');
+      final attempt = await ref
+          .read(practiceRepositoryProvider)
+          .submitVideoAttempt(
+            videoBytes: bytes,
+            fileName: recording.name.isEmpty ? 'practice.mp4' : recording.name,
+            targetSignId: sign.id,
+            modelVersion: _modelVersion,
+            sessionId: _sessionId,
+            requestId: const Uuid().v4(),
+          );
+      assessment = _assessmentFromAttempt(attempt, sign);
+      if (attempt.quotaRemaining != null) {
+        _quotaRemaining = attempt.quotaRemaining;
+      }
+    } catch (error) {
+      assessment = AiAssessmentResult(
+        isCorrect: false,
+        statusTitle: 'Chưa thể xử lý video',
+        confidencePercent: 0,
+        targetWord: sign.label,
+        feedbackNote:
+            'Video không được lưu. ${friendlyPracticeNetworkError(error)}',
+        candidates: const [],
+        hasMotion: true,
+      );
+    }
+    if (!mounted) return;
+    setState(() {
+      _isAnalyzing = false;
+      _phase = PracticePhase.scored;
+      _lastAssessment = assessment;
+    });
+    try {
+      await ref
+          .read(practiceStatsProvider.notifier)
+          .recordSession(answered: 1, correct: assessment.isCorrect ? 1 : 0);
+    } catch (_) {}
+  }
+
+  AiAssessmentResult _assessmentFromAttempt(
+    AiAttemptResponse attempt,
+    PracticeSignItem sign,
+  ) => buildAiAssessment(attempt, sign);
+
+  Future<bool> _requestServerVideoConsent() async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Cho phép xử lý video trên máy chủ?'),
+        content: const Text(
+          'Video ngắn sẽ được mã hóa và gửi qua HTTPS để trích xuất landmarks. '
+          'Video chỉ được xử lý tạm thời, không lưu vào R2, Azure Storage hay cơ sở dữ liệu. '
+          'Bạn có thể từ chối để tiếp tục dùng chế độ xử lý trên thiết bị.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Không tải lên'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Đồng ý tải video'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _resetToIdle() {
-    _stopMotionTracking();
     _timer?.cancel();
     _scanController.stop();
     setState(() {
@@ -803,6 +789,54 @@ class _PracticePageState extends ConsumerState<PracticePage>
             ],
             const SizedBox(height: 12),
 
+            if (_serverVideoAvailable) ...[
+              Text(
+                'Cách xử lý video',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ChoiceChip(
+                    avatar: const Icon(Icons.phone_android_rounded, size: 18),
+                    label: const Text('Trên thiết bị (đang hoàn thiện)'),
+                    selected: !_useServerVideoForSession,
+                    onSelected:
+                        _phase == PracticePhase.recording ||
+                            !_onDeviceLandmarkPipelineReady
+                        ? null
+                        : (_) => setState(() {
+                            _serverVideoDeclined = true;
+                          }),
+                  ),
+                  ChoiceChip(
+                    avatar: const Icon(Icons.cloud_queue_rounded, size: 18),
+                    label: const Text('Trên server'),
+                    selected: _useServerVideoForSession,
+                    onSelected: _phase == PracticePhase.recording
+                        ? null
+                        : (_) => setState(() {
+                            _serverVideoDeclined = false;
+                          }),
+                  ),
+                ],
+              ),
+              if (!_onDeviceLandmarkPipelineReady) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'On-device tạm khóa để tránh kết quả sai. Hiện chỉ server trích xuất landmarks thật.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+            ],
+
             // Sign Selection Dropdown
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -914,7 +948,9 @@ class _PracticePageState extends ConsumerState<PracticePage>
                       const CircularProgressIndicator(strokeWidth: 3),
                       const SizedBox(height: 12),
                       Text(
-                        'Đang gửi dữ liệu phân tích tới AI Model backend...',
+                        _useServerVideoForSession
+                            ? 'Đang tải video và xử lý landmarks trên máy chủ...'
+                            : 'Đang gửi dữ liệu phân tích tới AI Model backend...',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -1085,15 +1121,42 @@ class _PracticePageState extends ConsumerState<PracticePage>
                 child: ColoredBox(
                   color: const Color(0xFF080B12),
                   child: split
-                      ? Column(
-                          children: [
-                            Expanded(child: _buildDemoCallPane(currentSign)),
-                            Container(
-                              height: 2,
-                              color: Colors.white.withAlpha(30),
-                            ),
-                            Expanded(child: _buildCameraCallPane()),
-                          ],
+                      ? LayoutBuilder(
+                          builder: (context, constraints) {
+                            const dividerHeight = 2.0;
+                            final paneHeight =
+                                (constraints.maxHeight - dividerHeight) / 2;
+                            return Column(
+                              children: [
+                                SizedBox(
+                                  key: const ValueKey('split-demo-pane'),
+                                  width: double.infinity,
+                                  height: paneHeight,
+                                  child: ClipRect(
+                                    key: const ValueKey(
+                                      'split-demo-paint-clip',
+                                    ),
+                                    child: _buildDemoCallPane(currentSign),
+                                  ),
+                                ),
+                                Container(
+                                  height: dividerHeight,
+                                  color: Colors.white.withAlpha(30),
+                                ),
+                                SizedBox(
+                                  key: const ValueKey('split-camera-pane'),
+                                  width: double.infinity,
+                                  height: paneHeight,
+                                  child: ClipRect(
+                                    key: const ValueKey(
+                                      'split-camera-paint-clip',
+                                    ),
+                                    child: _buildCameraCallPane(),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         )
                       : Stack(
                           fit: StackFit.expand,
@@ -1201,7 +1264,11 @@ class _PracticePageState extends ConsumerState<PracticePage>
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Hình ảnh không rời khỏi máy bạn — ứng dụng chỉ gửi dãy số mô tả chuyển động.',
+                    _useServerVideoForSession
+                        ? 'Chỉ khi bạn đồng ý, video ngắn mới được gửi qua HTTPS, xử lý tạm thời rồi xóa; máy chủ không lưu video.'
+                        : _onDeviceLandmarkPipelineReady
+                        ? 'Hình ảnh không rời khỏi máy bạn — ứng dụng chỉ gửi dãy số mô tả chuyển động.'
+                        : 'On-device chưa sẵn sàng; ứng dụng sẽ không tạo kết quả nhận diện giả.',
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark ? Colors.white60 : Colors.black54,
@@ -1576,65 +1643,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
       child: SizedBox(
         width: previewSize != null ? previewSize.height : 480,
         height: previewSize != null ? previewSize.width : 640,
-        child: Stack(
-          children: [
-            CameraPreview(_cameraController!),
-            // Debug overlay - hiển thị luôn để test
-            if (_extractor != null) ...[
-              CustomPaint(
-                painter: PoseDebugPainter(
-                  poses: _extractor!.lastDetectedPoses,
-                  imageSize: _extractor!.lastImageSize ?? const Size(640, 480),
-                  previewSize: Size(
-                    previewSize?.height ?? 480,
-                    previewSize?.width ?? 640,
-                  ),
-                  error: _extractor!.lastError,
-                ),
-              ),
-              // Debug text overlay
-              Positioned(
-                top: 10,
-                left: 10,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.black87,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'DEBUG',
-                        style: TextStyle(
-                          color: Colors.yellow,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'Poses: ${_extractor!.lastDetectedPoses.length}',
-                        style: const TextStyle(color: Colors.white, fontSize: 10),
-                      ),
-                      Text(
-                        'Frames: ${_extractor!.usefulFrameCount}/64',
-                        style: const TextStyle(color: Colors.white, fontSize: 10),
-                      ),
-                      if (_extractor!.lastError != null)
-                        Text(
-                          'Err: ${_extractor!.lastError}',
-                          style: const TextStyle(color: Colors.red, fontSize: 9),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
+        child: CameraPreview(_cameraController!),
       ),
     );
   }

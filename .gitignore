@@ -23,5 +23,19 @@ android/.kotlin/
 .env
 .env.local
 
+# Local training exports (may contain participant videos)
+/training-data/
+
+# Python service build/test output
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+
+# Downloaded MediaPipe model for the video-processing service
+/src/video_processing/models/
+
 # macOS
 .DS_Store

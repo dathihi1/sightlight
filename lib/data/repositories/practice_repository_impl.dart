@@ -62,6 +62,23 @@ class PracticeRepositoryImpl implements PracticeRepository {
   );
 
   @override
+  Future<AiAttemptResponse> submitVideoAttempt({
+    required List<int> videoBytes,
+    required String fileName,
+    required String targetSignId,
+    required String modelVersion,
+    required String sessionId,
+    required String requestId,
+  }) => _remoteDataSource.submitVideoAttempt(
+    videoBytes: videoBytes,
+    fileName: fileName,
+    targetSignId: targetSignId,
+    modelVersion: modelVersion,
+    sessionId: sessionId,
+    requestId: requestId,
+  );
+
+  @override
   PracticeStats getPracticeStats() => _localDataSource.getPracticeStats();
 
   @override

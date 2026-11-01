@@ -7,6 +7,8 @@ class ApiConstants {
   static const String uatBaseUrl = stagingBaseUrl;
   static const String prodBaseUrl =
       'https://signlight-api.thankfulocean-a6c2129d.eastasia.azurecontainerapps.io';
+  static const String prodVideoProcessingBaseUrl =
+      'https://signlight-video-processing.thankfulocean-a6c2129d.eastasia.azurecontainerapps.io';
 
   // Current environment
   // Override per build with:
@@ -15,6 +17,18 @@ class ApiConstants {
     'API_BASE_URL',
     defaultValue: prodBaseUrl,
   );
+  static const String videoProcessingBaseUrl = String.fromEnvironment(
+    'VIDEO_PROCESSING_BASE_URL',
+    defaultValue: prodVideoProcessingBaseUrl,
+  );
+  static const bool serverVideoEnabled = bool.fromEnvironment(
+    'SERVER_VIDEO_ENABLED',
+    defaultValue: true,
+  );
+  static bool get useServerVideoProcessing =>
+      serverVideoEnabled && videoProcessingBaseUrl.trim().isNotEmpty;
+  static String get videoInference =>
+      '${videoProcessingBaseUrl.replaceAll(RegExp(r'/$'), '')}/v1/video/infer';
   static const String apiVersion = '1.0';
   static const String requestIdHeader = 'X-Request-Id';
   static const String apiPrefix = '/api/v1';

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,12 +8,57 @@ import 'package:sightlight_flutter/presentation/pages/practice/practice_page.dar
 import 'package:sightlight_flutter/presentation/providers/practice_provider.dart';
 
 void main() {
-  Widget createTestWidget() {
+  test('low confidence still shows the word predicted by AI', () {
+    const sign = PracticeSignItem(
+      id: 'target-sign',
+      label: 'Anh',
+      topic: 'Gia đình',
+      videoUrl: '',
+      hint: '',
+    );
+    const attempt = AiAttemptResponse(
+      attemptId: 'attempt-1',
+      verified: false,
+      status: 'low_confidence',
+      confidence: 0.38,
+      predictedSignId: 'predicted-sign',
+      predictedLabel: 'Chị',
+      top3: [],
+    );
+
+    final result = buildAiAssessment(attempt, sign);
+
+    expect(result.statusTitle, 'Độ khớp thấp');
+    expect(result.confidencePercent, 38);
+    expect(result.candidates, hasLength(1));
+    expect(result.candidates.single.word, 'Chị');
+    expect(result.candidates.single.probability, 38);
+    expect(result.candidates.single.isTarget, isFalse);
+  });
+
+  test('503 is shown as a friendly sync message without Dio internals', () {
+    final request = RequestOptions(path: '/api/v1/ai/attempts');
+    final error = DioException.badResponse(
+      statusCode: 503,
+      requestOptions: request,
+      response: Response<Object>(requestOptions: request, statusCode: 503),
+    );
+
+    final message = friendlyPracticeNetworkError(error, syncing: true);
+
+    expect(message, contains('máy chủ AI đang tạm bận'));
+    expect(message, isNot(contains('DioException')));
+    expect(message, isNot(contains('503')));
+  });
+
+  Widget createTestWidget({bool serverVideoEnabled = false}) {
     return ProviderScope(
       overrides: [
         practiceRepositoryProvider.overrideWithValue(_FakePracticeRepository()),
       ],
-      child: const MaterialApp(home: PracticePage()),
+      child: MaterialApp(
+        home: PracticePage(serverVideoEnabled: serverVideoEnabled),
+      ),
     );
   }
 
@@ -40,10 +86,7 @@ void main() {
         expect(find.text('Bạn'), findsOneWidget);
         expect(find.text('Chia đôi'), findsOneWidget);
         expect(find.text('Khung nhỏ'), findsOneWidget);
-        expect(
-          find.textContaining('Hình ảnh không rời khỏi máy bạn'),
-          findsOneWidget,
-        );
+        expect(find.textContaining('On-device chưa sẵn sàng'), findsOneWidget);
 
         // Verify single "Bắt đầu ký hiệu" button
         expect(find.text('Bắt đầu ký hiệu'), findsOneWidget);
@@ -63,8 +106,47 @@ void main() {
       },
     );
 
+    testWidgets('Split layout gives demo and user video equal height', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pump();
+      await tester.pump();
+
+      final demoSize = tester.getSize(
+        find.byKey(const ValueKey('split-demo-pane')),
+      );
+      final cameraSize = tester.getSize(
+        find.byKey(const ValueKey('split-camera-pane')),
+      );
+      final demoPaneRect = tester.getRect(
+        find.byKey(const ValueKey('split-demo-pane')),
+      );
+      final cameraPaneRect = tester.getRect(
+        find.byKey(const ValueKey('split-camera-pane')),
+      );
+      final demoClipRect = tester.getRect(
+        find.byKey(const ValueKey('split-demo-paint-clip')),
+      );
+      final cameraClipRect = tester.getRect(
+        find.byKey(const ValueKey('split-camera-paint-clip')),
+      );
+
+      expect(demoSize.width, cameraSize.width);
+      expect(demoSize.height, closeTo(cameraSize.height, 0.01));
+      expect(demoSize.height, greaterThan(0));
+      expect(demoClipRect, demoPaneRect);
+      expect(cameraClipRect, cameraPaneRect);
+      expect(cameraPaneRect.top, closeTo(demoPaneRect.bottom + 2, 0.01));
+    });
+
     testWidgets(
-      'Tapping "Bắt đầu ký hiệu" starts camera recording and scoring flow',
+      'Does not fabricate a local score without MediaPipe landmarks',
       (tester) async {
         tester.view.physicalSize = const Size(1080, 2400);
         tester.view.devicePixelRatio = 2.0;
@@ -82,32 +164,59 @@ void main() {
         await tester.tap(startButton);
         await tester.pump();
 
-        // Should now show recording state with stop button
-        final stopButton = find.textContaining('Dừng & Chấm điểm');
-        expect(stopButton, findsOneWidget);
-        expect(find.textContaining('Đang ghi'), findsOneWidget);
-
-        // Tap stop & score
-        await tester.ensureVisible(stopButton);
-        await tester.tap(stopButton);
-        await tester.pump();
-
-        // Should now show scored state
-        expect(find.textContaining('Không phát hiện cử chỉ'), findsOneWidget);
-        expect(find.textContaining('Độ tin cậy'), findsOneWidget);
-        final nextButton = find.text('Từ tiếp theo');
-        expect(find.text('Luyện lại'), findsOneWidget);
-        expect(nextButton, findsOneWidget);
-
-        // Tap next sign
-        await tester.ensureVisible(nextButton);
-        await tester.tap(nextButton);
-        await tester.pump();
-
-        // Returns to idle state ready for next sign
+        expect(
+          find.textContaining('Nhận diện trên thiết bị đang được hoàn thiện'),
+          findsOneWidget,
+        );
+        expect(find.textContaining('Độ tin cậy'), findsNothing);
         expect(find.text('Bắt đầu ký hiệu'), findsOneWidget);
       },
     );
+
+    testWidgets('Lets the user choose local or server video processing', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestWidget(serverVideoEnabled: true));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Cách xử lý video'), findsOneWidget);
+      expect(find.text('Trên thiết bị (đang hoàn thiện)'), findsOneWidget);
+      expect(find.text('Trên server'), findsOneWidget);
+      expect(
+        tester
+            .widget<ChoiceChip>(
+              find.widgetWithText(
+                ChoiceChip,
+                'Trên thiết bị (đang hoàn thiện)',
+              ),
+            )
+            .selected,
+        isFalse,
+      );
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Trên server'))
+            .selected,
+        isTrue,
+      );
+      expect(
+        tester
+            .widget<ChoiceChip>(
+              find.widgetWithText(
+                ChoiceChip,
+                'Trên thiết bị (đang hoàn thiện)',
+              ),
+            )
+            .onSelected,
+        isNull,
+      );
+    });
   });
 }
 
@@ -160,6 +269,20 @@ class _FakePracticeRepository implements PracticeRepository {
     required double handFrameRatio,
     required String sessionId,
   }) async => null;
+
+  @override
+  Future<AiAttemptResponse> submitVideoAttempt({
+    required List<int> videoBytes,
+    required String fileName,
+    required String targetSignId,
+    required String modelVersion,
+    required String sessionId,
+    required String requestId,
+  }) async => const AiAttemptResponse(
+    attemptId: 'video-attempt',
+    verified: false,
+    status: 'no_hand',
+  );
 
   @override
   PracticeStats getPracticeStats() => const PracticeStats();

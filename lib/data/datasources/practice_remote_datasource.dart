@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
 
 import '../../core/constants/api_constants.dart';
 import '../models/practice/practice_model.dart';
@@ -110,6 +111,53 @@ class PracticeRemoteDataSource {
     return AiAttemptResponse.fromJson(
       data['result'] as Map<String, dynamic>? ?? const {},
     );
+  }
+
+  Future<AiAttemptResponse> submitVideoAttempt({
+    required List<int> videoBytes,
+    required String fileName,
+    required String targetSignId,
+    required String modelVersion,
+    required String sessionId,
+    required String requestId,
+  }) async {
+    if (!ApiConstants.useServerVideoProcessing) {
+      throw StateError('Chế độ xử lý video máy chủ chưa được cấu hình.');
+    }
+    final extension = fileName.toLowerCase().split('.').last;
+    final mediaType = switch (extension) {
+      'mov' => MediaType('video', 'quicktime'),
+      'webm' => MediaType('video', 'webm'),
+      _ => MediaType('video', 'mp4'),
+    };
+    final form = FormData.fromMap({
+      'video': MultipartFile.fromBytes(
+        videoBytes,
+        filename: fileName,
+        contentType: mediaType,
+      ),
+      'targetSignId': targetSignId,
+      'modelVersion': modelVersion,
+      if (_isUuid(sessionId)) 'sessionId': sessionId,
+      'requestId': requestId,
+      'consent': true,
+    });
+    final response = await _dio.post<Map<String, dynamic>>(
+      ApiConstants.videoInference,
+      data: form,
+      options: Options(
+        contentType: 'multipart/form-data',
+        headers: {ApiConstants.requestIdHeader: requestId},
+        sendTimeout: const Duration(seconds: 30),
+        receiveTimeout: ApiConstants.receiveTimeout,
+      ),
+    );
+    final data = response.data;
+    final attempt = data?['attempt'];
+    if (attempt is! Map<String, dynamic>) {
+      throw const FormatException('Máy chủ không trả về kết quả chấm điểm.');
+    }
+    return AiAttemptResponse.fromJson(attempt);
   }
 
   bool _isUuid(String value) => RegExp(

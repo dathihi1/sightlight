@@ -21,6 +21,14 @@ abstract interface class PracticeRepository {
     required double handFrameRatio,
     required String sessionId,
   });
+  Future<AiAttemptResponse> submitVideoAttempt({
+    required List<int> videoBytes,
+    required String fileName,
+    required String targetSignId,
+    required String modelVersion,
+    required String sessionId,
+    required String requestId,
+  });
   PracticeStats getPracticeStats();
   Future<PracticeStats> recordSessionResult({
     required int answered,

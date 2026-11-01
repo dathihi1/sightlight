@@ -98,8 +98,8 @@ Android build compatibility fixes include disabling Kotlin incremental compilati
 ## Remaining blockers
 
 1. AI landmark extraction (high impact)
-   - The current camera screen measures pixel motion and constructs a synthetic `64×327` tensor. It does not implement the MediaPipe pose/hand landmark schema expected by the ONNX models and backend.
-   - Therefore, model execution works technically, but recognition accuracy cannot be considered valid. Completing this requires an Android/iOS-compatible MediaPipe Holistic/hand-landmark pipeline that produces the backend’s exact `v2_holistic_subset` ordering and normalization.
+   - The old camera path measured pixel motion and constructed a synthetic `64×327` tensor, which produced repeated confidence values unrelated to the selected sign. That path has been removed and on-device inference is visibly disabled.
+   - Server processing is the accurate production path. Re-enable on-device only after an Android/iOS MediaPipe Holistic pipeline produces the backend’s exact `v2_holistic_subset` ordering and normalization.
 
 2. Backend endpoints absent from actual controller source
    - `PATCH /me/profile`, `PUT /me/avatar`, `PATCH /me/preferences`

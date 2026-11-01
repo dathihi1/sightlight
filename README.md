@@ -1,6 +1,16 @@
 # SignLight Flutter App
 
-Flutter mobile app gọi API backend SignLight (Spring Boot).
+Flutter mobile app gọi API backend SignLight (Spring Boot). Repo còn có service xử lý video tùy chọn tại [`src/video_processing`](src/video_processing/README.md).
+
+## Server video processing (tùy chọn)
+
+Hiện app mặc định chọn **Trên server**; trước lần tải đầu tiên app luôn hỏi đồng ý. Video ngắn được gửi qua HTTPS, xử lý tạm thời bằng MediaPipe để tạo tensor `64 × 327`, không lưu vào R2/Azure Storage/database, rồi Spring tiếp tục chấm điểm và quản lý quota. Lựa chọn **Trên thiết bị** tạm khóa cho tới khi Flutter có MediaPipe Holistic native đúng schema; tensor tổng hợp từ pixel motion đã bị xóa vì tạo confidence lặp lại và không phản ánh cử chỉ thật.
+
+```powershell
+flutter run
+```
+
+Production URL đã được cấu hình sẵn. Có thể tắt chế độ server cho một build bằng `--dart-define=SERVER_VIDEO_ENABLED=false`, hoặc thay URL bằng `--dart-define=VIDEO_PROCESSING_BASE_URL=https://...`. Service dùng cùng access token đăng nhập của app; không tạo access token thứ hai. Xem hướng dẫn Docker, API và Azure trong [`src/video_processing/README.md`](src/video_processing/README.md).
 
 ## Kiến trúc
 

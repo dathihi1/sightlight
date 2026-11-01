@@ -38,6 +38,19 @@ lib/
 └── main.dart
 ```
 
+## Luồng nhận diện video phía máy chủ
+
+```text
+Flutter (consent + JWT + video ngắn)
+  -> Video Processing Service /v1/video/infer
+     -> Spring /api/v1/ai/capabilities (pre-authorization)
+     -> decode + MediaPipe Holistic + feature pipeline 64x327
+     -> Spring /api/v1/ai/attempts (authoritative quota/scoring)
+        -> AI inference service
+```
+
+Video Processing Service là stateless, không lưu raw video và xóa file tạm trong `finally`. Spring vẫn là nguồn sự thật duy nhất cho quyền truy cập model, quota, XP và kết quả được xác minh. `requestId` được truyền xuyên suốt để truy vết và chống gửi trùng ngắn hạn. Production chạy Azure Container Apps Consumption với `minReplicas=0`; do đó có cold start nhưng không cần máy cá nhân bật.
+
 ## Thêm endpoint mới
 
 ### 1. Thêm constant
