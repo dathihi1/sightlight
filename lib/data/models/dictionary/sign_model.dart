@@ -27,13 +27,13 @@ class RegionalVariant {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'regionLabel': regionLabel,
-        'signerLabel': signerLabel,
-        'videoUrl': videoUrl,
-        'primary': primary,
-        'placeholderVideo': placeholderVideo,
-      };
+    'id': id,
+    'regionLabel': regionLabel,
+    'signerLabel': signerLabel,
+    'videoUrl': videoUrl,
+    'primary': primary,
+    'placeholderVideo': placeholderVideo,
+  };
 }
 
 class Sign {
@@ -74,16 +74,16 @@ class Sign {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'word': word,
-        'meaning': meaning,
-        'topic': topic,
-        'wordClass': wordClass,
-        'thumbnailUrl': thumbnailUrl,
-        'videoUrl': videoUrl,
-        'aiRecognizable': aiRecognizable,
-        'english': english,
-      };
+    'id': id,
+    'word': word,
+    'meaning': meaning,
+    'topic': topic,
+    'wordClass': wordClass,
+    'thumbnailUrl': thumbnailUrl,
+    'videoUrl': videoUrl,
+    'aiRecognizable': aiRecognizable,
+    'english': english,
+  };
 }
 
 class SignDetail {
@@ -119,7 +119,8 @@ class SignDetail {
   }
 
   factory SignDetail.fromJson(Map<String, dynamic> json) {
-    final variantsList = (json['variants'] as List<dynamic>?)
+    final variantsList =
+        (json['variants'] as List<dynamic>?)
             ?.map((v) => RegionalVariant.fromJson(v as Map<String, dynamic>))
             .toList() ??
         const [];
@@ -156,10 +157,7 @@ class TopicItem {
   final String topic;
   final int signCount;
 
-  const TopicItem({
-    required this.topic,
-    required this.signCount,
-  });
+  const TopicItem({required this.topic, required this.signCount});
 
   factory TopicItem.fromJson(Map<String, dynamic> json) {
     return TopicItem(
@@ -168,8 +166,5 @@ class TopicItem {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        'topic': topic,
-        'signCount': signCount,
-      };
+  Map<String, dynamic> toJson() => {'topic': topic, 'signCount': signCount};
 }

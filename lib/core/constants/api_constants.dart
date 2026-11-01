@@ -2,12 +2,21 @@
 class ApiConstants {
   // Base URLs
   static const String devBaseUrl = 'http://localhost:8080';
-  static const String uatBaseUrl = 'https://uat.signlight.local';
+  static const String stagingBaseUrl = 'https://uat.signlight.local';
+  @Deprecated('Use stagingBaseUrl')
+  static const String uatBaseUrl = stagingBaseUrl;
   static const String prodBaseUrl =
       'https://signlight-api.thankfulocean-a6c2129d.eastasia.azurecontainerapps.io';
 
   // Current environment
-  static const String baseUrl = prodBaseUrl;
+  // Override per build with:
+  // --dart-define=API_BASE_URL=https://api.example.com
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: prodBaseUrl,
+  );
+  static const String apiVersion = '1.0';
+  static const String requestIdHeader = 'X-Request-Id';
   static const String apiPrefix = '/api/v1';
 
   // Endpoints
@@ -32,15 +41,20 @@ class ApiConstants {
   static const String progressOverview = '$apiPrefix/progress/overview';
   static const String progressActivity = '$apiPrefix/progress/activity';
   static const String awards = '$apiPrefix/awards';
-  static String awardCelebrated(String code) => '$apiPrefix/awards/$code/celebrated';
+  static String awardCelebrated(String code) =>
+      '$apiPrefix/awards/$code/celebrated';
   static const String gamificationSummary = '$apiPrefix/gamification/summary';
   static const String gamificationStore = '$apiPrefix/gamification/store';
-  static const String gamificationRedeem = '$apiPrefix/gamification/store/redeem';
+  static const String gamificationRedeem =
+      '$apiPrefix/gamification/store/redeem';
 
   // Billing & Payment (payOS)
   static const String checkout = '$apiPrefix/billing/checkout';
   static const String billingPlans = '$apiPrefix/billing/plans';
-  static String billingVerify(String orderCode) => '$apiPrefix/billing/verify/$orderCode';
+  static String billingStatus(String orderCode) =>
+      '$apiPrefix/billing/status/$orderCode';
+  static String billingConfirm(String orderCode) =>
+      '$apiPrefix/billing/confirm/$orderCode';
 
   // Referral
   static const String referralSummary = '$apiPrefix/referral/summary';
@@ -49,18 +63,29 @@ class ApiConstants {
 
   // Courses
   static const String courses = '$apiPrefix/courses';
-  static String coursePath(String courseId) => '$apiPrefix/courses/$courseId/path';
+  static String coursePath(String courseId) =>
+      '$apiPrefix/courses/$courseId/path';
+  static String lesson(String lessonId) => '$apiPrefix/lessons/$lessonId';
+  static String lessonAnswer(String lessonId, String exerciseId) =>
+      '$apiPrefix/lessons/$lessonId/exercises/$exerciseId/answer';
+  static String completeLesson(String lessonId) =>
+      '$apiPrefix/lessons/$lessonId/complete';
 
   // Dictionary
   static const String dictionarySearch = '$apiPrefix/dictionary/search';
-  static String signDetail(String signId) => '$apiPrefix/dictionary/signs/$signId';
+  static String signDetail(String signId) =>
+      '$apiPrefix/dictionary/signs/$signId';
   static const String dictionaryTopics = '$apiPrefix/dictionary/topics';
 
   // Practice
-  static const String vocabularySession = '$apiPrefix/practice/vocabulary/session';
-  static const String vocabularyAnswer = '$apiPrefix/practice/vocabulary/answer';
-  static const String fingerspellSession = '$apiPrefix/practice/fingerspell/session';
-  static const String fingerspellAttempt = '$apiPrefix/practice/fingerspell/attempt';
+  static const String vocabularySession =
+      '$apiPrefix/practice/vocabulary/session';
+  static const String vocabularyAnswer =
+      '$apiPrefix/practice/vocabulary/answer';
+  static const String fingerspellSession =
+      '$apiPrefix/practice/fingerspell/session';
+  static const String fingerspellAttempt =
+      '$apiPrefix/practice/fingerspell/attempt';
   static const String numbersSession = '$apiPrefix/practice/numbers/session';
   static const String aiPracticeSession = '$apiPrefix/ai/practice/session';
   static const String aiAttempts = '$apiPrefix/ai/attempts';

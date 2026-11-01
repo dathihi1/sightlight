@@ -10,6 +10,7 @@ class SignVideoPlayer extends StatefulWidget {
     this.height = 240,
     this.placeholderText,
     this.isPlaceholder = false,
+    this.compact = false,
   });
 
   final String videoUrl;
@@ -18,6 +19,7 @@ class SignVideoPlayer extends StatefulWidget {
   final double height;
   final String? placeholderText;
   final bool isPlaceholder;
+  final bool compact;
 
   @override
   State<SignVideoPlayer> createState() => _SignVideoPlayerState();
@@ -98,6 +100,14 @@ class _SignVideoPlayerState extends State<SignVideoPlayer> {
     final theme = Theme.of(context);
 
     if (widget.isPlaceholder || widget.videoUrl.trim().isEmpty) {
+      if (widget.compact) {
+        return Container(
+          height: widget.height,
+          color: theme.colorScheme.surfaceContainerHighest,
+          alignment: Alignment.center,
+          child: const Icon(Icons.play_circle_outline_rounded, size: 34),
+        );
+      }
       return Container(
         height: widget.height,
         decoration: BoxDecoration(
@@ -147,14 +157,34 @@ class _SignVideoPlayerState extends State<SignVideoPlayer> {
     }
 
     if (_hasError) {
+      if (widget.compact) {
+        return Material(
+          color: theme.colorScheme.surfaceContainerHighest,
+          child: InkWell(
+            onTap: () {
+              setState(() {
+                _hasError = false;
+                _isInitialized = false;
+              });
+              _initializeVideo();
+            },
+            child: SizedBox(
+              height: widget.height,
+              child: Icon(
+                Icons.refresh_rounded,
+                size: 30,
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ),
+        );
+      }
       return Container(
         height: widget.height,
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceContainerHighest.withAlpha(128),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: theme.colorScheme.error.withAlpha(76),
-          ),
+          border: Border.all(color: theme.colorScheme.error.withAlpha(76)),
         ),
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -248,43 +278,40 @@ class _SignVideoPlayerState extends State<SignVideoPlayer> {
               ),
             ),
             // Speed indicator & controls bar
-            Positioned(
-              bottom: 8,
-              right: 8,
-              child: InkWell(
-                onTap: _cycleSpeed,
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.speed,
-                        color: Colors.white,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${_playbackSpeed}x',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+            if (!widget.compact)
+              Positioned(
+                bottom: 8,
+                right: 8,
+                child: InkWell(
+                  onTap: _cycleSpeed,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.speed, color: Colors.white, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${_playbackSpeed}x',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),

@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
+
 import '../../core/localization/app_localizations.dart';
 
 class ErrorView extends StatelessWidget {
-  const ErrorView({
-    super.key,
-    required this.message,
-    this.onRetry,
-    this.icon,
-  });
+  const ErrorView({super.key, required this.message, this.onRetry, this.icon});
 
   final String message;
   final VoidCallback? onRetry;

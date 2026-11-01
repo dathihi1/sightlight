@@ -1,9 +1,11 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sightlight_flutter/data/models/dictionary/sign_model.dart';
 import 'package:sightlight_flutter/presentation/providers/dictionary_provider.dart';
 import 'package:sightlight_flutter/presentation/widgets/sign_card.dart';
+
 import 'sign_detail_page.dart';
 
 const _shortTopicLabels = {
@@ -62,10 +64,7 @@ class _DictionaryPageState extends ConsumerState<DictionaryPage> {
   void _navigateToDetail(Sign sign) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => SignDetailPage(
-          signId: sign.id,
-          initialSign: sign,
-        ),
+        builder: (_) => SignDetailPage(signId: sign.id, initialSign: sign),
       ),
     );
   }
@@ -116,7 +115,9 @@ class _DictionaryPageState extends ConsumerState<DictionaryPage> {
               ],
               elevation: const WidgetStatePropertyAll(0),
               backgroundColor: WidgetStatePropertyAll(
-                theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
               ),
               shape: WidgetStatePropertyAll(
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -141,7 +142,11 @@ class _DictionaryPageState extends ConsumerState<DictionaryPage> {
                   label: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.favorite, size: 16, color: Colors.redAccent),
+                      const Icon(
+                        Icons.favorite,
+                        size: 16,
+                        color: Colors.redAccent,
+                      ),
                       const SizedBox(width: 4),
                       Text('Đã lưu (${favorites.length})'),
                     ],
@@ -172,8 +177,7 @@ class _DictionaryPageState extends ConsumerState<DictionaryPage> {
                       final item = topics[index];
                       final isSelected =
                           query.isEmpty && item.topic == selectedTopic;
-                      final label =
-                          _shortTopicLabels[item.topic] ?? item.topic;
+                      final label = _shortTopicLabels[item.topic] ?? item.topic;
                       return FilterChip(
                         label: Text(
                           '$label (${item.signCount})',
@@ -227,8 +231,9 @@ class _DictionaryPageState extends ConsumerState<DictionaryPage> {
                         ),
                       ),
                       InkWell(
-                        onTap: () =>
-                            ref.read(searchHistoryProvider.notifier).clearHistory(),
+                        onTap: () => ref
+                            .read(searchHistoryProvider.notifier)
+                            .clearHistory(),
                         child: Text(
                           'Xóa tất cả',
                           style: theme.textTheme.labelSmall?.copyWith(
@@ -255,8 +260,7 @@ class _DictionaryPageState extends ConsumerState<DictionaryPage> {
                             onDeleted: () => ref
                                 .read(searchHistoryProvider.notifier)
                                 .removeQuery(term),
-                            deleteIconColor:
-                                theme.colorScheme.onSurfaceVariant,
+                            deleteIconColor: theme.colorScheme.onSurfaceVariant,
                           ),
                         );
                       }).toList(),
@@ -304,8 +308,8 @@ class _DictionaryPageState extends ConsumerState<DictionaryPage> {
                 Text(
                   'Hãy thử tìm bằng từ khoá không dấu hoặc từ khác',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -331,16 +335,18 @@ class _DictionaryPageState extends ConsumerState<DictionaryPage> {
           ),
         );
       },
-      loading: () => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.cloud_off_rounded, size: 48, color: Colors.orange),
+              const Icon(
+                Icons.cloud_off_rounded,
+                size: 48,
+                color: Colors.orange,
+              ),
               const SizedBox(height: 12),
               Text(
                 'Không thể tải dữ liệu từ điển',
@@ -388,8 +394,8 @@ class _DictionaryPageState extends ConsumerState<DictionaryPage> {
             Text(
               'Nhấn biểu tượng trái tim để lưu ký hiệu cần ôn tập',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),

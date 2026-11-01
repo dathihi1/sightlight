@@ -4,7 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:sightlight_flutter/core/theme/app_theme.dart';
 import 'package:sightlight_flutter/domain/entities/progress_stats.dart';
-import 'package:sightlight_flutter/presentation/pages/home_page.dart';
+import 'package:sightlight_flutter/domain/entities/learning.dart';
+import 'package:sightlight_flutter/presentation/providers/learning_provider.dart';
 import 'package:sightlight_flutter/presentation/providers/auth_provider.dart';
 import 'package:sightlight_flutter/presentation/providers/gamification_provider.dart';
 import 'package:sightlight_flutter/presentation/widgets/activity_chart_widget.dart';
@@ -128,15 +129,17 @@ class ProgressPage extends ConsumerWidget {
     final statsState = ref.watch(progressStatsProvider);
     final selectedDays = ref.watch(activityDaysRangeProvider);
     final authState = ref.watch(authStateProvider);
-    final units = ref.watch(learningPathProvider);
+    final units =
+        ref.watch(learningPathProvider).valueOrNull?.units ??
+        const <LearningUnit>[];
     final theme = Theme.of(context);
     final user = authState.valueOrNull;
     final learnerName =
         (user?.displayName != null && user!.displayName!.isNotEmpty)
-            ? user.displayName!
-            : (user?.email != null && user!.email.isNotEmpty)
-                ? user.email.split('@').first
-                : 'Viet Thang';
+        ? user.displayName!
+        : (user?.email != null && user!.email.isNotEmpty)
+        ? user.email.split('@').first
+        : 'Viet Thang';
 
     return Scaffold(
       appBar: AppBar(
@@ -684,7 +687,7 @@ class ProgressPage extends ConsumerWidget {
   Widget _buildCompletedUnitsSection(
     BuildContext context, {
     required ProgressStats stats,
-    required List<Unit> units,
+    required List<LearningUnit> units,
     required int totalUnits,
     required int totalLessons,
   }) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../domain/entities/award.dart';
 import '../../providers/gamification_provider.dart';
 import '../../widgets/badge_celebration_dialog.dart';
@@ -47,8 +48,7 @@ class _AwardsPageState extends ConsumerState<AwardsPage> {
               Text('Lỗi: $err'),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed: () =>
-                    ref.read(awardsProvider.notifier).loadAwards(),
+                onPressed: () => ref.read(awardsProvider.notifier).loadAwards(),
                 child: const Text('Thử lại'),
               ),
             ],
@@ -185,18 +185,15 @@ class _AwardsPageState extends ConsumerState<AwardsPage> {
                   sliver: SliverGrid(
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 0.72,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final badge = filteredBadges[index];
-                        return _buildBadgeCard(context, badge);
-                      },
-                      childCount: filteredBadges.length,
-                    ),
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 0.72,
+                        ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final badge = filteredBadges[index];
+                      return _buildBadgeCard(context, badge);
+                    }, childCount: filteredBadges.length),
                   ),
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -359,7 +356,10 @@ class _AwardsPageState extends ConsumerState<AwardsPage> {
                     ),
                     child: const Text(
                       'Ăn mừng 🎉',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 )
@@ -371,7 +371,9 @@ class _AwardsPageState extends ConsumerState<AwardsPage> {
                   style: TextStyle(
                     fontSize: 10,
                     color: isUnlocked ? Colors.green : Colors.grey.shade600,
-                    fontWeight: isUnlocked ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isUnlocked
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
             ],

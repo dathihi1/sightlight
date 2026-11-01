@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/auth_provider.dart';
+import '../widgets/brand_logo.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
@@ -111,7 +112,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(Icons.sign_language, size: 64, color: Colors.blue),
+                  const Center(child: BrandLogo(size: 82, withShadow: true)),
                   const SizedBox(height: 16),
                   Text(
                     'Tạo tài khoản SignLight',
@@ -192,8 +193,12 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       if (value == null || value.isEmpty) {
                         return 'Vui lòng nhập mật khẩu';
                       }
-                      if (value.length < 6) {
-                        return 'Mật khẩu phải có ít nhất 6 ký tự';
+                      if (value.length < 10) {
+                        return 'Mật khẩu phải có ít nhất 10 ký tự';
+                      }
+                      if (!RegExp(r'[A-Za-z]').hasMatch(value) ||
+                          !RegExp(r'[0-9]').hasMatch(value)) {
+                        return 'Mật khẩu phải có cả chữ và số';
                       }
                       return null;
                     },

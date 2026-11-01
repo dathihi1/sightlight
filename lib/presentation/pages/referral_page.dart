@@ -72,32 +72,14 @@ class ReferralSummary {
         .toList();
 
     return ReferralSummary(
-      referralCode: (json['referralCode'] as String?) ?? 'SL8888',
-      referralLink:
-          (json['referralLink'] as String?) ??
-          'https://signlight.vn/dang-ky?ref=SL8888',
+      referralCode: json['referralCode']?.toString() ?? '',
+      referralLink: json['referralLink']?.toString() ?? '',
       invitedCount: (json['invitedCount'] as num?)?.toInt() ?? friends.length,
       targetCount: (json['targetCount'] as num?)?.toInt() ?? 5,
       canClaimReward: (json['canClaimReward'] as bool?) ?? false,
       rewardClaimed: (json['rewardClaimed'] as bool?) ?? false,
       referredByCode: json['referredByCode'] as String?,
       invitedFriends: friends,
-    );
-  }
-
-  factory ReferralSummary.defaultForUser(String? userId) {
-    final code = userId != null && userId.length >= 6
-        ? 'SL${userId.substring(0, 6).toUpperCase()}'
-        : 'SL888888';
-    return ReferralSummary(
-      referralCode: code,
-      referralLink: 'https://signlight.vn/dang-ky?ref=$code',
-      invitedCount: 0,
-      targetCount: 5,
-      canClaimReward: false,
-      rewardClaimed: false,
-      referredByCode: null,
-      invitedFriends: const [],
     );
   }
 
@@ -144,13 +126,10 @@ class ReferralNotifier extends StateNotifier<AsyncValue<ReferralSummary>> {
       } else if (body is Map<String, dynamic>) {
         state = AsyncValue.data(ReferralSummary.fromJson(body));
       } else {
-        final user = _ref.read(authStateProvider).value;
-        state = AsyncValue.data(ReferralSummary.defaultForUser(user?.id));
+        throw const FormatException('Phản hồi giới thiệu không hợp lệ');
       }
-    } catch (_) {
-      // Fallback to default state based on current user
-      final user = _ref.read(authStateProvider).value;
-      state = AsyncValue.data(ReferralSummary.defaultForUser(user?.id));
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
     }
   }
 

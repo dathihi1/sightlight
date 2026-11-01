@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
-import '../providers/auth_provider.dart';
 import '../providers/billing_provider.dart';
 
 class PaymentResultPage extends ConsumerStatefulWidget {
@@ -34,7 +34,8 @@ class _PaymentResultPageState extends ConsumerState<PaymentResultPage> {
   }
 
   Future<void> _processPaymentResult() async {
-    final isCancelled = widget.cancel == 'true' ||
+    final isCancelled =
+        widget.cancel == 'true' ||
         (widget.status?.toUpperCase() == 'CANCELLED');
 
     if (isCancelled) {
@@ -49,21 +50,8 @@ class _PaymentResultPageState extends ConsumerState<PaymentResultPage> {
     }
 
     final code = widget.orderCode;
-    final status = widget.status?.toUpperCase();
-
-    // If payOS returned status=PAID directly
-    if (status == 'PAID' || status == 'SUCCESS') {
-      ref.read(authStateProvider.notifier).updatePremiumStatus(true);
-      if (mounted) {
-        setState(() {
-          _isVerifying = false;
-          _isSuccess = true;
-        });
-      }
-      return;
-    }
-
-    // Verify with backend if orderCode is present
+    // Query parameters from payOS are never trusted. The backend status is the
+    // only source of truth for granting Premium.
     if (code != null && code.isNotEmpty) {
       final billingNotifier = ref.read(billingStateProvider.notifier);
       final verified = await billingNotifier.verifyAndCompletePayment(code);
@@ -73,20 +61,18 @@ class _PaymentResultPageState extends ConsumerState<PaymentResultPage> {
           _isVerifying = false;
           _isSuccess = verified;
           if (!verified) {
-            _errorMessage =
-                'Không thể xác minh giao dịch. Nếu bạn đã chuyển khoản, hệ thống sẽ tự động cập nhật sau vài phút.';
+            _errorMessage = 'Không thể xác minh giao dịch. Nếu bạn đã chuyển khoản, hệ thống sẽ tự động cập nhật sau vài phút.';
           }
         });
       }
       return;
     }
 
-    // Fallback: Default to success if query params signal return from payOS
-    ref.read(authStateProvider.notifier).updatePremiumStatus(true);
     if (mounted) {
       setState(() {
         _isVerifying = false;
-        _isSuccess = true;
+        _isSuccess = false;
+        _errorMessage = 'Thiếu mã đơn hàng nên chưa thể xác minh giao dịch. Vui lòng kiểm tra lại trong lịch sử thanh toán.';
       });
     }
   }
@@ -184,8 +170,9 @@ class _PaymentResultPageState extends ConsumerState<PaymentResultPage> {
                           backgroundColor: _isSuccess
                               ? AppTheme.primaryBlue
                               : theme.colorScheme.surfaceContainerHighest,
-                          foregroundColor:
-                              _isSuccess ? Colors.white : theme.colorScheme.onSurface,
+                          foregroundColor: _isSuccess
+                              ? Colors.white
+                              : theme.colorScheme.onSurface,
                         ),
                         child: Text(l10n.returnHome),
                       ),

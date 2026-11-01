@@ -136,13 +136,16 @@ class AuthRepositoryImpl implements AuthRepository {
           displayName: result.displayName,
           avatarUrl: result.avatarUrl,
           isPremium: result.isPremium,
+          roles: result.roles,
+          activeCourseId: result.activeCourseId,
         );
       }
     } catch (_) {
       // Fallback to local stored info if available
     }
 
-    if (userId != null) {
+    final remainingToken = await _tokenStorage.getAccessToken();
+    if (remainingToken != null && remainingToken.isNotEmpty && userId != null) {
       return User(id: userId, email: userEmail ?? '', isPremium: false);
     }
 

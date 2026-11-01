@@ -48,6 +48,9 @@ class UserInfo {
     this.displayName,
     this.avatarUrl,
     this.isPremium = false,
+    this.roles = const [],
+    this.activeCourseId,
+    this.emailVerified = false,
   });
 
   final String id;
@@ -55,16 +58,36 @@ class UserInfo {
   final String? displayName;
   final String? avatarUrl;
   final bool isPremium;
+  final List<String> roles;
+  final String? activeCourseId;
+  final bool emailVerified;
 
   factory UserInfo.fromJson(Map<String, dynamic> json) {
+    final profile = json['profile'] is Map<String, dynamic>
+        ? json['profile'] as Map<String, dynamic>
+        : json;
+    final roles =
+        (json['roles'] as List<dynamic>?)
+            ?.map((role) => role.toString())
+            .toList() ??
+        const <String>[];
+    final preferences = json['preferences'] is Map<String, dynamic>
+        ? json['preferences'] as Map<String, dynamic>
+        : const <String, dynamic>{};
     return UserInfo(
-      id: json['id'] as String? ?? '',
-      email: json['email'] as String? ?? '',
-      displayName: (json['displayName'] ?? json['name'] ?? json['fullName'])
-          as String?,
-      avatarUrl: (json['avatarUrl'] ?? json['picture'] ?? json['avatar'])
-          as String?,
-      isPremium: json['isPremium'] as bool? ?? false,
+      id: (json['userId'] ?? json['id'] ?? '').toString(),
+      email: (profile['email'] ?? json['email'] ?? '').toString(),
+      displayName: (profile['displayName'] ?? json['name'] ?? json['fullName'])
+          ?.toString(),
+      avatarUrl: (profile['avatarUrl'] ?? json['picture'] ?? json['avatar'])
+          ?.toString(),
+      isPremium:
+          (json['isPremium'] as bool?) ??
+          roles.any((role) => role.toUpperCase().contains('PREMIUM')),
+      roles: roles,
+      activeCourseId: (preferences['activeCourseId'] ?? json['activeCourseId'])
+          ?.toString(),
+      emailVerified: json['emailVerified'] as bool? ?? false,
     );
   }
 }

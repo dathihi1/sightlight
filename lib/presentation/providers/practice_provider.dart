@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/network/dio_client.dart';
 import '../../core/storage/shared_prefs_provider.dart';
 import '../../data/datasources/practice_local_datasource.dart';
@@ -18,13 +19,13 @@ final practiceRepositoryProvider = Provider<PracticeRepository>((ref) {
 // Practice Stats Provider
 final practiceStatsProvider =
     StateNotifierProvider<PracticeStatsNotifier, PracticeStats>((ref) {
-  final repo = ref.watch(practiceRepositoryProvider);
-  return PracticeStatsNotifier(repo);
-});
+      final repo = ref.watch(practiceRepositoryProvider);
+      return PracticeStatsNotifier(repo);
+    });
 
 class PracticeStatsNotifier extends StateNotifier<PracticeStats> {
   PracticeStatsNotifier(this._repository)
-      : super(_repository.getPracticeStats());
+    : super(_repository.getPracticeStats());
 
   final PracticeRepository _repository;
 
@@ -108,17 +109,20 @@ class VocabularyPracticeState {
   }
 }
 
-final vocabularyPracticeProvider = StateNotifierProvider.autoDispose<
-    VocabularyPracticeNotifier, VocabularyPracticeState>((ref) {
-  final repo = ref.watch(practiceRepositoryProvider);
-  final statsNotifier = ref.watch(practiceStatsProvider.notifier);
-  return VocabularyPracticeNotifier(repo, statsNotifier);
-});
+final vocabularyPracticeProvider =
+    StateNotifierProvider.autoDispose<
+      VocabularyPracticeNotifier,
+      VocabularyPracticeState
+    >((ref) {
+      final repo = ref.watch(practiceRepositoryProvider);
+      final statsNotifier = ref.watch(practiceStatsProvider.notifier);
+      return VocabularyPracticeNotifier(repo, statsNotifier);
+    });
 
 class VocabularyPracticeNotifier
     extends StateNotifier<VocabularyPracticeState> {
   VocabularyPracticeNotifier(this._repository, this._statsNotifier)
-      : super(const VocabularyPracticeState(isLoading: true)) {
+    : super(const VocabularyPracticeState(isLoading: true)) {
     loadSession();
   }
 
@@ -129,10 +133,7 @@ class VocabularyPracticeNotifier
     state = const VocabularyPracticeState(isLoading: true);
     try {
       final session = await _repository.getVocabularySession();
-      state = VocabularyPracticeState(
-        session: session,
-        isLoading: false,
-      );
+      state = VocabularyPracticeState(session: session, isLoading: false);
     } catch (e) {
       state = VocabularyPracticeState(
         isLoading: false,
@@ -146,7 +147,8 @@ class VocabularyPracticeNotifier
 
     final question = state.currentQuestion!;
     final isCorrect =
-        answer.trim().toLowerCase() == question.correctAnswer.trim().toLowerCase();
+        answer.trim().toLowerCase() ==
+        question.correctAnswer.trim().toLowerCase();
 
     final newScore = isCorrect ? state.score + 1 : state.score;
 
@@ -263,17 +265,20 @@ class FingerspellPracticeState {
   }
 }
 
-final fingerspellPracticeProvider = StateNotifierProvider.autoDispose<
-    FingerspellPracticeNotifier, FingerspellPracticeState>((ref) {
-  final repo = ref.watch(practiceRepositoryProvider);
-  final statsNotifier = ref.watch(practiceStatsProvider.notifier);
-  return FingerspellPracticeNotifier(repo, statsNotifier);
-});
+final fingerspellPracticeProvider =
+    StateNotifierProvider.autoDispose<
+      FingerspellPracticeNotifier,
+      FingerspellPracticeState
+    >((ref) {
+      final repo = ref.watch(practiceRepositoryProvider);
+      final statsNotifier = ref.watch(practiceStatsProvider.notifier);
+      return FingerspellPracticeNotifier(repo, statsNotifier);
+    });
 
 class FingerspellPracticeNotifier
     extends StateNotifier<FingerspellPracticeState> {
   FingerspellPracticeNotifier(this._repository, this._statsNotifier)
-      : super(const FingerspellPracticeState(isLoading: true)) {
+    : super(const FingerspellPracticeState(isLoading: true)) {
     loadSession();
   }
 
@@ -284,10 +289,7 @@ class FingerspellPracticeNotifier
     state = const FingerspellPracticeState(isLoading: true);
     try {
       final session = await _repository.getFingerspellSession();
-      state = FingerspellPracticeState(
-        session: session,
-        isLoading: false,
-      );
+      state = FingerspellPracticeState(session: session, isLoading: false);
     } catch (e) {
       state = FingerspellPracticeState(
         isLoading: false,
@@ -372,16 +374,19 @@ class FingerspellPracticeNotifier
 
 // ----------------- Numbers Practice -----------------
 
-final numbersPracticeProvider = StateNotifierProvider.autoDispose<
-    NumbersPracticeNotifier, VocabularyPracticeState>((ref) {
-  final repo = ref.watch(practiceRepositoryProvider);
-  final statsNotifier = ref.watch(practiceStatsProvider.notifier);
-  return NumbersPracticeNotifier(repo, statsNotifier);
-});
+final numbersPracticeProvider =
+    StateNotifierProvider.autoDispose<
+      NumbersPracticeNotifier,
+      VocabularyPracticeState
+    >((ref) {
+      final repo = ref.watch(practiceRepositoryProvider);
+      final statsNotifier = ref.watch(practiceStatsProvider.notifier);
+      return NumbersPracticeNotifier(repo, statsNotifier);
+    });
 
 class NumbersPracticeNotifier extends StateNotifier<VocabularyPracticeState> {
   NumbersPracticeNotifier(this._repository, this._statsNotifier)
-      : super(const VocabularyPracticeState(isLoading: true)) {
+    : super(const VocabularyPracticeState(isLoading: true)) {
     loadSession();
   }
 
@@ -392,10 +397,7 @@ class NumbersPracticeNotifier extends StateNotifier<VocabularyPracticeState> {
     state = const VocabularyPracticeState(isLoading: true);
     try {
       final session = await _repository.getNumbersSession();
-      state = VocabularyPracticeState(
-        session: session,
-        isLoading: false,
-      );
+      state = VocabularyPracticeState(session: session, isLoading: false);
     } catch (e) {
       state = VocabularyPracticeState(
         isLoading: false,
@@ -409,7 +411,8 @@ class NumbersPracticeNotifier extends StateNotifier<VocabularyPracticeState> {
 
     final question = state.currentQuestion!;
     final isCorrect =
-        answer.trim().toLowerCase() == question.correctAnswer.trim().toLowerCase();
+        answer.trim().toLowerCase() ==
+        question.correctAnswer.trim().toLowerCase();
 
     final newScore = isCorrect ? state.score + 1 : state.score;
 

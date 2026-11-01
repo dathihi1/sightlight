@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../domain/entities/progress_stats.dart';
 
 class ActivityChartWidget extends StatelessWidget {
@@ -28,8 +29,9 @@ class ActivityChartWidget extends StatelessWidget {
       if (a.minutes > maxMinutes) maxMinutes = a.minutes;
       totalMinutes += a.minutes;
     }
-    final avgMinutes =
-        displayedList.isNotEmpty ? (totalMinutes / displayedList.length) : 0.0;
+    final avgMinutes = displayedList.isNotEmpty
+        ? (totalMinutes / displayedList.length)
+        : 0.0;
 
     return Card(
       elevation: 2,
@@ -120,8 +122,8 @@ class ActivityChartWidget extends StatelessWidget {
                                       color: isGoalMet
                                           ? Colors.blue.shade600
                                           : act.minutes > 0
-                                              ? Colors.blue.shade200
-                                              : Colors.grey.shade200,
+                                          ? Colors.blue.shade200
+                                          : Colors.grey.shade200,
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                   ),
@@ -179,10 +181,7 @@ class ActivityChartWidget extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 11, color: Colors.grey),
-        ),
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
       ],
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../domain/entities/award.dart';
 
 class BadgeCelebrationDialog extends StatelessWidget {
@@ -19,10 +20,8 @@ class BadgeCelebrationDialog extends StatelessWidget {
     return showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => BadgeCelebrationDialog(
-        badge: badge,
-        onCelebrated: onCelebrated,
-      ),
+      builder: (ctx) =>
+          BadgeCelebrationDialog(badge: badge, onCelebrated: onCelebrated),
     );
   }
 

@@ -17,7 +17,10 @@ class TransactionResponse<T> {
   ) {
     return TransactionResponse<T>(
       requestId: json['requestId'] as String?,
-      errorCode: (json['errorCode'] ?? '00000') as String,
+      // A missing code is a malformed contract response, never implicit
+      // success. This prevents unwrapped/HTML proxy responses from being
+      // accepted as valid business data.
+      errorCode: json['errorCode']?.toString() ?? '00499',
       errorMessage: json['errorMessage'] as String?,
       result: json['result'] == null ? null : fromJsonT(json['result']),
     );

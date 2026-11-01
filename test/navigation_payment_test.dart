@@ -10,21 +10,18 @@ import 'package:sightlight_flutter/domain/entities/plan.dart';
 
 void main() {
   group('Billing and Payment Models', () {
-    test('Plan default plans have 1 month, 6 months, and lifetime options', () {
-      final plans = Plan.defaultPlans;
-      expect(plans.length, 3);
-
-      final plan1m = plans.firstWhere((p) => p.id == 'plan_1_month');
-      expect(plan1m.durationMonths, 1);
-      expect(plan1m.isPopular, isFalse);
-
-      final plan6m = plans.firstWhere((p) => p.id == 'plan_6_months');
-      expect(plan6m.durationMonths, 6);
-      expect(plan6m.isPopular, isTrue);
-
-      final planLifetime = plans.firstWhere((p) => p.id == 'plan_lifetime');
-      expect(planLifetime.isLifetime, isTrue);
-      expect(planLifetime.durationMonths, 0);
+    test('Plan holds backend-provided pricing fields', () {
+      const plan = Plan(
+        id: 'PREMIUM_1M',
+        name: 'Premium 1 tháng',
+        description: 'Gói học Premium',
+        price: 59000,
+        durationMonths: 1,
+        features: ['Gói học Premium'],
+      );
+      expect(plan.id, 'PREMIUM_1M');
+      expect(plan.price, 59000);
+      expect(plan.durationMonths, 1);
     });
 
     test('CheckoutRequest serializes properly to JSON', () {
@@ -37,8 +34,10 @@ void main() {
 
       final json = req.toJson();
       expect(json['planId'], 'plan_6_months');
-      expect(json['returnUrl'], 'signlight://payment-return');
-      expect(json['cancelUrl'], 'signlight://payment-return?cancel=true');
+      // Backend CheckoutRequest accepts only planId + requestId. Redirect URLs
+      // are configured server-side and must not be trusted from the client.
+      expect(json.containsKey('returnUrl'), isFalse);
+      expect(json.containsKey('cancelUrl'), isFalse);
       expect(json['requestId'], 'req_123');
     });
 
@@ -70,7 +69,7 @@ void main() {
           'orderCode': 987654,
           'paymentUrl': 'https://pay.payos.vn/web/nested-url',
           'status': 'PAID',
-        }
+        },
       };
 
       final model = CheckoutSessionModel.fromJson(nestedJson);
@@ -118,7 +117,10 @@ void main() {
 
   group('AppException Handling', () {
     test('NetworkException creates readable messages with error code', () {
-      const exc = NetworkException('Network connection timeout', code: 'TIMEOUT');
+      const exc = NetworkException(
+        'Network connection timeout',
+        code: 'TIMEOUT',
+      );
       expect(exc.message, 'Network connection timeout');
       expect(exc.code, 'TIMEOUT');
       expect(exc.toString(), 'Network connection timeout');

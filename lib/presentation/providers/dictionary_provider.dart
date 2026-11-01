@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/network/dio_client.dart';
 import '../../core/storage/shared_prefs_provider.dart';
 import '../../data/datasources/dictionary_local_datasource.dart';
@@ -17,8 +19,9 @@ final dictionaryRepositoryProvider = Provider<DictionaryRepository>((ref) {
 });
 
 // Selected topic provider
-final selectedTopicProvider =
-    StateProvider<String>((ref) => 'Gia đình & Xưng hô');
+final selectedTopicProvider = StateProvider<String>(
+  (ref) => 'Gia đình & Xưng hô',
+);
 
 // Topics list provider
 final dictionaryTopicsProvider = FutureProvider<List<TopicItem>>((ref) async {
@@ -52,13 +55,13 @@ final searchResultsProvider = FutureProvider<List<Sign>>((ref) async {
 // Search history
 final searchHistoryProvider =
     StateNotifierProvider<SearchHistoryNotifier, List<String>>((ref) {
-  final repo = ref.watch(dictionaryRepositoryProvider);
-  return SearchHistoryNotifier(repo);
-});
+      final repo = ref.watch(dictionaryRepositoryProvider);
+      return SearchHistoryNotifier(repo);
+    });
 
 class SearchHistoryNotifier extends StateNotifier<List<String>> {
   SearchHistoryNotifier(this._repository)
-      : super(_repository.getSearchHistory());
+    : super(_repository.getSearchHistory());
 
   final DictionaryRepository _repository;
 
@@ -81,13 +84,13 @@ class SearchHistoryNotifier extends StateNotifier<List<String>> {
 // Favorite signs
 final favoriteSignsProvider =
     StateNotifierProvider<FavoriteSignsNotifier, List<Sign>>((ref) {
-  final repo = ref.watch(dictionaryRepositoryProvider);
-  return FavoriteSignsNotifier(repo);
-});
+      final repo = ref.watch(dictionaryRepositoryProvider);
+      return FavoriteSignsNotifier(repo);
+    });
 
 class FavoriteSignsNotifier extends StateNotifier<List<Sign>> {
   FavoriteSignsNotifier(this._repository)
-      : super(_repository.getFavoriteSigns());
+    : super(_repository.getFavoriteSigns());
 
   final DictionaryRepository _repository;
 
@@ -101,8 +104,10 @@ class FavoriteSignsNotifier extends StateNotifier<List<Sign>> {
 }
 
 // Sign detail
-final signDetailProvider =
-    FutureProvider.family<SignDetail, String>((ref, signId) async {
+final signDetailProvider = FutureProvider.family<SignDetail, String>((
+  ref,
+  signId,
+) async {
   final repo = ref.watch(dictionaryRepositoryProvider);
   return repo.getSignDetail(signId);
 });

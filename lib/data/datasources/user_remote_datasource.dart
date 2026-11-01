@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+
 import '../../core/constants/api_constants.dart';
 import '../models/transaction_response.dart';
 import '../models/user/user_profile_dto.dart';
@@ -28,10 +29,7 @@ class UserRemoteDataSource {
   }) async {
     final response = await _dio.patch(
       ApiConstants.updateProfile,
-      data: {
-        'displayName': ?displayName,
-        'timezone': ?timezone,
-      },
+      data: {'displayName': ?displayName, 'timezone': ?timezone},
     );
 
     final data = response.data is Map<String, dynamic>
@@ -49,20 +47,13 @@ class UserRemoteDataSource {
   Future<TransactionResponse<String>> updateAvatar(String filePath) async {
     final fileName = filePath.split(RegExp(r'[\\/]')).last;
     final formData = FormData.fromMap({
-      'file': await MultipartFile.fromFile(
-        filePath,
-        filename: fileName,
-      ),
+      'file': await MultipartFile.fromFile(filePath, filename: fileName),
     });
 
     final response = await _dio.put(
       ApiConstants.updateAvatar,
       data: formData,
-      options: Options(
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      ),
+      options: Options(headers: {'Content-Type': 'multipart/form-data'}),
     );
 
     final data = response.data is Map<String, dynamic>

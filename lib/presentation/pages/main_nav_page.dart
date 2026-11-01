@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'gamification/progress_page.dart';
 import 'gamification/awards_page.dart';
 import 'profile/profile_page.dart';
@@ -30,10 +31,7 @@ class _MainNavPageState extends State<MainNavPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {

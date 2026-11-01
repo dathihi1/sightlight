@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -20,19 +22,33 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 final authStateProvider =
     StateNotifierProvider<AuthNotifier, AsyncValue<User?>>((ref) {
       final repository = ref.watch(authRepositoryProvider);
-      return AuthNotifier(repository);
+      final tokenStorage = ref.watch(tokenStorageProvider);
+      return AuthNotifier(repository, tokenStorage);
     });
 
 class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
-  static const _googleWebClientId =
-      '701794322092-f9k658h8vgrftuv8t4mfk50ctnk7vc50.apps.googleusercontent.com';
+  static const _googleWebClientId = String.fromEnvironment(
+    'GOOGLE_SERVER_CLIENT_ID',
+    defaultValue: '701794322092-f9k658h8vgrftuv8t4mfk50ctnk7vc50.apps.googleusercontent.com',
+  );
   static Future<void>? _googleInitialization;
 
-  AuthNotifier(this._repository) : super(const AsyncValue.loading()) {
+  AuthNotifier(this._repository, TokenStorage tokenStorage)
+    : super(const AsyncValue.loading()) {
+    _sessionExpiredSubscription = tokenStorage.sessionExpired.listen((_) {
+      if (mounted) state = const AsyncValue.data(null);
+    });
     checkAuthStatus();
   }
 
   final AuthRepository _repository;
+  late final StreamSubscription<void> _sessionExpiredSubscription;
+
+  @override
+  void dispose() {
+    _sessionExpiredSubscription.cancel();
+    super.dispose();
+  }
 
   Future<void> checkAuthStatus() async {
     state = const AsyncValue.loading();

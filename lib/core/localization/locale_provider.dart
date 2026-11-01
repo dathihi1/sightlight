@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../constants/storage_keys.dart';
 
 final localeProvider = StateNotifierProvider<LocaleNotifier, Locale>((ref) {
@@ -32,7 +33,9 @@ class LocaleNotifier extends StateNotifier<Locale> {
   }
 
   Future<void> toggleLocale() async {
-    final next = state.languageCode == 'vi' ? const Locale('en') : const Locale('vi');
+    final next = state.languageCode == 'vi'
+        ? const Locale('en')
+        : const Locale('vi');
     await setLocale(next);
   }
 }

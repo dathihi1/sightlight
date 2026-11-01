@@ -33,9 +33,8 @@ class UserProfileDto {
         ? json['preferences'] as Map<String, dynamic>
         : <String, dynamic>{};
 
-    final rolesList = (json['roles'] as List<dynamic>?)
-            ?.map((e) => e.toString())
-            .toList() ??
+    final rolesList =
+        (json['roles'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
         [];
 
     final isPrem =

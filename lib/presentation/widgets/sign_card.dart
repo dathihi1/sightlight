@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../data/models/dictionary/sign_model.dart';
 
 class SignCard extends StatelessWidget {
@@ -40,7 +41,9 @@ class SignCard extends StatelessWidget {
                 width: 68,
                 height: 68,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+                  color: theme.colorScheme.primaryContainer.withValues(
+                    alpha: 0.4,
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
@@ -136,7 +139,9 @@ class SignCard extends StatelessWidget {
                 IconButton(
                   icon: Icon(
                     isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: isFavorite ? Colors.redAccent : theme.colorScheme.outline,
+                    color: isFavorite
+                        ? Colors.redAccent
+                        : theme.colorScheme.outline,
                     size: 22,
                   ),
                   onPressed: onFavoriteToggle,
@@ -148,12 +153,7 @@ class SignCard extends StatelessWidget {
     );
   }
 
-  Widget _buildChip(
-    BuildContext context,
-    String label,
-    Color bg,
-    Color fg,
-  ) {
+  Widget _buildChip(BuildContext context, String label, Color bg, Color fg) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
@@ -162,11 +162,7 @@ class SignCard extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 11,
-          color: fg,
-          fontWeight: FontWeight.w500,
-        ),
+        style: TextStyle(fontSize: 11, color: fg, fontWeight: FontWeight.w500),
       ),
     );
   }

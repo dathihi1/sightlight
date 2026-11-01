@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -9,6 +11,10 @@ final tokenStorageProvider = Provider<TokenStorage>((ref) {
 
 class TokenStorage {
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final StreamController<void> _sessionExpiredController =
+      StreamController<void>.broadcast();
+
+  Stream<void> get sessionExpired => _sessionExpiredController.stream;
 
   Future<void> saveAccessToken(String token) async {
     await _secureStorage.write(key: StorageKeys.accessToken, value: token);
@@ -47,5 +53,10 @@ class TokenStorage {
     await _secureStorage.delete(key: StorageKeys.refreshToken);
     await _secureStorage.delete(key: StorageKeys.userId);
     await _secureStorage.delete(key: StorageKeys.userEmail);
+  }
+
+  Future<void> expireSession() async {
+    await clearTokens();
+    _sessionExpiredController.add(null);
   }
 }

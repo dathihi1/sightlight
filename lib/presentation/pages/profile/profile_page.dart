@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+
 import '../../providers/user_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../gamification/progress_page.dart';
@@ -187,9 +189,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             icon: const Icon(Icons.settings),
             tooltip: 'Cài đặt',
             onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SettingsPage()),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const SettingsPage()));
             },
           ),
         ],
@@ -227,11 +229,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       CircleAvatar(
                         radius: 54,
                         backgroundColor: Colors.blue.shade100,
-                        backgroundImage: (avatarUrl != null &&
-                                avatarUrl.isNotEmpty)
+                        backgroundImage:
+                            (avatarUrl != null && avatarUrl.isNotEmpty)
                             ? (avatarUrl.startsWith('http')
-                                ? NetworkImage(avatarUrl)
-                                : FileImage(File(avatarUrl)) as ImageProvider)
+                                  ? NetworkImage(avatarUrl)
+                                  : FileImage(File(avatarUrl)) as ImageProvider)
                             : null,
                         child: (avatarUrl == null || avatarUrl.isEmpty)
                             ? Text(
@@ -351,9 +353,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   child: Column(
                     children: [
                       ListTile(
-                        leading: const Icon(Icons.trending_up, color: Colors.deepOrange),
+                        leading: const Icon(
+                          Icons.trending_up,
+                          color: Colors.deepOrange,
+                        ),
                         title: const Text('Tiến độ học tập & Streak'),
-                        subtitle: const Text('Theo dõi chuỗi streak và thời gian học'),
+                        subtitle: const Text(
+                          'Theo dõi chuỗi streak và thời gian học',
+                        ),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
                           Navigator.of(context).push(
@@ -365,7 +372,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       ),
                       const Divider(height: 1),
                       ListTile(
-                        leading: const Icon(Icons.emoji_events, color: Colors.amber),
+                        leading: const Icon(
+                          Icons.emoji_events,
+                          color: Colors.amber,
+                        ),
                         title: const Text('Thành tựu & Huy hiệu'),
                         subtitle: const Text('Bộ sưu tập huy hiệu VSL của bạn'),
                         trailing: const Icon(Icons.chevron_right),
@@ -379,9 +389,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       ),
                       const Divider(height: 1),
                       ListTile(
-                        leading: const Icon(Icons.card_giftcard, color: Colors.purple),
+                        leading: const Icon(
+                          Icons.card_giftcard,
+                          color: Colors.purple,
+                        ),
                         title: const Text('Mời bạn bè (Nhận 1 tháng Premium)'),
-                        subtitle: const Text('Huy hiệu Đại sứ & 30 ngày Premium miễn phí'),
+                        subtitle: const Text(
+                          'Huy hiệu Đại sứ & 30 ngày Premium miễn phí',
+                        ),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
                           Navigator.of(context).push(
@@ -404,7 +419,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   child: Column(
                     children: [
                       ListTile(
-                        leading: const Icon(Icons.lock_reset, color: Colors.blue),
+                        leading: const Icon(
+                          Icons.lock_reset,
+                          color: Colors.blue,
+                        ),
                         title: const Text('Đổi mật khẩu'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _showChangePasswordDialog(profile.email),

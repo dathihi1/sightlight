@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+
 import '../../core/errors/error_dialog.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
@@ -17,7 +18,7 @@ class UpgradePage extends ConsumerStatefulWidget {
 }
 
 class _UpgradePageState extends ConsumerState<UpgradePage> {
-  String _selectedPlanId = 'plan_6_months';
+  String _selectedPlanId = '';
   final _currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
 
   Future<void> _handleCheckout() async {
@@ -35,7 +36,8 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
 
     if (session == null && mounted) {
       final billingState = ref.read(billingStateProvider);
-      final errorMsg = billingState.error?.toString() ??
+      final errorMsg =
+          billingState.error?.toString() ??
           'Không thể khởi tạo phiên thanh toán qua payOS';
       showGlobalErrorDialog(
         context,
@@ -85,7 +87,15 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
           ),
         ),
         data: (plans) {
-          final effectivePlans = plans.isNotEmpty ? plans : Plan.defaultPlans;
+          final effectivePlans = plans;
+          if (effectivePlans.isNotEmpty &&
+              !effectivePlans.any((plan) => plan.id == _selectedPlanId)) {
+            _selectedPlanId = effectivePlans.first.id;
+          }
+
+          if (effectivePlans.isEmpty) {
+            return Center(child: Text('Hiện chưa có gói Premium nào đang mở.'));
+          }
 
           return SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -212,7 +222,10 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.premiumGold,
                   borderRadius: BorderRadius.circular(20),
@@ -220,7 +233,11 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.workspace_premium, color: Colors.black, size: 16),
+                    Icon(
+                      Icons.workspace_premium,
+                      color: Colors.black,
+                      size: 16,
+                    ),
                     SizedBox(width: 4),
                     Text(
                       'PREMIUM',
@@ -236,8 +253,10 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
               const Spacer(),
               if (isPremium)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withAlpha(50),
                     borderRadius: BorderRadius.circular(12),
@@ -261,10 +280,7 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
           const SizedBox(height: 6),
           Text(
             l10n.upgradeSubtitle,
-            style: TextStyle(
-              color: Colors.white.withAlpha(220),
-              fontSize: 13,
-            ),
+            style: TextStyle(color: Colors.white.withAlpha(220), fontSize: 13),
           ),
         ],
       ),
@@ -339,9 +355,7 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
             children: [
               Row(
                 children: [
-                  Radio<String>(
-                    value: plan.id,
-                  ),
+                  Radio<String>(value: plan.id),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -462,10 +476,7 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
-                      feat,
-                      style: theme.textTheme.bodyMedium,
-                    ),
+                    child: Text(feat, style: theme.textTheme.bodyMedium),
                   ),
                 ],
               ),

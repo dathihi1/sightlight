@@ -4,118 +4,17 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/entities/progress_stats.dart';
 import '../../domain/entities/user.dart';
+import '../../domain/entities/learning.dart';
 import '../providers/auth_provider.dart';
 import '../providers/gamification_provider.dart';
+import '../providers/learning_provider.dart';
 
-class Lesson {
-  const Lesson({
-    required this.id,
-    required this.title,
-    required this.subtitle,
-    required this.isCompleted,
-    required this.isLocked,
-    this.bestScorePercent,
-  });
-
-  final String id;
-  final String title;
-  final String subtitle;
-  final bool isCompleted;
-  final bool isLocked;
-  final int? bestScorePercent;
-}
-
-class Unit {
-  const Unit({
-    required this.id,
-    required this.number,
-    required this.title,
-    required this.lessons,
-    required this.isLocked,
-    this.isFree = true,
-  });
-
-  final String id;
-  final int number;
-  final String title;
-  final List<Lesson> lessons;
-  final bool isLocked;
-  final bool isFree;
-
-  int get completedCount => lessons.where((l) => l.isCompleted).length;
-  int get totalCount => lessons.length;
-  int get progressPercent =>
-      totalCount > 0 ? (completedCount * 100 ~/ totalCount) : 0;
-}
-
-final learningPathProvider = Provider<List<Unit>>((ref) {
-  return List.generate(17, (index) {
-    final unitNumber = index + 1;
-    final isFirstUnit = unitNumber == 1;
-    return Unit(
-      id: 'unit_$unitNumber',
-      number: unitNumber,
-      title: _getUnitTitle(unitNumber),
-      lessons: _buildLessonsForUnit(unitNumber, !isFirstUnit),
-      isLocked: !isFirstUnit,
-      isFree: unitNumber <= 3,
-    );
-  });
-});
-
-List<Lesson> _buildLessonsForUnit(int unitNumber, bool isUnitLocked) {
-  final lessonNames = [
-    'Bài 1: Làm quen ký hiệu',
-    'Bài 2: Thực hành cử chỉ',
-    'Bài 3: Ghép từ & phản xạ',
-    'Bài 4: Kiểm tra đánh giá',
-  ];
-
-  final lessonSubtitles = [
-    'Nhận diện cử chỉ qua hình ảnh và video mẫu',
-    'Luyện tập từng ký hiệu với hướng dẫn chi tiết',
-    'Phản xạ nhanh với camera và bài tập tương tác',
-    'Ôn tập tổng hợp và kiểm tra độ chính xác AI',
-  ];
-
-  return List.generate(4, (index) {
-    final lessonNumber = index + 1;
-    final isLocked = isUnitLocked || (unitNumber == 1 && lessonNumber > 1);
-    return Lesson(
-      id: 'lesson_${unitNumber}_$lessonNumber',
-      title: lessonNames[index],
-      subtitle: lessonSubtitles[index],
-      isCompleted: false,
-      isLocked: isLocked,
-    );
-  });
-}
-
-String _getUnitTitle(int number) {
-  final titles = {
-    1: '29 Chữ cái ngón tay cơ bản',
-    2: 'Số đếm và thời gian',
-    3: 'Gia đình và người thân',
-    4: 'Màu sắc và hình dạng',
-    5: 'Động vật và thiên nhiên',
-    6: 'Thức ăn và đồ uống',
-    7: 'Quần áo và phụ kiện',
-    8: 'Nhà cửa và đồ dùng',
-    9: 'Giao thông và địa điểm',
-    10: 'Nghề nghiệp và công việc',
-    11: 'Cảm xúc và tính cách',
-    12: 'Thể thao và giải trí',
-    13: 'Sức khỏe và y tế',
-    14: 'Giáo dục và học tập',
-    15: 'Công nghệ và mạng xã hội',
-    16: 'Văn hóa và lễ hội',
-    17: 'Giao tiếp nâng cao',
-  };
-  return titles[number] ?? 'Chủ đề $number';
-}
+typedef Lesson = LearningLesson;
+typedef Unit = LearningUnit;
 
 final currentUnitProvider = Provider<Unit?>((ref) {
-  final units = ref.watch(learningPathProvider);
+  final units = ref.watch(learningPathProvider).valueOrNull?.units ?? const [];
+  if (units.isEmpty) return null;
   return units.firstWhere(
     (u) => u.completedCount < u.totalCount,
     orElse: () => units.first,
@@ -126,13 +25,17 @@ class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   void _onStartLesson(BuildContext context, Lesson lesson, Unit unit) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Bắt đầu ${lesson.title} - ${unit.title}'),
-        duration: const Duration(seconds: 1),
-      ),
-    );
-    context.go('/practice');
+    if (lesson.premiumLocked) {
+      context.push('/upgrade');
+      return;
+    }
+    if (lesson.isLocked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(lesson.lockedReason ?? 'Bài học đang bị khóa.')),
+      );
+      return;
+    }
+    context.push('/lessons/${lesson.id}');
   }
 
   @override
@@ -142,8 +45,36 @@ class HomePage extends ConsumerWidget {
     final statsAsync = ref.watch(progressStatsProvider);
     final stats = statsAsync.valueOrNull;
 
+    final pathAsync = ref.watch(learningPathProvider);
     final currentUnit = ref.watch(currentUnitProvider);
-    final allUnits = ref.watch(learningPathProvider);
+    final allUnits = pathAsync.valueOrNull?.units ?? const <Unit>[];
+
+    if (pathAsync.isLoading && allUnits.isEmpty) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (pathAsync.hasError && allUnits.isEmpty) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  pathAsync.error.toString().replaceFirst('Exception: ', ''),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () => ref.invalidate(learningPathProvider),
+                  child: const Text('Thử lại'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     final allLessons = allUnits.expand((u) => u.lessons).toList();
     final totalLessons = allLessons.length;
@@ -152,10 +83,12 @@ class HomePage extends ConsumerWidget {
         ? (totalCompleted * 100 ~/ totalLessons)
         : 0;
 
-    final targetLesson = currentUnit?.lessons.firstWhere(
-      (l) => !l.isCompleted && !l.isLocked,
-      orElse: () => currentUnit.lessons.first,
-    );
+    final targetLesson = currentUnit != null && currentUnit.lessons.isNotEmpty
+        ? currentUnit.lessons.firstWhere(
+            (l) => !l.isCompleted && !l.isLocked,
+            orElse: () => currentUnit.lessons.first,
+          )
+        : null;
 
     return Scaffold(
       body: ListView(

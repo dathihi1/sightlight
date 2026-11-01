@@ -121,7 +121,8 @@ class _SignDetailPageState extends ConsumerState<SignDetailPage> {
           : 0;
       final variant = detail.variants[safeIndex];
       currentVideoUrl = variant.videoUrl;
-      isPlaceholder = variant.placeholderVideo || currentVideoUrl.trim().isEmpty;
+      isPlaceholder =
+          variant.placeholderVideo || currentVideoUrl.trim().isEmpty;
     } else {
       currentVideoUrl = widget.initialSign?.videoUrl ?? '';
       isPlaceholder = currentVideoUrl.trim().isEmpty;

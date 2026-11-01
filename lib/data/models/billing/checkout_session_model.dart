@@ -20,14 +20,17 @@ class CheckoutSessionModel {
         ? json['data'] as Map<String, dynamic>
         : json;
 
-    final url = (payload['checkoutUrl'] ??
-            payload['paymentUrl'] ??
-            payload['returnUrl'] ??
-            payload['url'] ??
-            '') as String;
+    final url =
+        (payload['checkoutUrl'] ??
+                payload['paymentUrl'] ??
+                payload['returnUrl'] ??
+                payload['url'] ??
+                '')
+            as String;
     final codeRaw = payload['orderCode'] ?? payload['orderId'] ?? 0;
-    final code =
-        codeRaw is int ? codeRaw : int.tryParse(codeRaw.toString()) ?? 0;
+    final code = codeRaw is int
+        ? codeRaw
+        : int.tryParse(codeRaw.toString()) ?? 0;
 
     return CheckoutSessionModel(
       checkoutUrl: url,
@@ -39,10 +42,10 @@ class CheckoutSessionModel {
   }
 
   CheckoutSession toEntity() => CheckoutSession(
-        checkoutUrl: checkoutUrl,
-        orderCode: orderCode,
-        status: status,
-        planId: planId,
-        amount: amount,
-      );
+    checkoutUrl: checkoutUrl,
+    orderCode: orderCode,
+    status: status,
+    planId: planId,
+    amount: amount,
+  );
 }

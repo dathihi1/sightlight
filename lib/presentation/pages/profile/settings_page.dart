@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../providers/user_provider.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -11,9 +12,7 @@ class SettingsPage extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cài đặt'),
-      ),
+      appBar: AppBar(title: const Text('Cài đặt')),
       body: profileState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Lỗi: $err')),
@@ -72,9 +71,7 @@ class SettingsPage extends ConsumerWidget {
                           ref
                               .read(userProfileProvider.notifier)
                               .updatePreferences(
-                                prefs.copyWith(
-                                  dailyGoalMinutes: val.toInt(),
-                                ),
+                                prefs.copyWith(dailyGoalMinutes: val.toInt()),
                               );
                         },
                       ),
@@ -113,7 +110,9 @@ class SettingsPage extends ConsumerWidget {
                   ),
                   value: prefs.notificationsEnabled,
                   onChanged: (val) {
-                    ref.read(userProfileProvider.notifier).updatePreferences(
+                    ref
+                        .read(userProfileProvider.notifier)
+                        .updatePreferences(
                           prefs.copyWith(notificationsEnabled: val),
                         );
                   },
@@ -170,16 +169,30 @@ class SettingsPage extends ConsumerWidget {
                       leading: const Icon(Icons.speed),
                       title: const Text('Tốc độ phát video ký hiệu'),
                       trailing: DropdownButton<String>(
-                        value: ['0.75', '1.0', '1.25', '1.5']
-                                .contains(prefs.videoSpeed)
+                        value:
+                            [
+                              '0.75',
+                              '1.0',
+                              '1.25',
+                              '1.5',
+                            ].contains(prefs.videoSpeed)
                             ? prefs.videoSpeed
                             : '1.0',
                         underline: const SizedBox(),
                         items: const [
-                          DropdownMenuItem(value: '0.75', child: Text('0.75x (Chậm)')),
-                          DropdownMenuItem(value: '1.0', child: Text('1.0x (Chuẩn)')),
+                          DropdownMenuItem(
+                            value: '0.75',
+                            child: Text('0.75x (Chậm)'),
+                          ),
+                          DropdownMenuItem(
+                            value: '1.0',
+                            child: Text('1.0x (Chuẩn)'),
+                          ),
                           DropdownMenuItem(value: '1.25', child: Text('1.25x')),
-                          DropdownMenuItem(value: '1.5', child: Text('1.5x (Nhanh)')),
+                          DropdownMenuItem(
+                            value: '1.5',
+                            child: Text('1.5x (Nhanh)'),
+                          ),
                         ],
                         onChanged: (val) {
                           if (val != null) {

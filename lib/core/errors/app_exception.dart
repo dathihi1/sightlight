@@ -10,6 +10,9 @@ sealed class AppException implements Exception {
   String toString() => message;
 
   factory AppException.fromDio(DioException error) {
+    if (error.error is AppException) {
+      return error.error! as AppException;
+    }
     switch (error.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
@@ -22,34 +25,36 @@ sealed class AppException implements Exception {
         final statusCode = error.response?.statusCode;
         final data = error.response?.data;
         String? serverMsg;
+        String? serverCode;
         if (data is Map<String, dynamic>) {
           serverMsg = (data['errorMessage'] ?? data['message']) as String?;
+          serverCode = data['errorCode']?.toString();
         }
 
         if (statusCode == 401) {
           return AuthException(
             serverMsg ?? 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
-            code: 'UNAUTHORIZED',
+            code: serverCode ?? 'UNAUTHORIZED',
           );
         } else if (statusCode == 403) {
           return AuthException(
             serverMsg ?? 'Bạn không có quyền truy cập tính năng này.',
-            code: 'FORBIDDEN',
+            code: serverCode ?? 'FORBIDDEN',
           );
         } else if (statusCode == 404) {
           return ServerException(
             serverMsg ?? 'Không tìm thấy dữ liệu yêu cầu.',
-            code: 'NOT_FOUND',
+            code: serverCode ?? 'NOT_FOUND',
           );
         } else if (statusCode != null && statusCode >= 500) {
           return ServerException(
             serverMsg ?? 'Hệ thống máy chủ đang bận. Vui lòng thử lại sau.',
-            code: 'SERVER_ERROR',
+            code: serverCode ?? 'SERVER_ERROR',
           );
         }
         return ServerException(
           serverMsg ?? 'Yêu cầu không hợp lệ ($statusCode).',
-          code: 'BAD_REQUEST',
+          code: serverCode ?? 'BAD_REQUEST',
         );
 
       case DioExceptionType.connectionError:
@@ -83,6 +88,10 @@ class NetworkException extends AppException {
 
 class ServerException extends AppException {
   const ServerException(super.message, {super.code});
+}
+
+class BusinessException extends AppException {
+  const BusinessException(super.message, {required super.code});
 }
 
 class AuthException extends AppException {

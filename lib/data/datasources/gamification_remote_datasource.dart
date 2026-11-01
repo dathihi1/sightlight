@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+
 import '../../core/constants/api_constants.dart';
 import '../models/transaction_response.dart';
 import '../models/gamification/progress_stats_dto.dart';
@@ -33,7 +34,8 @@ class GamificationRemoteDataSource {
     );
   }
 
-  Future<TransactionResponse<List<ActivityDayDto>>> getProgressActivity() async {
+  Future<TransactionResponse<List<ActivityDayDto>>>
+  getProgressActivity() async {
     Response response;
     try {
       response = await _dio.get(ApiConstants.progressActivity);
@@ -41,15 +43,12 @@ class GamificationRemoteDataSource {
           ? response.data as Map<String, dynamic>
           : <String, dynamic>{'result': response.data};
 
-      return TransactionResponse<List<ActivityDayDto>>.fromJson(
-        data,
-        (json) {
-          final list = json is List ? json : [];
-          return list
-              .map((e) => ActivityDayDto.fromJson(e as Map<String, dynamic>))
-              .toList();
-        },
-      );
+      return TransactionResponse<List<ActivityDayDto>>.fromJson(data, (json) {
+        final list = json is List ? json : [];
+        return list
+            .map((e) => ActivityDayDto.fromJson(e as Map<String, dynamic>))
+            .toList();
+      });
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
         // Fallback to gamification summary
@@ -77,21 +76,18 @@ class GamificationRemoteDataSource {
           ? response.data as Map<String, dynamic>
           : <String, dynamic>{'result': response.data};
 
-      return TransactionResponse<List<BadgeItemDto>>.fromJson(
-        data,
-        (json) {
-          final list = json is List
-              ? json
-              : (json is Map && json['badges'] is List)
-                  ? json['badges'] as List
-                  : (json is Map && json['items'] is List)
-                      ? json['items'] as List
-                      : [];
-          return list
-              .map((e) => BadgeItemDto.fromJson(e as Map<String, dynamic>))
-              .toList();
-        },
-      );
+      return TransactionResponse<List<BadgeItemDto>>.fromJson(data, (json) {
+        final list = json is List
+            ? json
+            : (json is Map && json['badges'] is List)
+            ? json['badges'] as List
+            : (json is Map && json['items'] is List)
+            ? json['items'] as List
+            : [];
+        return list
+            .map((e) => BadgeItemDto.fromJson(e as Map<String, dynamic>))
+            .toList();
+      });
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
         // Fallback to store
@@ -100,17 +96,24 @@ class GamificationRemoteDataSource {
             ? response.data as Map<String, dynamic>
             : <String, dynamic>{'result': response.data};
 
-        return TransactionResponse<List<BadgeItemDto>>.fromJson(
-          data,
-          (json) {
-            final list = (json is Map && json['items'] is List)
-                ? json['items'] as List
-                : [];
-            return list
-                .map((e) => BadgeItemDto.fromJson(e as Map<String, dynamic>))
-                .toList();
-          },
-        );
+        return TransactionResponse<List<BadgeItemDto>>.fromJson(data, (json) {
+          final list = (json is Map && json['items'] is List)
+              ? (json['items'] as List)
+                    .where((item) => item is Map && item['itemType'] == 'BADGE')
+                    .map(
+                      (item) => <String, dynamic>{
+                        ...(item as Map).cast<String, dynamic>(),
+                        // The deployed backend has no award celebration
+                        // endpoint; store ownership is already final state.
+                        'isCelebrated': true,
+                      },
+                    )
+                    .toList()
+              : [];
+          return list
+              .map((e) => BadgeItemDto.fromJson(e as Map<String, dynamic>))
+              .toList();
+        });
       }
       rethrow;
     }

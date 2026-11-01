@@ -44,15 +44,10 @@ dependencies:
 
   # State management
   flutter_riverpod: ^2.6.1
-  riverpod_annotation: ^2.6.1
 
   # Storage
   flutter_secure_storage: ^9.2.2
   shared_preferences: ^2.3.3
-
-  # Code generation
-  freezed_annotation: ^2.4.4
-  json_annotation: ^4.9.0
 
   # Utils
   intl: ^0.20.3
@@ -70,10 +65,9 @@ dev_dependencies:
     sdk: flutter
 
   # Code generation
-  build_runner: ^2.4.13
-  freezed: ^2.5.7
-  json_serializable: ^6.8.0
-  riverpod_generator: ^2.6.2
+  # No generators are currently registered, but keeping build_runner makes the
+  # project's verification command explicit and compatible with Dart 3.13.
+  build_runner: 2.16.2
 
   flutter_lints: ^6.0.0
 
@@ -89,6 +83,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/branding/signlight_logo.png
     - assets/models/vsl_mvp30_v2_lite_transformer/
     - assets/models/vsl_mvp400_v2_lite_transformer/
 

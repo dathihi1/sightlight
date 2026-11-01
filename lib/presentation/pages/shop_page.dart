@@ -78,67 +78,14 @@ class _ShopPageState extends ConsumerState<ShopPage> {
   int? _localExpBalance;
   int? _localAiBonusQuota;
   int? _localFreezeCount;
-
-  // Default initial catalog matching backend & web store definitions
-  static const List<ShopItem> _initialCatalog = [
-    ShopItem(
-      itemKey: 'AI_BONUS_3',
-      itemType: 'AI_QUOTA',
-      title: '+3 lượt luyện AI Camera',
-      description: 'Thêm 3 lượt chấm Camera AI sau khi dùng hết hạn mức miễn phí trong ngày.',
-      costExp: 50,
-      icon: Icons.videocam_rounded,
-    ),
-    ShopItem(
-      itemKey: 'AI_BONUS_10',
-      itemType: 'AI_QUOTA',
-      title: '+10 lượt luyện AI Camera',
-      description: 'Gói tiết kiệm thêm 10 lượt chấm Camera AI.',
-      costExp: 130,
-      icon: Icons.camera_alt_rounded,
-    ),
-    ShopItem(
-      itemKey: 'STREAK_FREEZE',
-      itemType: 'STREAK',
-      title: 'Băng bảo vệ chuỗi Streak',
-      description: 'Bảo vệ chuỗi học nếu bạn lỡ nghỉ một ngày; mỗi tài khoản giữ tối đa 3 băng.',
-      costExp: 100,
-      icon: Icons.ac_unit_rounded,
-    ),
-    ShopItem(
-      itemKey: 'BADGE_AMBASSADOR',
-      itemType: 'BADGE',
-      title: 'Huy hiệu Đại sứ VSL',
-      description:
-          'Huy hiệu danh dự cho học viên lan tỏa Ngôn ngữ Ký hiệu Việt Nam.',
-      costExp: 150,
-      icon: Icons.military_tech_rounded,
-    ),
-    ShopItem(
-      itemKey: 'BADGE_PERSISTENCE',
-      itemType: 'BADGE',
-      title: 'Huy hiệu Đôi tay kiên trì',
-      description: 'Huy hiệu ghi nhận sự chuyên cần trên hành trình học.',
-      costExp: 200,
-      icon: Icons.local_fire_department_rounded,
-    ),
-    ShopItem(
-      itemKey: 'BADGE_COMMUNITY_HERO',
-      itemType: 'BADGE',
-      title: 'Huy hiệu Người thắp sáng cộng đồng',
-      description:
-          'Huy hiệu đặc biệt dành cho học viên tích cực kết nối cộng đồng.',
-      costExp: 300,
-      icon: Icons.bolt_rounded,
-    ),
-  ];
+  String? _loadError;
 
   late List<ShopItem> _items;
 
   @override
   void initState() {
     super.initState();
-    _items = List.of(_initialCatalog);
+    _items = [];
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchCatalog();
     });
@@ -146,7 +93,10 @@ class _ShopPageState extends ConsumerState<ShopPage> {
 
   Future<void> _fetchCatalog() async {
     if (!mounted) return;
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
 
     try {
       final dio = ref.read(dioProvider);
@@ -191,8 +141,12 @@ class _ShopPageState extends ConsumerState<ShopPage> {
           });
         }
       }
-    } catch (_) {
-      // In offline or fallback mode, keep initial catalog gracefully
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _loadError = error.toString().replaceFirst('Exception: ', '');
+        });
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -644,6 +598,19 @@ class _ShopPageState extends ConsumerState<ShopPage> {
               ),
 
               const SizedBox(height: 12),
+
+              if (_loadError != null) ...[
+                MaterialBanner(
+                  content: Text(_loadError!),
+                  actions: [
+                    TextButton(
+                      onPressed: _fetchCatalog,
+                      child: const Text('Thử lại'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
 
               // 2. Grid of items using GridView.builder
               if (filteredItems.isEmpty)

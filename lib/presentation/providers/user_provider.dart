@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/network/dio_client.dart';
 import '../../data/datasources/user_remote_datasource.dart';
 import '../../data/repositories/user_repository_impl.dart';
@@ -17,9 +18,9 @@ final userRepositoryProvider = Provider<UserRepository>((ref) {
 
 final userProfileProvider =
     StateNotifierProvider<UserProfileNotifier, AsyncValue<UserProfile>>((ref) {
-  final repository = ref.watch(userRepositoryProvider);
-  return UserProfileNotifier(repository);
-});
+      final repository = ref.watch(userRepositoryProvider);
+      return UserProfileNotifier(repository);
+    });
 
 class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
   UserProfileNotifier(this._repository) : super(const AsyncValue.loading()) {
@@ -38,10 +39,7 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
     }
   }
 
-  Future<bool> updateProfile({
-    String? displayName,
-    String? timezone,
-  }) async {
+  Future<bool> updateProfile({String? displayName, String? timezone}) async {
     final current = state.valueOrNull;
     if (current == null) return false;
 
@@ -60,8 +58,8 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
       );
       state = AsyncValue.data(updated);
       return true;
-    } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
+    } catch (_) {
+      state = AsyncValue.data(current);
       return false;
     }
   }
@@ -77,8 +75,8 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
       final newAvatarUrl = await _repository.updateAvatar(filePath);
       state = AsyncValue.data(current.copyWith(avatarUrl: newAvatarUrl));
       return true;
-    } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
+    } catch (_) {
+      state = AsyncValue.data(current);
       return false;
     }
   }
@@ -94,8 +92,8 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
       final updatedPrefs = await _repository.updatePreferences(preferences);
       state = AsyncValue.data(current.copyWith(preferences: updatedPrefs));
       return true;
-    } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
+    } catch (_) {
+      state = AsyncValue.data(current);
       return false;
     }
   }

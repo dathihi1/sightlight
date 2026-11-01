@@ -6,6 +6,7 @@ import '../../presentation/pages/dictionary/dictionary_page.dart';
 import '../../presentation/pages/forgot_password_page.dart';
 import '../../presentation/pages/home_page.dart';
 import '../../presentation/pages/login_page.dart';
+import '../../presentation/pages/learning/lesson_page.dart';
 import '../../presentation/pages/payment_result_page.dart';
 import '../../presentation/pages/practice/practice_page.dart';
 import '../../presentation/pages/profile/profile_page.dart';
@@ -93,6 +94,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // Standalone full-screen routes
+      GoRoute(
+        path: '/lessons/:lessonId',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) =>
+            LessonPage(lessonId: state.pathParameters['lessonId']!),
+      ),
       GoRoute(
         path: '/upgrade',
         redirect: (context, state) => '/profile/premium',

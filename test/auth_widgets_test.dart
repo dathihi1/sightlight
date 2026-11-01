@@ -122,7 +122,7 @@ void main() {
       await tester.tap(find.widgetWithText(ElevatedButton, 'Đăng ký'));
       await tester.pump();
 
-      expect(find.text('Mật khẩu phải có ít nhất 6 ký tự'), findsOneWidget);
+      expect(find.text('Mật khẩu phải có ít nhất 10 ký tự'), findsOneWidget);
       expect(find.text('Mật khẩu xác nhận không khớp'), findsOneWidget);
     });
   });

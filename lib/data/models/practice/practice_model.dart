@@ -25,7 +25,8 @@ class PracticeQuestion {
       signId: (json['signId'] ?? '') as String,
       word: (json['word'] ?? '') as String,
       videoUrl: (json['videoUrl'] ?? '') as String,
-      options: (json['options'] as List<dynamic>?)
+      options:
+          (json['options'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
@@ -36,28 +37,26 @@ class PracticeQuestion {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'signId': signId,
-        'word': word,
-        'videoUrl': videoUrl,
-        'options': options,
-        'correctAnswer': correctAnswer,
-        'meaning': meaning,
-        'topic': topic,
-      };
+    'id': id,
+    'signId': signId,
+    'word': word,
+    'videoUrl': videoUrl,
+    'options': options,
+    'correctAnswer': correctAnswer,
+    'meaning': meaning,
+    'topic': topic,
+  };
 }
 
 class VocabularySession {
-  const VocabularySession({
-    required this.sessionId,
-    required this.items,
-  });
+  const VocabularySession({required this.sessionId, required this.items});
 
   final String sessionId;
   final List<PracticeQuestion> items;
 
   factory VocabularySession.fromJson(Map<String, dynamic> json) {
-    final list = (json['items'] as List<dynamic>?)
+    final list =
+        (json['items'] as List<dynamic>?)
             ?.map((e) => PracticeQuestion.fromJson(e as Map<String, dynamic>))
             .toList() ??
         const [];
@@ -68,9 +67,9 @@ class VocabularySession {
   }
 
   Map<String, dynamic> toJson() => {
-        'sessionId': sessionId,
-        'items': items.map((e) => e.toJson()).toList(),
-      };
+    'sessionId': sessionId,
+    'items': items.map((e) => e.toJson()).toList(),
+  };
 }
 
 class FingerspellItem {
@@ -88,8 +87,7 @@ class FingerspellItem {
   final String? videoUrl;
   final Map<String, String> letterSigns;
 
-  List<String> get letters =>
-      word.toUpperCase().replaceAll(' ', '').split('');
+  List<String> get letters => word.toUpperCase().replaceAll(' ', '').split('');
 
   factory FingerspellItem.fromJson(Map<String, dynamic> json) {
     return FingerspellItem(
@@ -97,7 +95,8 @@ class FingerspellItem {
       word: (json['word'] ?? '') as String,
       hint: (json['hint'] ?? '') as String,
       videoUrl: json['videoUrl'] as String?,
-      letterSigns: (json['letterSigns'] as Map<String, dynamic>?)?.map(
+      letterSigns:
+          (json['letterSigns'] as Map<String, dynamic>?)?.map(
             (k, v) => MapEntry(k, v.toString()),
           ) ??
           const {},
@@ -105,25 +104,23 @@ class FingerspellItem {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'word': word,
-        'hint': hint,
-        'videoUrl': videoUrl,
-        'letterSigns': letterSigns,
-      };
+    'id': id,
+    'word': word,
+    'hint': hint,
+    'videoUrl': videoUrl,
+    'letterSigns': letterSigns,
+  };
 }
 
 class FingerspellSession {
-  const FingerspellSession({
-    required this.sessionId,
-    required this.items,
-  });
+  const FingerspellSession({required this.sessionId, required this.items});
 
   final String sessionId;
   final List<FingerspellItem> items;
 
   factory FingerspellSession.fromJson(Map<String, dynamic> json) {
-    final list = (json['items'] as List<dynamic>?)
+    final list =
+        (json['items'] as List<dynamic>?)
             ?.map((e) => FingerspellItem.fromJson(e as Map<String, dynamic>))
             .toList() ??
         const [];
@@ -134,9 +131,9 @@ class FingerspellSession {
   }
 
   Map<String, dynamic> toJson() => {
-        'sessionId': sessionId,
-        'items': items.map((e) => e.toJson()).toList(),
-      };
+    'sessionId': sessionId,
+    'items': items.map((e) => e.toJson()).toList(),
+  };
 }
 
 class PracticeAnswer {
@@ -165,12 +162,12 @@ class PracticeAnswer {
   }
 
   Map<String, dynamic> toJson() => {
-        'sessionId': sessionId,
-        'questionId': questionId,
-        'selectedAnswer': selectedAnswer,
-        'isCorrect': isCorrect,
-        'timeTakenSeconds': timeTakenSeconds,
-      };
+    'sessionId': sessionId,
+    'questionId': questionId,
+    'selectedAnswer': selectedAnswer,
+    'isCorrect': isCorrect,
+    'timeTakenSeconds': timeTakenSeconds,
+  };
 }
 
 class PracticeStats {
@@ -191,10 +188,7 @@ class PracticeStats {
   double get accuracy =>
       totalAnswered == 0 ? 0.0 : (totalCorrect / totalAnswered) * 100;
 
-  PracticeStats copyWithSession({
-    required int answered,
-    required int correct,
-  }) {
+  PracticeStats copyWithSession({required int answered, required int correct}) {
     final now = DateTime.now();
     final todayStr = now.toIso8601String().substring(0, 10);
 
@@ -233,12 +227,12 @@ class PracticeStats {
   }
 
   Map<String, dynamic> toJson() => {
-        'totalSessions': totalSessions,
-        'totalAnswered': totalAnswered,
-        'totalCorrect': totalCorrect,
-        'streakDays': streakDays,
-        'lastSessionDate': lastSessionDate,
-      };
+    'totalSessions': totalSessions,
+    'totalAnswered': totalAnswered,
+    'totalCorrect': totalCorrect,
+    'streakDays': streakDays,
+    'lastSessionDate': lastSessionDate,
+  };
 }
 
 class AiPracticeItem {
@@ -282,15 +276,71 @@ class AiPracticeSessionResponse {
   final List<AiPracticeItem> items;
 
   factory AiPracticeSessionResponse.fromJson(Map<String, dynamic> json) {
-    final list = (json['items'] as List<dynamic>?)
+    final list =
+        (json['items'] as List<dynamic>?)
             ?.map((e) => AiPracticeItem.fromJson(e as Map<String, dynamic>))
             .toList() ??
         const [];
     return AiPracticeSessionResponse(
       sessionId: (json['sessionId'] ?? '') as String,
-      modelVersion: (json['modelVersion'] ?? 'vsl-mvp30-v2-lite-transformer')
-          as String,
+      modelVersion:
+          (json['modelVersion'] ?? 'vsl-mvp30-v2-lite-transformer') as String,
       items: list,
+    );
+  }
+}
+
+class AiQuotaResponse {
+  const AiQuotaResponse({
+    required this.used,
+    required this.unlimited,
+    this.limit,
+    this.remaining,
+    this.resetAtLocal,
+  });
+
+  final int used;
+  final int? limit;
+  final int? remaining;
+  final String? resetAtLocal;
+  final bool unlimited;
+
+  factory AiQuotaResponse.fromJson(Map<String, dynamic> json) {
+    return AiQuotaResponse(
+      used: (json['used'] as num?)?.toInt() ?? 0,
+      limit: (json['limit'] as num?)?.toInt(),
+      remaining: (json['remaining'] as num?)?.toInt(),
+      resetAtLocal: json['resetAtLocal']?.toString(),
+      unlimited: json['unlimited'] as bool? ?? false,
+    );
+  }
+}
+
+class AiCapabilitiesResponse {
+  const AiCapabilitiesResponse({
+    required this.modelVersion,
+    required this.sequenceLength,
+    required this.featureDim,
+    required this.availableModelSizes,
+    required this.stubMode,
+  });
+
+  final String modelVersion;
+  final int sequenceLength;
+  final int featureDim;
+  final List<int> availableModelSizes;
+  final bool stubMode;
+
+  factory AiCapabilitiesResponse.fromJson(Map<String, dynamic> json) {
+    return AiCapabilitiesResponse(
+      modelVersion: json['modelVersion']?.toString() ?? '',
+      sequenceLength: (json['sequenceLength'] as num?)?.toInt() ?? 0,
+      featureDim: (json['featureDim'] as num?)?.toInt() ?? 0,
+      availableModelSizes:
+          (json['availableModelSizes'] as List<dynamic>? ?? const [])
+              .map((value) => (value as num).toInt())
+              .toList(),
+      stubMode: json['stubMode'] as bool? ?? false,
     );
   }
 }
@@ -345,11 +395,13 @@ class AiAttemptResponse {
   final bool stubMode;
 
   factory AiAttemptResponse.fromJson(Map<String, dynamic> json) {
-    final top3List = (json['top3'] as List<dynamic>?)
+    final top3List =
+        (json['top3'] as List<dynamic>?)
             ?.map((e) => AiCandidateDto.fromJson(e as Map<String, dynamic>))
             .toList() ??
         const [];
-    final hintsList = (json['qualityHints'] as List<dynamic>?)
+    final hintsList =
+        (json['qualityHints'] as List<dynamic>?)
             ?.map((e) => e.toString())
             .toList() ??
         const [];
@@ -369,4 +421,3 @@ class AiAttemptResponse {
     );
   }
 }
-

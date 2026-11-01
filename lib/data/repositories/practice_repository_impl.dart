@@ -4,10 +4,7 @@ import '../datasources/practice_remote_datasource.dart';
 import '../models/practice/practice_model.dart';
 
 class PracticeRepositoryImpl implements PracticeRepository {
-  const PracticeRepositoryImpl(
-    this._remoteDataSource,
-    this._localDataSource,
-  );
+  const PracticeRepositoryImpl(this._remoteDataSource, this._localDataSource);
 
   final PracticeRemoteDataSource _remoteDataSource;
   final PracticeLocalDataSource _localDataSource;
@@ -36,8 +33,14 @@ class PracticeRepositoryImpl implements PracticeRepository {
   Future<AiPracticeSessionResponse> getAiPracticeSession({
     int size = 400,
     String? signId,
-  }) =>
-      _remoteDataSource.getAiPracticeSession(size: size, signId: signId);
+  }) => _remoteDataSource.getAiPracticeSession(size: size, signId: signId);
+
+  @override
+  Future<AiQuotaResponse> getAiQuota() => _remoteDataSource.getAiQuota();
+
+  @override
+  Future<AiCapabilitiesResponse> getAiCapabilities({required int modelSize}) =>
+      _remoteDataSource.getAiCapabilities(modelSize: modelSize);
 
   @override
   Future<AiAttemptResponse?> submitAiAttempt({
@@ -48,16 +51,15 @@ class PracticeRepositoryImpl implements PracticeRepository {
     required int durationMs,
     required double handFrameRatio,
     required String sessionId,
-  }) =>
-      _remoteDataSource.submitAiAttempt(
-        targetSignId: targetSignId,
-        modelVersion: modelVersion,
-        features: features,
-        frameCount: frameCount,
-        durationMs: durationMs,
-        handFrameRatio: handFrameRatio,
-        sessionId: sessionId,
-      );
+  }) => _remoteDataSource.submitAiAttempt(
+    targetSignId: targetSignId,
+    modelVersion: modelVersion,
+    features: features,
+    frameCount: frameCount,
+    durationMs: durationMs,
+    handFrameRatio: handFrameRatio,
+    sessionId: sessionId,
+  );
 
   @override
   PracticeStats getPracticeStats() => _localDataSource.getPracticeStats();
@@ -66,11 +68,10 @@ class PracticeRepositoryImpl implements PracticeRepository {
   Future<PracticeStats> recordSessionResult({
     required int answered,
     required int correct,
-  }) =>
-      _localDataSource.recordSessionResult(
-        answered: answered,
-        correct: correct,
-      );
+  }) => _localDataSource.recordSessionResult(
+    answered: answered,
+    correct: correct,
+  );
 
   @override
   Future<void> resetStats() => _localDataSource.resetStats();

@@ -191,50 +191,58 @@ void main() {
       prefs = await SharedPreferences.getInstance();
     });
 
-    test('DictionaryLocalDataSource stores and retrieves search history', () async {
-      final dataSource = DictionaryLocalDataSource(prefs);
+    test(
+      'DictionaryLocalDataSource stores and retrieves search history',
+      () async {
+        final dataSource = DictionaryLocalDataSource(prefs);
 
-      expect(dataSource.getSearchHistory(), isEmpty);
+        expect(dataSource.getSearchHistory(), isEmpty);
 
-      await dataSource.addSearchQuery('Xin chào');
-      await dataSource.addSearchQuery('Cảm ơn');
-      await dataSource.addSearchQuery('Xin chào'); // duplicate should move to top
+        await dataSource.addSearchQuery('Xin chào');
+        await dataSource.addSearchQuery('Cảm ơn');
+        await dataSource.addSearchQuery(
+          'Xin chào',
+        ); // duplicate should move to top
 
-      final history = dataSource.getSearchHistory();
-      expect(history.length, 2);
-      expect(history[0], 'Xin chào');
-      expect(history[1], 'Cảm ơn');
+        final history = dataSource.getSearchHistory();
+        expect(history.length, 2);
+        expect(history[0], 'Xin chào');
+        expect(history[1], 'Cảm ơn');
 
-      await dataSource.removeSearchQuery('Xin chào');
-      expect(dataSource.getSearchHistory(), ['Cảm ơn']);
+        await dataSource.removeSearchQuery('Xin chào');
+        expect(dataSource.getSearchHistory(), ['Cảm ơn']);
 
-      await dataSource.clearSearchHistory();
-      expect(dataSource.getSearchHistory(), isEmpty);
-    });
+        await dataSource.clearSearchHistory();
+        expect(dataSource.getSearchHistory(), isEmpty);
+      },
+    );
 
-    test('DictionaryLocalDataSource stores and toggles favorite signs', () async {
-      final dataSource = DictionaryLocalDataSource(prefs);
-      const testSign = Sign(
-        id: 'fav-1',
-        word: 'Yêu',
-        meaning: 'Tình cảm yêu thương',
-        topic: 'Cảm xúc',
-      );
+    test(
+      'DictionaryLocalDataSource stores and toggles favorite signs',
+      () async {
+        final dataSource = DictionaryLocalDataSource(prefs);
+        const testSign = Sign(
+          id: 'fav-1',
+          word: 'Yêu',
+          meaning: 'Tình cảm yêu thương',
+          topic: 'Cảm xúc',
+        );
 
-      expect(dataSource.isFavorite('fav-1'), isFalse);
-      expect(dataSource.getFavoriteSigns(), isEmpty);
+        expect(dataSource.isFavorite('fav-1'), isFalse);
+        expect(dataSource.getFavoriteSigns(), isEmpty);
 
-      final added = await dataSource.toggleFavorite(testSign);
-      expect(added, isTrue);
-      expect(dataSource.isFavorite('fav-1'), isTrue);
-      expect(dataSource.getFavoriteSigns().length, 1);
-      expect(dataSource.getFavoriteSigns().first.word, 'Yêu');
+        final added = await dataSource.toggleFavorite(testSign);
+        expect(added, isTrue);
+        expect(dataSource.isFavorite('fav-1'), isTrue);
+        expect(dataSource.getFavoriteSigns().length, 1);
+        expect(dataSource.getFavoriteSigns().first.word, 'Yêu');
 
-      final removed = await dataSource.toggleFavorite(testSign);
-      expect(removed, isFalse);
-      expect(dataSource.isFavorite('fav-1'), isFalse);
-      expect(dataSource.getFavoriteSigns(), isEmpty);
-    });
+        final removed = await dataSource.toggleFavorite(testSign);
+        expect(removed, isFalse);
+        expect(dataSource.isFavorite('fav-1'), isFalse);
+        expect(dataSource.getFavoriteSigns(), isEmpty);
+      },
+    );
 
     test('PracticeLocalDataSource manages PracticeStats persistence', () async {
       final dataSource = PracticeLocalDataSource(prefs);

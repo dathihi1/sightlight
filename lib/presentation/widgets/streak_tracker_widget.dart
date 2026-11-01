@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../domain/entities/progress_stats.dart';
 
 class StreakTrackerWidget extends StatelessWidget {
@@ -59,8 +60,8 @@ class StreakTrackerWidget extends StatelessWidget {
                               color: isMetToday
                                   ? Colors.deepOrange
                                   : (theme.brightness == Brightness.dark
-                                      ? Colors.white
-                                      : Colors.black87),
+                                        ? Colors.white
+                                        : Colors.black87),
                             ),
                           ),
                           if (isMetToday)
@@ -170,7 +171,8 @@ class StreakTrackerWidget extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: days.map((day) {
         final key = '${day.year}-${day.month}-${day.day}';
-        final isToday = day.year == now.year &&
+        final isToday =
+            day.year == now.year &&
             day.month == now.month &&
             day.day == now.day;
         final act = activityMap[key];
@@ -197,19 +199,15 @@ class StreakTrackerWidget extends StatelessWidget {
                 color: isMet
                     ? Colors.orange
                     : isToday
-                        ? Colors.orange.shade50
-                        : Colors.grey.shade200,
+                    ? Colors.orange.shade50
+                    : Colors.grey.shade200,
                 border: isToday
                     ? Border.all(color: Colors.deepOrange, width: 2)
                     : null,
               ),
               child: Center(
                 child: isMet
-                    ? const Icon(
-                        Icons.check,
-                        size: 18,
-                        color: Colors.white,
-                      )
+                    ? const Icon(Icons.check, size: 18, color: Colors.white)
                     : Text(
                         '${day.day}',
                         style: TextStyle(
@@ -217,8 +215,9 @@ class StreakTrackerWidget extends StatelessWidget {
                           color: isToday
                               ? Colors.deepOrange
                               : Colors.grey.shade600,
-                          fontWeight:
-                              isToday ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isToday
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
               ),

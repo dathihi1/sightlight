@@ -15,21 +15,14 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
+
 subprojects {
     plugins.withId("com.android.library") {
-        val android = extensions.findByName("android")
-        if (android != null) {
-            try {
-                val method = android.javaClass.methods.firstOrNull {
-                    it.name == "compileSdkVersion" && it.parameterTypes.size == 1
-                }
-                method?.invoke(android, 35)
-            } catch (_: Exception) {
+        extensions.configure<com.android.build.api.variant.LibraryAndroidComponentsExtension> {
+            finalizeDsl { libraryExtension ->
+                libraryExtension.compileSdk = 36
             }
         }
-    }
-    tasks.matching { it.name.contains("AarMetadata") }.configureEach {
-        enabled = false
     }
 }
 

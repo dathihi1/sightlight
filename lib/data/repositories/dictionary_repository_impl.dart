@@ -4,10 +4,7 @@ import '../datasources/dictionary_remote_datasource.dart';
 import '../models/dictionary/sign_model.dart';
 
 class DictionaryRepositoryImpl implements DictionaryRepository {
-  const DictionaryRepositoryImpl(
-    this._remoteDataSource,
-    this._localDataSource,
-  );
+  const DictionaryRepositoryImpl(this._remoteDataSource, this._localDataSource);
 
   final DictionaryRemoteDataSource _remoteDataSource;
   final DictionaryLocalDataSource _localDataSource;
@@ -44,8 +41,7 @@ class DictionaryRepositoryImpl implements DictionaryRepository {
       _localDataSource.removeSearchQuery(query);
 
   @override
-  Future<void> clearSearchHistory() =>
-      _localDataSource.clearSearchHistory();
+  Future<void> clearSearchHistory() => _localDataSource.clearSearchHistory();
 
   @override
   List<Sign> getFavoriteSigns() => _localDataSource.getFavoriteSigns();

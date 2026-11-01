@@ -10,6 +10,8 @@ abstract interface class PracticeRepository {
     int size = 400,
     String? signId,
   });
+  Future<AiQuotaResponse> getAiQuota();
+  Future<AiCapabilitiesResponse> getAiCapabilities({required int modelSize});
   Future<AiAttemptResponse?> submitAiAttempt({
     required String targetSignId,
     required String modelVersion,

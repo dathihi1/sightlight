@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
+
 import 'package:flutter/services.dart';
 import 'package:onnxruntime/onnxruntime.dart';
 
@@ -97,15 +98,17 @@ class LocalRecognizer {
       }
     }
 
-    final inputOrt = OrtValueTensor.createTensorWithDataList(
-      flat,
-      [1, sequenceLength, featureDim],
-    );
+    final inputOrt = OrtValueTensor.createTensorWithDataList(flat, [
+      1,
+      sequenceLength,
+      featureDim,
+    ]);
     final runOptions = OrtRunOptions();
 
     try {
-      final inputName =
-          session.inputNames.isNotEmpty ? session.inputNames.first : 'sequence';
+      final inputName = session.inputNames.isNotEmpty
+          ? session.inputNames.first
+          : 'sequence';
       final inputs = {inputName: inputOrt};
 
       final outputs = session.run(runOptions, inputs);
@@ -133,16 +136,16 @@ class LocalRecognizer {
       indexed.sort((a, b) => b.value.compareTo(a.value));
 
       final top3 = indexed.take(3).map((e) {
-        final label =
-            e.key < _labels.length ? _labels[e.key] : 'Sign #${e.key}';
+        final label = e.key < _labels.length
+            ? _labels[e.key]
+            : 'Sign #${e.key}';
         return LocalInferenceCandidate(label: label, confidence: e.value);
       }).toList();
 
       final latencyMs = stopwatch.elapsedMilliseconds;
 
       return LocalInferenceResult(
-        predictedLabel:
-            top3.isNotEmpty ? top3.first.label : 'Không xác định',
+        predictedLabel: top3.isNotEmpty ? top3.first.label : 'Không xác định',
         confidence: top3.isNotEmpty ? top3.first.confidence : 0.0,
         top3: top3,
         latencyMs: latencyMs,

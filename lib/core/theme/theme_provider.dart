@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../constants/storage_keys.dart';
 
-final themeModeProvider =
-    StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
+final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((
+  ref,
+) {
   return ThemeModeNotifier();
 });
 
@@ -34,8 +36,8 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
       final modeStr = mode == ThemeMode.light
           ? 'light'
           : mode == ThemeMode.dark
-              ? 'dark'
-              : 'system';
+          ? 'dark'
+          : 'system';
       await prefs.setString(StorageKeys.themeMode, modeStr);
     } catch (_) {}
   }

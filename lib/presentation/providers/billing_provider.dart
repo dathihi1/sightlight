@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../../core/network/dio_client.dart';
 import '../../data/datasources/billing_remote_datasource.dart';
 import '../../data/repositories/billing_repository_impl.dart';
@@ -23,13 +24,13 @@ final selectedPlanProvider = StateProvider<Plan?>((ref) => null);
 
 final billingStateProvider =
     StateNotifierProvider<BillingNotifier, AsyncValue<CheckoutSession?>>((ref) {
-  final repository = ref.watch(billingRepositoryProvider);
-  return BillingNotifier(repository, ref);
-});
+      final repository = ref.watch(billingRepositoryProvider);
+      return BillingNotifier(repository, ref);
+    });
 
 class BillingNotifier extends StateNotifier<AsyncValue<CheckoutSession?>> {
   BillingNotifier(this._repository, this._ref)
-      : super(const AsyncValue.data(null));
+    : super(const AsyncValue.data(null));
 
   final BillingRepository _repository;
   final Ref _ref;

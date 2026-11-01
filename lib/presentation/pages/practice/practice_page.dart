@@ -61,6 +61,8 @@ class AiAssessmentResult {
 
 enum PracticePhase { idle, recording, scored }
 
+enum PracticeCallLayout { split, pictureInPicture }
+
 class PracticePage extends ConsumerStatefulWidget {
   const PracticePage({super.key});
 
@@ -70,52 +72,7 @@ class PracticePage extends ConsumerStatefulWidget {
 
 class _PracticePageState extends ConsumerState<PracticePage>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  static const List<PracticeSignItem> _defaultSigns = [
-    PracticeSignItem(
-      id: '5abc8ccc-ceda-4314-ba95-795d358f13a1',
-      label: 'Anh',
-      topic: 'Gia đình & Xưng hô',
-      videoUrl:
-          'https://pub-22f6ba1572c34ec9b4667ae82ffee124.r2.dev/web/Anh__000000.mp4',
-      hint:
-          'Đưa bàn tay phải về phía trước, lòng bàn tay hướng vào trong ngực.',
-    ),
-    PracticeSignItem(
-      id: 'd2587487-8173-4fb0-9563-5f6e83746349',
-      label: 'Chị',
-      topic: 'Gia đình & Xưng hô',
-      videoUrl:
-          'https://pub-22f6ba1572c34ec9b4667ae82ffee124.r2.dev/web/Ch%E1%BB%8B__000002.mp4',
-      hint:
-          'Khép các ngón tay, đặt cạnh thái dương và nhẹ nhàng chuyển động nhẹ.',
-    ),
-    PracticeSignItem(
-      id: '70e112f8-349b-4590-98b1-8fd9ac7d0049',
-      label: 'Em',
-      topic: 'Gia đình & Xưng hô',
-      videoUrl:
-          'https://pub-22f6ba1572c34ec9b4667ae82ffee124.r2.dev/web/Em__000004.mp4',
-      hint: 'Đặt bàn tay ngang tầm ngực, hướng bàn tay xuống và hạ nhẹ xuống.',
-    ),
-    PracticeSignItem(
-      id: '5d4233a0-c9fa-43a4-917c-84daa218794e',
-      label: 'Chú',
-      topic: 'Gia đình & Xưng hô',
-      videoUrl:
-          'https://pub-22f6ba1572c34ec9b4667ae82ffee124.r2.dev/web/Ch%C3%BA__000006.mp4',
-      hint: 'Đưa bàn tay lên gần tai, gập nhẹ các ngón tay.',
-    ),
-    PracticeSignItem(
-      id: '6b90db7c-4740-4fe7-8ae3-aa3570267252',
-      label: 'Cháu',
-      topic: 'Gia đình & Xưng hô',
-      videoUrl:
-          'https://pub-22f6ba1572c34ec9b4667ae82ffee124.r2.dev/web/Ch%C3%A1u__000008.mp4',
-      hint: 'Đặt tay thấp ngang thắt lưng biểu thị người nhỏ tuổi.',
-    ),
-  ];
-
-  List<PracticeSignItem> _signs = List.of(_defaultSigns);
+  List<PracticeSignItem> _signs = [];
   int _currentIndex = 0;
   PracticePhase _phase = PracticePhase.idle;
   double _elapsedSeconds = 0.0;
@@ -124,7 +81,12 @@ class _PracticePageState extends ConsumerState<PracticePage>
   AiAssessmentResult? _lastAssessment;
   bool _isAnalyzing = false;
   bool _isLoading = false;
+  String? _sessionError;
   int _selectedModelSize = 30;
+  List<int> _availableModelSizes = const [30];
+  int? _quotaRemaining;
+  bool _quotaUnlimited = false;
+  PracticeCallLayout _callLayout = PracticeCallLayout.split;
   String _sessionId = 'ai-practice-session-001';
   String _modelVersion = 'vsl-mvp30-v2-lite-transformer';
 
@@ -167,30 +129,41 @@ class _PracticePageState extends ConsumerState<PracticePage>
     setState(() {
       _selectedModelSize = targetSize;
       _isLoading = true;
+      _sessionError = null;
     });
 
     // Tải trước mô hình ONNX INT8 cục bộ để dự phòng ngoại tuyến
     unawaited(LocalRecognizer.instance.load(modelSize: targetSize));
 
     try {
-      final session = await ref
-          .read(practiceRepositoryProvider)
-          .getAiPracticeSession(size: targetSize);
+      final repository = ref.read(practiceRepositoryProvider);
+      final capabilities = await repository.getAiCapabilities(
+        modelSize: targetSize,
+      );
+      final session = await repository.getAiPracticeSession(size: targetSize);
+      final quota = await repository.getAiQuota();
       if (!mounted) return;
       if (session.items.isNotEmpty) {
         setState(() {
           _sessionId = session.sessionId;
           _modelVersion = session.modelVersion;
+          _availableModelSizes = capabilities.availableModelSizes.isEmpty
+              ? const [30]
+              : capabilities.availableModelSizes;
+          _quotaRemaining = quota.remaining;
+          _quotaUnlimited = quota.unlimited;
           _signs = session.items
-              .map((item) => PracticeSignItem(
-                    id: item.signId,
-                    label: item.label,
-                    topic: item.topic.isNotEmpty ? item.topic : 'Ký hiệu AI',
-                    videoUrl: item.videoUrl,
-                    hint: item.hint.isNotEmpty
-                        ? item.hint
-                        : 'Thực hiện ký hiệu trước camera.',
-                  ))
+              .map(
+                (item) => PracticeSignItem(
+                  id: item.signId,
+                  label: item.label,
+                  topic: item.topic.isNotEmpty ? item.topic : 'Ký hiệu AI',
+                  videoUrl: item.videoUrl,
+                  hint: item.hint.isNotEmpty
+                      ? item.hint
+                      : 'Thực hiện ký hiệu trước camera.',
+                ),
+              )
               .toList();
           if (_currentIndex >= _signs.length) {
             _currentIndex = 0;
@@ -199,8 +172,13 @@ class _PracticePageState extends ConsumerState<PracticePage>
           _lastAssessment = null;
         });
       }
-    } catch (_) {
-      // Retain default signs on network failure
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _sessionError = error.toString().replaceFirst('Exception: ', '');
+          _signs = [];
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -402,8 +380,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
         statusTitle: 'Không phát hiện cử chỉ',
         confidencePercent: 0,
         targetWord: sign.label,
-        feedbackNote:
-            'Không phát hiện chuyển động bàn tay trong khung hình. Vui lòng hướng camera vào bạn và làm theo video mẫu.',
+        feedbackNote: 'Không phát hiện chuyển động bàn tay trong khung hình. Vui lòng hướng camera vào bạn và làm theo video mẫu.',
         candidates: const [],
         hasMotion: false,
       );
@@ -414,8 +391,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
         statusTitle: 'Cử chỉ quá ngắn',
         confidencePercent: 0,
         targetWord: sign.label,
-        feedbackNote:
-            'Thời lượng làm ký hiệu quá ngắn (< 1s) để AI nhận diện trọn vẹn chuyển động.',
+        feedbackNote: 'Thời lượng làm ký hiệu quá ngắn (< 1s) để AI nhận diện trọn vẹn chuyển động.',
         candidates: const [],
         hasMotion: true,
       );
@@ -445,8 +421,11 @@ class _PracticePageState extends ConsumerState<PracticePage>
 
       // 2. Gửi attempt lên backend API để ghi nhận lịch sử và hạn mức
       AiAttemptResponse? attemptRes;
+      String? syncError;
       try {
-        attemptRes = await ref.read(practiceRepositoryProvider).submitAiAttempt(
+        attemptRes = await ref
+            .read(practiceRepositoryProvider)
+            .submitAiAttempt(
               targetSignId: sign.id,
               modelVersion: _modelVersion,
               features: features,
@@ -455,20 +434,24 @@ class _PracticePageState extends ConsumerState<PracticePage>
               handFrameRatio: handRatio,
               sessionId: _sessionId,
             );
-      } catch (_) {
+      } catch (error) {
         attemptRes = null;
+        syncError = error.toString().replaceFirst('Exception: ', '');
       }
 
       // 3. Phân giải kết quả: nếu backend trả về stubMode=true hoặc gặp lỗi mạng,
       // ưu tiên kết quả on-device localInf thật theo đúng BR-A118 của web.
       if (attemptRes != null && (!attemptRes.stubMode || localInf == null)) {
         final candidates = attemptRes.top3
-            .map((c) => AiRecognitionCandidate(
-                  word: c.label,
-                  probability: (c.confidence * 100).round(),
-                  isTarget: c.label.toLowerCase() == sign.label.toLowerCase() ||
-                      c.signId == sign.id,
-                ))
+            .map(
+              (c) => AiRecognitionCandidate(
+                word: c.label,
+                probability: (c.confidence * 100).round(),
+                isTarget:
+                    c.label.toLowerCase() == sign.label.toLowerCase() ||
+                    c.signId == sign.id,
+              ),
+            )
             .toList();
 
         final confPercent = attemptRes.confidence != null
@@ -500,8 +483,8 @@ class _PracticePageState extends ConsumerState<PracticePage>
         final note = attemptRes.qualityHints.isNotEmpty
             ? attemptRes.qualityHints.join('. ')
             : (attemptRes.countedAgainstQuota
-                ? 'Đã ghi nhận nỗ lực (còn ${attemptRes.quotaRemaining ?? 0} lượt hôm nay).'
-                : 'Lượt này không tính vào hạn mức.');
+                  ? 'Đã ghi nhận nỗ lực (còn ${attemptRes.quotaRemaining ?? 0} lượt hôm nay).'
+                  : 'Lượt này không tính vào hạn mức.');
 
         assessment = AiAssessmentResult(
           isCorrect: attemptRes.verified,
@@ -513,7 +496,8 @@ class _PracticePageState extends ConsumerState<PracticePage>
           hasMotion: true,
         );
       } else if (localInf != null && localInf.top3.isNotEmpty) {
-        final isMatched = localInf.predictedLabel.trim().toLowerCase() ==
+        final isMatched =
+            localInf.predictedLabel.trim().toLowerCase() ==
             sign.label.trim().toLowerCase();
         final isCorrect = isMatched && localInf.confidence >= 0.50;
         final confPercent = (localInf.confidence * 100).round();
@@ -542,8 +526,9 @@ class _PracticePageState extends ConsumerState<PracticePage>
           statusTitle: title,
           confidencePercent: confPercent,
           targetWord: sign.label,
-          feedbackNote:
-              'Nhận diện on-device ($_selectedModelSize từ, ${localInf.latencyMs}ms). Cử chỉ: ${localInf.predictedLabel} ($confPercent%).',
+          feedbackNote: syncError == null
+              ? 'Nhận diện on-device ($_selectedModelSize từ, ${localInf.latencyMs}ms). Cử chỉ: ${localInf.predictedLabel} ($confPercent%).'
+              : 'Nhận diện on-device nhưng chưa đồng bộ máy chủ: $syncError',
           candidates: candidates,
           hasMotion: true,
         );
@@ -553,7 +538,8 @@ class _PracticePageState extends ConsumerState<PracticePage>
           statusTitle: 'Lỗi nhận diện AI',
           confidencePercent: 0,
           targetWord: sign.label,
-          feedbackNote: 'Không thể kết nối máy chủ nhận diện. Vui lòng thử lại.',
+          feedbackNote:
+              'Không thể kết nối máy chủ nhận diện. Vui lòng thử lại.',
           candidates: const [],
           hasMotion: true,
         );
@@ -599,6 +585,34 @@ class _PracticePageState extends ConsumerState<PracticePage>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    if (_signs.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Luyện Camera AI')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: _isLoading
+                ? const CircularProgressIndicator()
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.cloud_off_rounded, size: 48),
+                      const SizedBox(height: 12),
+                      Text(
+                        _sessionError ?? 'Phiên luyện hiện không có dữ liệu.',
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () => _loadAiSession(),
+                        child: const Text('Thử lại'),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      );
+    }
     final currentSign = _signs[_currentIndex];
 
     return Scaffold(
@@ -625,9 +639,10 @@ class _PracticePageState extends ConsumerState<PracticePage>
                   ],
                 ),
               ),
-              const PopupMenuItem<int>(
+              PopupMenuItem<int>(
                 value: 400,
-                child: Row(
+                enabled: _availableModelSizes.contains(400),
+                child: const Row(
                   children: [
                     Icon(
                       Icons.workspace_premium_rounded,
@@ -658,7 +673,9 @@ class _PracticePageState extends ConsumerState<PracticePage>
                         ? Icons.workspace_premium_rounded
                         : Icons.auto_awesome_rounded,
                     size: 14,
-                    color: isDark ? Colors.amber.shade300 : Colors.amber.shade800,
+                    color: isDark
+                        ? Colors.amber.shade300
+                        : Colors.amber.shade800,
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -743,6 +760,17 @@ class _PracticePageState extends ConsumerState<PracticePage>
                 ),
               ],
             ),
+            if (_quotaUnlimited || _quotaRemaining != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _quotaUnlimited
+                    ? 'Hạn mức AI: không giới hạn'
+                    : 'Còn ${_quotaRemaining ?? 0} lượt AI hôm nay',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
 
             // Sign Selection Dropdown
@@ -843,264 +871,9 @@ class _PracticePageState extends ConsumerState<PracticePage>
             ),
             const SizedBox(height: 16),
 
-            // Video mẫu (Sample demonstration)
-            Card(
-              elevation: 0,
-              color: isDark
-                  ? theme.colorScheme.surfaceContainerLow
-                  : Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(
-                  color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withAlpha(30),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.play_circle_fill_rounded,
-                            color: Color(0xFF2563EB),
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Video mẫu — ${currentSign.label}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child: SignVideoPlayer(
-                        key: ValueKey(currentSign.videoUrl),
-                        videoUrl: currentSign.videoUrl,
-                        height: 200,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.withAlpha(20),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.amber.withAlpha(50)),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.lightbulb_outline_rounded,
-                            size: 18,
-                            color: Colors.amber.shade800,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              currentSign.hint,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: isDark
-                                    ? Colors.amber.shade200
-                                    : Colors.amber.shade900,
-                                height: 1.3,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            // Video-call stage: split screen or camera-first picture-in-picture.
+            _buildVideoCallStage(currentSign, isDark),
             const SizedBox(height: 16),
-
-            // Camera của bạn (Camera Viewfinder & AI Recognition)
-            Card(
-              elevation: 0,
-              color: isDark
-                  ? theme.colorScheme.surfaceContainerLow
-                  : Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(
-                  color: _phase == PracticePhase.recording
-                      ? Colors.redAccent
-                      : (isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
-                  width: _phase == PracticePhase.recording ? 2 : 1,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: _phase == PracticePhase.recording
-                                    ? Colors.red.withAlpha(30)
-                                    : Colors.purple.withAlpha(30),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.videocam_rounded,
-                                color: _phase == PracticePhase.recording
-                                    ? Colors.redAccent
-                                    : const Color(0xFF7C3AED),
-                                size: 18,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'Camera của bạn',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            if (_cameras.length > 1)
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.flip_camera_ios_rounded,
-                                  size: 18,
-                                ),
-                                tooltip: 'Đổi camera trước / sau',
-                                onPressed: _phase == PracticePhase.recording
-                                    ? null
-                                    : _toggleCameraLens,
-                              ),
-                            _buildStatusBadge(),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Real Camera Viewfinder Screen
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: AspectRatio(
-                        aspectRatio: 4 / 3,
-                        child: Container(
-                          color: const Color(0xFF0B0F19),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              // 1. Live Camera Preview Feed (Luôn luôn hiển thị)
-                              _buildCameraFeed(),
-
-                              // 2. Viewfinder Grid & Corner Brackets Overlay
-                              CustomPaint(
-                                painter: _ViewfinderPainter(
-                                  isRecording:
-                                      _phase == PracticePhase.recording,
-                                ),
-                              ),
-
-                              // 3. Scanning Laser Bar during recording
-                              if (_phase == PracticePhase.recording)
-                                AnimatedBuilder(
-                                  animation: _scanAnimation,
-                                  builder: (context, child) {
-                                    return CustomPaint(
-                                      painter: _ScanningLaserPainter(
-                                        progress: _scanAnimation.value,
-                                      ),
-                                    );
-                                  },
-                                ),
-
-                              // 4. Idle Guide Overlay
-                              if (_phase == PracticePhase.idle &&
-                                  _isCameraInitialized)
-                                Positioned(
-                                  bottom: 12,
-                                  left: 12,
-                                  right: 12,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black54,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Text(
-                                      'Căn chỉnh bàn tay và khuôn mặt vào khung hình',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Privacy Notice (Bản quyền bảo mật web)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.shield_outlined,
-                          size: 16,
-                          color: Color(0xFF16A34A),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Hình ảnh không rời khỏi máy bạn — trình duyệt chỉ gửi một dãy số mô tả chuyển động.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark ? Colors.white60 : Colors.black54,
-                              height: 1.3,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
             // Trạng thái đang gửi phân tích AI Model Backend
             if (_isAnalyzing) ...[
               Center(
@@ -1141,10 +914,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
                   icon: const Icon(Icons.videocam_rounded, size: 22),
                   label: const Text(
                     'Bắt đầu ký hiệu',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF2563EB),
@@ -1221,15 +991,296 @@ class _PracticePageState extends ConsumerState<PracticePage>
     );
   }
 
+  Widget _buildVideoCallStage(PracticeSignItem currentSign, bool isDark) {
+    final theme = Theme.of(context);
+    final split = _callLayout == PracticeCallLayout.split;
+    return Card(
+      elevation: 0,
+      color: isDark ? theme.colorScheme.surfaceContainerLow : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+        side: BorderSide(
+          color: _phase == PracticePhase.recording
+              ? Colors.redAccent
+              : (isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+          width: _phase == PracticePhase.recording ? 2 : 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2563EB).withAlpha(25),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.video_call_rounded,
+                    color: Color(0xFF2563EB),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 9),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Phòng luyện Camera AI',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        'Video mẫu và camera của bạn',
+                        style: TextStyle(fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+                _buildStatusBadge(),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: AspectRatio(
+                aspectRatio: 3 / 4,
+                child: ColoredBox(
+                  color: const Color(0xFF080B12),
+                  child: split
+                      ? Column(
+                          children: [
+                            Expanded(child: _buildDemoCallPane(currentSign)),
+                            Container(
+                              height: 2,
+                              color: Colors.white.withAlpha(30),
+                            ),
+                            Expanded(child: _buildCameraCallPane()),
+                          ],
+                        )
+                      : Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            _buildCameraCallPane(),
+                            Positioned(
+                              top: 14,
+                              right: 14,
+                              width: 132,
+                              height: 176,
+                              child: Material(
+                                elevation: 10,
+                                color: Colors.black,
+                                borderRadius: BorderRadius.circular(16),
+                                clipBehavior: Clip.antiAlias,
+                                child: _buildDemoCallPane(
+                                  currentSign,
+                                  compact: true,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _CallControl(
+                  icon: Icons.vertical_split_rounded,
+                  label: 'Chia đôi',
+                  selected: split,
+                  onTap: _phase == PracticePhase.recording
+                      ? null
+                      : () => setState(
+                          () => _callLayout = PracticeCallLayout.split,
+                        ),
+                ),
+                const SizedBox(width: 18),
+                _CallControl(
+                  icon: Icons.picture_in_picture_alt_rounded,
+                  label: 'Khung nhỏ',
+                  selected: !split,
+                  onTap: _phase == PracticePhase.recording
+                      ? null
+                      : () => setState(
+                          () =>
+                              _callLayout = PracticeCallLayout.pictureInPicture,
+                        ),
+                ),
+                if (_cameras.length > 1) ...[
+                  const SizedBox(width: 18),
+                  _CallControl(
+                    icon: Icons.flip_camera_ios_rounded,
+                    label: 'Đổi camera',
+                    onTap: _phase == PracticePhase.recording
+                        ? null
+                        : _toggleCameraLens,
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              decoration: BoxDecoration(
+                color: Colors.amber.withAlpha(18),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withAlpha(45)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.lightbulb_outline_rounded,
+                    size: 17,
+                    color: Colors.amber.shade800,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      currentSign.hint,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark
+                            ? Colors.amber.shade200
+                            : Colors.amber.shade900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.shield_outlined,
+                  size: 16,
+                  color: Color(0xFF16A34A),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Hình ảnh không rời khỏi máy bạn — ứng dụng chỉ gửi dãy số mô tả chuyển động.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white60 : Colors.black54,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDemoCallPane(
+    PracticeSignItem currentSign, {
+    bool compact = false,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            SignVideoPlayer(
+              key: ValueKey('call-demo-${currentSign.id}-$compact'),
+              videoUrl: currentSign.videoUrl,
+              height: constraints.maxHeight,
+              compact: compact,
+            ),
+            Positioned(
+              top: compact ? 7 : 10,
+              left: compact ? 7 : 10,
+              child: _CallLabel(
+                icon: Icons.play_circle_fill_rounded,
+                text: compact ? 'Mẫu' : 'Video mẫu · ${currentSign.label}',
+                compact: compact,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCameraCallPane() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        _buildCameraFeed(),
+        CustomPaint(
+          painter: _ViewfinderPainter(
+            isRecording: _phase == PracticePhase.recording,
+          ),
+        ),
+        if (_phase == PracticePhase.recording)
+          AnimatedBuilder(
+            animation: _scanAnimation,
+            builder: (context, child) => CustomPaint(
+              painter: _ScanningLaserPainter(progress: _scanAnimation.value),
+            ),
+          ),
+        const Positioned(
+          top: 10,
+          left: 10,
+          child: _CallLabel(icon: Icons.videocam_rounded, text: 'Bạn'),
+        ),
+        if (_phase == PracticePhase.idle && _isCameraInitialized)
+          Positioned(
+            bottom: 12,
+            left: 12,
+            right: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Text(
+                'Căn bàn tay và khuôn mặt vào khung hình',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   /// Card kết quả nhận diện chuẩn theo giao diện Web (Image #44)
   Widget _buildWebStandardResultCard(AiAssessmentResult res, bool isDark) {
     final bgColor = res.isCorrect
-        ? (isDark ? const Color(0xFF064E3B).withAlpha(60) : const Color(0xFFF0FDF4))
-        : (isDark ? const Color(0xFF7C2D12).withAlpha(60) : const Color(0xFFFFFBEB));
+        ? (isDark
+              ? const Color(0xFF064E3B).withAlpha(60)
+              : const Color(0xFFF0FDF4))
+        : (isDark
+              ? const Color(0xFF7C2D12).withAlpha(60)
+              : const Color(0xFFFFFBEB));
 
     final borderColor = res.isCorrect
-        ? (isDark ? const Color(0xFF059669).withAlpha(120) : const Color(0xFFBBF7D0))
-        : (isDark ? const Color(0xFFD97706).withAlpha(120) : const Color(0xFFFDE68A));
+        ? (isDark
+              ? const Color(0xFF059669).withAlpha(120)
+              : const Color(0xFFBBF7D0))
+        : (isDark
+              ? const Color(0xFFD97706).withAlpha(120)
+              : const Color(0xFFFDE68A));
 
     final statusColor = res.isCorrect
         ? const Color(0xFF16A34A)
@@ -1255,7 +1306,9 @@ class _PracticePageState extends ConsumerState<PracticePage>
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  res.isCorrect ? Icons.check_rounded : Icons.priority_high_rounded,
+                  res.isCorrect
+                      ? Icons.check_rounded
+                      : Icons.priority_high_rounded,
                   color: Colors.white,
                   size: 20,
                 ),
@@ -1471,8 +1524,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
               ),
               const SizedBox(height: 4),
               Text(
-                _cameraErrorMessage ??
-                    'Vui lòng cấp quyền truy cập máy ảnh trong Cài đặt thiết bị.',
+                _cameraErrorMessage ?? 'Vui lòng cấp quyền truy cập máy ảnh trong Cài đặt thiết bị.',
                 style: const TextStyle(color: Colors.white60, fontSize: 12),
                 textAlign: TextAlign.center,
               ),
@@ -1584,6 +1636,109 @@ class _PracticePageState extends ConsumerState<PracticePage>
           ),
         );
     }
+  }
+}
+
+class _CallControl extends StatelessWidget {
+  const _CallControl({
+    required this.icon,
+    required this.label,
+    this.onTap,
+    this.selected = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected
+        ? Theme.of(context).colorScheme.primary
+        : Theme.of(context).colorScheme.onSurfaceVariant;
+    return Tooltip(
+      message: label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? Theme.of(context).colorScheme.primaryContainer
+                      : Theme.of(context).colorScheme.surfaceContainerHighest,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Icon(icon, color: onTap == null ? Colors.grey : color),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  color: onTap == null ? Colors.grey : color,
+                  fontSize: 10,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CallLabel extends StatelessWidget {
+  const _CallLabel({
+    required this.icon,
+    required this.text,
+    this.compact = false,
+  });
+
+  final IconData icon;
+  final String text;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 7 : 9,
+        vertical: compact ? 4 : 5,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.black.withAlpha(165),
+        borderRadius: BorderRadius.circular(99),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: compact ? 12 : 14),
+          const SizedBox(width: 5),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: compact ? 70 : 190),
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: compact ? 9 : 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

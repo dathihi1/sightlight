@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../core/localization/app_localizations.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_provider.dart';
 import '../providers/auth_provider.dart';
+import 'brand_logo.dart';
 import 'offline_banner.dart';
 
 class AppShell extends ConsumerWidget {
-  const AppShell({
-    super.key,
-    required this.navigationShell,
-  });
+  const AppShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
@@ -36,18 +35,11 @@ class AppShell extends ConsumerWidget {
       appBar: AppBar(
         title: Row(
           children: [
-            const Icon(
-              Icons.sign_language_rounded,
-              color: AppTheme.primaryBlue,
-              size: 26,
-            ),
+            const BrandLogo(size: 30),
             const SizedBox(width: 8),
             const Text(
               'SignLight',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
             ),
             if (isPremium) ...[
               const SizedBox(width: 8),

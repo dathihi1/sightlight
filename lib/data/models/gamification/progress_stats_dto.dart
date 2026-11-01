@@ -72,13 +72,15 @@ class ProgressStatsDto {
   final List<ActivityDayDto> recentActivities;
 
   factory ProgressStatsDto.fromJson(Map<String, dynamic> json) {
-    final activitiesList = (json['recentActivities'] as List<dynamic>?)
+    final activitiesList =
+        (json['recentActivities'] as List<dynamic>?)
             ?.map((e) => ActivityDayDto.fromJson(e as Map<String, dynamic>))
             .toList() ??
         [];
 
     return ProgressStatsDto(
-      streakDays: (json['streakDays'] as num?)?.toInt() ??
+      streakDays:
+          (json['streakDays'] as num?)?.toInt() ??
           (json['streak'] as num?)?.toInt() ??
           0,
       longestStreak: (json['longestStreak'] as num?)?.toInt() ?? 0,
@@ -89,7 +91,8 @@ class ProgressStatsDto {
           (json['totalMinutesLearned'] as num?)?.toDouble() ??
           (json['totalMinutes'] as num?)?.toDouble() ??
           0.0,
-      completedLessons: (json['completedLessons'] as num?)?.toInt() ??
+      completedLessons:
+          (json['completedLessons'] as num?)?.toInt() ??
           (json['lessonsCompleted'] as num?)?.toInt() ??
           0,
       signsMastered: (json['signsMastered'] as num?)?.toInt() ?? 0,

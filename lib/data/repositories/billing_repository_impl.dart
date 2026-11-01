@@ -11,8 +11,11 @@ class BillingRepositoryImpl implements BillingRepository {
 
   @override
   Future<List<Plan>> getPlans() async {
-    // In production, can fetch dynamic pricing from backend; fallback to standard plans
-    return Plan.defaultPlans;
+    final response = await _remoteDataSource.getPlans();
+    if (response.isError) {
+      throw Exception(response.errorMessage ?? 'Không thể tải bảng giá');
+    }
+    return response.result ?? const [];
   }
 
   @override
@@ -50,7 +53,7 @@ class BillingRepositoryImpl implements BillingRepository {
       final status = (data['status'] ?? '').toString().toUpperCase();
       return status == 'PAID' || status == 'SUCCESS' || status == 'COMPLETED';
     } catch (_) {
-      // If endpoint returns network issue or 404, check query parameter fallback in UI
+      // Payment is trusted only when the backend confirms it.
       return false;
     }
   }

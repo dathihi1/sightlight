@@ -26,10 +26,5 @@ class CheckoutRequest {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        'requestId': requestId,
-        'planId': planId,
-        if (returnUrl != null) 'returnUrl': returnUrl,
-        if (cancelUrl != null) 'cancelUrl': cancelUrl,
-      };
+  Map<String, dynamic> toJson() => {'requestId': requestId, 'planId': planId};
 }

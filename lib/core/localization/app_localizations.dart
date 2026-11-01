@@ -14,10 +14,7 @@ class AppLocalizations {
   static const LocalizationsDelegate<AppLocalizations> delegate =
       _AppLocalizationsDelegate();
 
-  static const List<Locale> supportedLocales = [
-    Locale('vi'),
-    Locale('en'),
-  ];
+  static const List<Locale> supportedLocales = [Locale('vi'), Locale('en')];
 
   bool get isVietnamese => locale.languageCode == 'vi';
 
@@ -48,8 +45,9 @@ class AppLocalizations {
       : 'Already have an account? Log in';
   String get loginSuccess =>
       isVietnamese ? 'Đăng nhập thành công!' : 'Logged in successfully!';
-  String get registerSuccess =>
-      isVietnamese ? 'Đăng ký tài khoản thành công!' : 'Registration successful!';
+  String get registerSuccess => isVietnamese
+      ? 'Đăng ký tài khoản thành công!'
+      : 'Registration successful!';
 
   // Payment & Upgrade
   String get upgradeTitle => isVietnamese

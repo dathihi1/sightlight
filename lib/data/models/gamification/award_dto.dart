@@ -42,7 +42,8 @@ class BadgeItemDto {
     final titleVal =
         (json['title'] ?? json['name'] ?? 'Huy hiệu mới') as String;
     final descVal = (json['description'] ?? '') as String;
-    final isUnlockedVal = (json['isUnlocked'] as bool?) ??
+    final isUnlockedVal =
+        (json['isUnlocked'] as bool?) ??
         (json['unlocked'] as bool?) ??
         (json['isOwned'] as bool?) ??
         false;
@@ -55,15 +56,17 @@ class BadgeItemDto {
       category: (json['category'] as String?) ?? 'General',
       level: (json['level'] as num?)?.toInt() ?? 1,
       maxLevel: (json['maxLevel'] as num?)?.toInt() ?? 3,
-      currentValue: (json['currentValue'] as num?)?.toInt() ??
-          (isUnlockedVal ? 100 : 0),
+      currentValue:
+          (json['currentValue'] as num?)?.toInt() ?? (isUnlockedVal ? 100 : 0),
       targetValue: (json['targetValue'] as num?)?.toInt() ?? 100,
       isUnlocked: isUnlockedVal,
-      isCelebrated: (json['isCelebrated'] as bool?) ??
+      isCelebrated:
+          (json['isCelebrated'] as bool?) ??
           (json['celebrated'] as bool?) ??
           false,
       unlockedAt: parsedUnlockedAt,
-      expReward: (json['expReward'] as num?)?.toInt() ??
+      expReward:
+          (json['expReward'] as num?)?.toInt() ??
           (json['costExp'] as num?)?.toInt() ??
           50,
     );
