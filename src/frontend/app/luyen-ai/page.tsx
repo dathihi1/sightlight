@@ -117,7 +117,7 @@ function AiPracticeContent() {
   const [result, setResult] = useState<AttemptResult | null>(null);
   const [localInference, setLocalInference] = useState<LocalInferenceResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [videoRatio, setVideoRatio] = useState<number>(16 / 9);
+  const [videoRatio, setVideoRatio] = useState<number>(1);
   const [showAdModal, setShowAdModal] = useState(false);
   const [preparationSave, setPreparationSave] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [selectedModelSize, setSelectedModelSize] = useState<ModelSize | null>(null);
@@ -835,7 +835,7 @@ function AiPracticeContent() {
                     : "ring-danger-300"
                   : "ring-transparent"
             }`}
-            style={{ aspectRatio: videoRatio, maxHeight: "70vh" }}
+            style={{ aspectRatio: videoRatio, width: `min(100%, ${videoRatio * 70}vh)` }}
           >
             <video
               ref={videoRef}

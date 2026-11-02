@@ -51,7 +51,7 @@ const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).p
 
 // Các object raw trên R2 đã được chuyển từ MPEG-4 Part 2 sang H.264 ngày 2026-10-21.
 // Đổi query string để trình duyệt không giữ bản codec cũ do Cache-Control: immutable.
-const R2_VIDEO_REVISION = "20261021-h264";
+const R2_VIDEO_REVISION = "20261102-cors-v2";
 
 export function withR2VideoRevision(url: string): string {
   if (!url.includes(".r2.dev/")) return url;
@@ -88,7 +88,7 @@ export function SignVideoPlayer({
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [ratio, setRatio] = useState(16 / 9);
+  const [ratio, setRatio] = useState(1);
 
   const resolvedDriveId = useMemo(() => {
     if (driveFileId && driveFileId.trim().length > 0) {
@@ -181,7 +181,7 @@ export function SignVideoPlayer({
     return (
       <div
         className={`relative mx-auto w-full overflow-hidden rounded-3xl bg-black ${className}`}
-        style={{ aspectRatio: ratio, maxHeight: "70vh" }}
+        style={{ aspectRatio: ratio, width: `min(100%, ${ratio * 70}vh)` }}
       >
         <iframe
           src={`https://drive.google.com/file/d/${resolvedDriveId}/preview`}
@@ -205,13 +205,13 @@ export function SignVideoPlayer({
     <div
       ref={wrapRef}
       className={`group relative mx-auto w-full overflow-hidden rounded-3xl bg-ink-950 ${className}`}
-      style={{ aspectRatio: ratio, maxHeight: "70vh" }}
+      style={{ aspectRatio: ratio, width: `min(100%, ${ratio * 70}vh)` }}
     >
       <video
         ref={videoRef}
         key={directSrc}
-        src={directSrc || undefined}
         crossOrigin={directSrc?.includes(".r2.dev/") ? "anonymous" : undefined}
+        src={directSrc || undefined}
         autoPlay={autoPlay}
         loop={isLooping}
         muted={muted}
@@ -225,9 +225,8 @@ export function SignVideoPlayer({
           const v = e.currentTarget;
           v.playbackRate = rate;
           setDuration(v.duration || 0);
-          // Giữ khung trong khoảng 3:4 (dọc) → 16:9 (ngang) để video không quá cao hay quá dẹt.
           if (v.videoWidth && v.videoHeight) {
-            const calculated = Math.min(16 / 9, Math.max(3 / 4, v.videoWidth / v.videoHeight));
+            const calculated = v.videoWidth / v.videoHeight;
             setRatio(calculated);
             onRatioChange?.(calculated);
           }
