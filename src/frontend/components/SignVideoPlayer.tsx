@@ -1,6 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  clearHandmarkOverlay,
+  drawHandmarkOverlay,
+  type HandmarkVisibility,
+} from "@/lib/holistic/handmarkOverlay";
+import { nextHolisticVideoTimestamp } from "@/lib/holistic/videoTimestamp";
 import { PlaceholderVideo } from "./PlaceholderVideo";
 
 export interface SignVideoPlayerProps {
@@ -13,6 +19,8 @@ export interface SignVideoPlayerProps {
   loop?: boolean;
   muted?: boolean;
   onRatioChange?: (ratio: number) => void;
+  handmarkEnabled?: boolean;
+  onHandmarkVisibilityChange?: (visibility: HandmarkVisibility) => void;
 }
 
 /**
@@ -68,8 +76,11 @@ export function SignVideoPlayer({
   loop = true,
   muted = true,
   onRatioChange,
+  handmarkEnabled = false,
+  onHandmarkVisibilityChange,
 }: SignVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const handmarkCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [isLooping, setIsLooping] = useState(loop);
   const [rate, setRate] = useState(1);
@@ -109,6 +120,58 @@ export function SignVideoPlayer({
       videoRef.current.loop = isLooping;
     }
   }, [rate, isLooping]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let animationFrame: number | null = null;
+
+    if (!handmarkEnabled) {
+      clearHandmarkOverlay(handmarkCanvasRef.current);
+      onHandmarkVisibilityChange?.("none");
+      return;
+    }
+
+    void (async () => {
+      const { loadHolisticLandmarker } = await import("@/lib/holistic/extractor");
+      const landmarker = await loadHolisticLandmarker();
+      let lastSampleAt = 0;
+
+      const tick = () => {
+        if (cancelled) return;
+        const video = videoRef.current;
+        const now = performance.now();
+        if (
+          video &&
+          !video.paused &&
+          video.readyState >= 2 &&
+          video.videoWidth > 0 &&
+          now - lastSampleAt >= 1000 / 12
+        ) {
+          lastSampleAt = now;
+          try {
+            const result = landmarker.detectForVideo(video, nextHolisticVideoTimestamp(now));
+            onHandmarkVisibilityChange?.(
+              drawHandmarkOverlay(handmarkCanvasRef.current, video, result, "contain"),
+            );
+          } catch (error) {
+            console.warn("Lỗi handmark video mẫu:", error);
+          }
+        }
+        animationFrame = requestAnimationFrame(tick);
+      };
+      animationFrame = requestAnimationFrame(tick);
+    })().catch((error) => {
+      console.warn("Không thể bật handmark video mẫu:", error);
+      onHandmarkVisibilityChange?.("none");
+    });
+
+    return () => {
+      cancelled = true;
+      if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+      clearHandmarkOverlay(handmarkCanvasRef.current);
+      onHandmarkVisibilityChange?.("none");
+    };
+  }, [directSrc, handmarkEnabled, onHandmarkVisibilityChange]);
 
   if (placeholderVideo || (!videoUrl && !resolvedDriveId)) {
     return <PlaceholderVideo label={title || "Video ký hiệu mẫu"} />;
@@ -170,6 +233,12 @@ export function SignVideoPlayer({
         }}
         onError={() => resolvedDriveId && setUseIframeFallback(true)}
         className="h-full w-full cursor-pointer object-contain"
+      />
+
+      <canvas
+        ref={handmarkCanvasRef}
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        aria-hidden="true"
       />
 
       {/* Tốc độ + lặp: luôn hiện (không ẩn sau hover) vì đây là công cụ học chính */}

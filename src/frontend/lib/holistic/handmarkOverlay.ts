@@ -17,6 +17,8 @@ interface CoverProjection {
   offsetY: number;
 }
 
+export type HandmarkObjectFit = "cover" | "contain";
+
 /** Chiếu tọa độ video chuẩn hóa lên vùng `object-cover` của camera. */
 export function projectLandmarkToCover(
   landmark: Pick<NormalizedLandmark, "x" | "y">,
@@ -32,10 +34,26 @@ export function projectLandmarkToCover(
   };
 }
 
+/** Chiếu tọa độ video chuẩn hóa lên vùng `object-contain` của video mẫu. */
+export function projectLandmarkToContain(
+  landmark: Pick<NormalizedLandmark, "x" | "y">,
+  sourceWidth: number,
+  sourceHeight: number,
+  viewportWidth: number,
+  viewportHeight: number,
+): { x: number; y: number } {
+  const projection = objectFitProjection(sourceWidth, sourceHeight, viewportWidth, viewportHeight, "contain");
+  return {
+    x: projection.offsetX + landmark.x * projection.renderedWidth,
+    y: projection.offsetY + landmark.y * projection.renderedHeight,
+  };
+}
+
 export function drawHandmarkOverlay(
   canvas: HTMLCanvasElement | null,
   video: HTMLVideoElement,
   result: HolisticLandmarkerResult,
+  objectFit: HandmarkObjectFit = "cover",
 ): HandmarkVisibility {
   if (!canvas || video.videoWidth <= 0 || video.videoHeight <= 0) return "none";
   const context = canvas.getContext("2d");
@@ -55,8 +73,8 @@ export function drawHandmarkOverlay(
 
   const left = firstHand(result.leftHandLandmarks);
   const right = firstHand(result.rightHandLandmarks);
-  if (left) drawHand(context, left, "#38bdf8", video.videoWidth, video.videoHeight, width, height);
-  if (right) drawHand(context, right, "#fbbf24", video.videoWidth, video.videoHeight, width, height);
+  if (left) drawHand(context, left, "#38bdf8", video.videoWidth, video.videoHeight, width, height, objectFit);
+  if (right) drawHand(context, right, "#fbbf24", video.videoWidth, video.videoHeight, width, height, objectFit);
   if (left && right) return "two";
   return left || right ? "one" : "none";
 }
@@ -74,15 +92,20 @@ function drawHand(
   sourceHeight: number,
   viewportWidth: number,
   viewportHeight: number,
+  objectFit: HandmarkObjectFit,
 ): void {
   if (landmarks.length < 21) return;
-  const points = landmarks.map((landmark) => projectLandmarkToCover(
-    landmark,
+  const projection = objectFitProjection(
     sourceWidth,
     sourceHeight,
     viewportWidth,
     viewportHeight,
-  ));
+    objectFit,
+  );
+  const points = landmarks.map((landmark) => ({
+    x: projection.offsetX + landmark.x * projection.renderedWidth,
+    y: projection.offsetY + landmark.y * projection.renderedHeight,
+  }));
 
   context.save();
   context.lineCap = "round";
@@ -120,7 +143,19 @@ function coverProjection(
   viewportWidth: number,
   viewportHeight: number,
 ): CoverProjection {
-  const scale = Math.max(viewportWidth / sourceWidth, viewportHeight / sourceHeight);
+  return objectFitProjection(sourceWidth, sourceHeight, viewportWidth, viewportHeight, "cover");
+}
+
+function objectFitProjection(
+  sourceWidth: number,
+  sourceHeight: number,
+  viewportWidth: number,
+  viewportHeight: number,
+  objectFit: HandmarkObjectFit,
+): CoverProjection {
+  const scale = objectFit === "contain"
+    ? Math.min(viewportWidth / sourceWidth, viewportHeight / sourceHeight)
+    : Math.max(viewportWidth / sourceWidth, viewportHeight / sourceHeight);
   const renderedWidth = sourceWidth * scale;
   const renderedHeight = sourceHeight * scale;
   return {

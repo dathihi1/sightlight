@@ -24,6 +24,7 @@ import {
   drawHandmarkOverlay,
   type HandmarkVisibility,
 } from "@/lib/holistic/handmarkOverlay";
+import { nextHolisticVideoTimestamp } from "@/lib/holistic/videoTimestamp";
 import {
   preferredRecordingMimeType,
   serverVideoEnabled,
@@ -124,6 +125,8 @@ function AiPracticeContent() {
   const [serverConsent, setServerConsent] = useState(false);
   const [serverDiagnostics, setServerDiagnostics] = useState<ServerVideoResponse<AttemptResult> | null>(null);
   const [handmarkVisibility, setHandmarkVisibility] = useState<HandmarkVisibility>("none");
+  const [sampleHandmarkEnabled, setSampleHandmarkEnabled] = useState(false);
+  const [sampleHandmarkVisibility, setSampleHandmarkVisibility] = useState<HandmarkVisibility>("none");
   const savedAttemptRef = useRef<string | null>(null);
 
   const capabilities = useQuery({
@@ -224,7 +227,6 @@ function AiPracticeContent() {
   function startHandmarkPreview(landmarker: HolisticLandmarker) {
     if (handmarkRafRef.current !== null) cancelAnimationFrame(handmarkRafRef.current);
     let lastSampleAt = 0;
-    let lastTimestamp = 0;
     const previewIntervalMs = 1000 / 12;
 
     const tick = () => {
@@ -238,10 +240,8 @@ function AiPracticeContent() {
         video.videoWidth > 0
       ) {
         lastSampleAt = now;
-        const frameTime = Math.max(now, lastTimestamp + 1);
-        lastTimestamp = frameTime;
         try {
-          renderHandmark(landmarker.detectForVideo(video, frameTime));
+          renderHandmark(landmarker.detectForVideo(video, nextHolisticVideoTimestamp(now)));
         } catch (frameError) {
           console.warn("Lỗi handmark preview:", frameError);
         }
@@ -268,6 +268,9 @@ function AiPracticeContent() {
         if (!preferredRecordingMimeType()) {
           throw new Error("Trình duyệt này chưa hỗ trợ định dạng ghi video WebM/MP4.");
         }
+        const { loadHolisticLandmarker } = await import("@/lib/holistic/extractor");
+        const landmarker = await loadHolisticLandmarker();
+        startHandmarkPreview(landmarker);
         setPhase("ready");
         return;
       }
@@ -331,7 +334,6 @@ function AiPracticeContent() {
     const beganAt = performance.now();
     const frameIntervalMs = 1000 / TARGET_SAMPLE_FPS;
     let lastSampleAt = 0;
-    let lastTimestamp = 0;
 
     const tick = () => {
       const video = videoRef.current;
@@ -349,11 +351,8 @@ function AiPracticeContent() {
         video.videoWidth > 0
       ) {
         lastSampleAt = now;
-        // MediaPipe detectForVideo yêu cầu timestamp tăng đơn điệu — ép tăng ít nhất 1ms mỗi khung.
-        const frameTime = Math.max(now, lastTimestamp + 1);
-        lastTimestamp = frameTime;
         try {
-          const landmarkResult = landmarker.detectForVideo(video, frameTime);
+          const landmarkResult = landmarker.detectForVideo(video, nextHolisticVideoTimestamp(now));
           recorder.addFrame(landmarkResult);
           renderHandmark(landmarkResult);
         } catch (frameErr) {
@@ -763,7 +762,37 @@ function AiPracticeContent() {
             placeholderVideo={item.placeholderVideo}
             title={`Video mẫu — ${item.label}`}
             onRatioChange={setVideoRatio}
+            handmarkEnabled={sampleHandmarkEnabled}
+            onHandmarkVisibilityChange={setSampleHandmarkVisibility}
           />
+          <div className="flex flex-wrap items-center gap-2 px-2 pb-2 pt-4">
+            <button
+              type="button"
+              onClick={() => setSampleHandmarkEnabled((enabled) => !enabled)}
+              aria-pressed={sampleHandmarkEnabled}
+              className={`btn flex-1 ${sampleHandmarkEnabled ? "btn-secondary" : "btn-primary"}`}
+            >
+              {sampleHandmarkEnabled ? "Tắt handmark video mẫu" : "Bật handmark video mẫu"}
+            </button>
+            {sampleHandmarkEnabled && (
+              <span
+                className={`chip ${
+                  sampleHandmarkVisibility === "two"
+                    ? "bg-success-50 text-success-700"
+                    : sampleHandmarkVisibility === "one"
+                      ? "bg-sun-50 text-sun-800"
+                      : "bg-ink-100 text-ink-600"
+                }`}
+                role="status"
+              >
+                {sampleHandmarkVisibility === "two"
+                  ? "Đã thấy 2 tay"
+                  : sampleHandmarkVisibility === "one"
+                    ? "Đã thấy 1 tay"
+                    : "Đang tìm bàn tay"}
+              </span>
+            )}
+          </div>
         </section>
 
         <section className="card overflow-hidden p-3" aria-labelledby="cam-title">
@@ -778,7 +807,7 @@ function AiPracticeContent() {
                 Đang ghi {(elapsedMs / 1000).toFixed(1)}s
               </span>
             )}
-            {processingMode === "device" && phase !== "idle" && phase !== "loading-model" && (
+            {phase !== "idle" && phase !== "loading-model" && (
               <span
                 className={`chip ${
                   handmarkVisibility === "two"
