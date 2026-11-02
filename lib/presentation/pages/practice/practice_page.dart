@@ -202,6 +202,8 @@ class _PracticePageState extends ConsumerState<PracticePage>
   late final HandmarkTracker _handmarkTracker;
   StreamSubscription<HandmarkSnapshot>? _handmarkSubscription;
   HandmarkSnapshot? _handmarkSnapshot;
+  int _lastHandmarkUpdateAtMs = 0;
+  bool _handmarkStreamingDuringRecording = false;
   String? _handmarkError;
   bool _sampleHandmarkEnabled = false;
   int _sampleHandmarkCount = 0;
@@ -237,6 +239,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
         if (!mounted) return;
         setState(() {
           _handmarkSnapshot = snapshot;
+          _lastHandmarkUpdateAtMs = DateTime.now().millisecondsSinceEpoch;
           _handmarkError = null;
         });
       },
@@ -517,14 +520,33 @@ class _PracticePageState extends ConsumerState<PracticePage>
       if (_useServerVideoForSession) {
         try {
           await _stopHandmarkStream(controller);
-          // CameraX trên một số máy Samsung xoay preview 90 độ và làm ML Kit
-          // lỗi khi phải chạy đồng thời Preview + VideoCapture + ImageAnalysis.
-          // Handmark đã được cập nhật liên tục ở màn hình chờ; trong 3 giây ghi
-          // hình ta giữ overlay cuối cùng, rồi bật lại stream ngay khi dừng quay.
+          // Dừng ImageAnalysis độc lập trước, sau đó khởi động VideoCapture
+          // kèm callback frame. Đây là luồng được camera 0.12.x hỗ trợ để
+          // Preview + VideoCapture + ImageAnalysis dùng chung một CameraX session;
+          // nếu chỉ gọi startVideoRecording() thì handmark sẽ giữ nguyên frame cuối.
           await controller.lockCaptureOrientation(DeviceOrientation.portraitUp);
-          await controller.startVideoRecording();
+          try {
+            await controller.startVideoRecording(
+              onAvailable: (image) => _processHandmarkFrame(image, controller),
+            );
+            _handmarkStreamingDuringRecording = true;
+          } catch (simultaneousError, stackTrace) {
+            // Một số camera không hỗ trợ bộ ba ImageCapture +
+            // VideoCapture + ImageAnalysis. Khi đó quay theo luồng tương
+            // thích cũ và ẩn overlay thay vì giữ cứng handmark cuối.
+            developer.log(
+              'Camera không hỗ trợ vừa quay vừa chạy handmark; dùng fallback',
+              name: 'signlight.handmark',
+              error: simultaneousError,
+              stackTrace: stackTrace,
+            );
+            _handmarkStreamingDuringRecording = false;
+            _handmarkSnapshot = null;
+            await controller.startVideoRecording();
+          }
           if (mounted) setState(() => _handmarkError = null);
         } catch (error) {
+          _handmarkStreamingDuringRecording = false;
           await _startHandmarkStream(controller);
           _showMessage('Không thể bắt đầu quay video: $error');
           return;
@@ -605,6 +627,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
         throw StateError('Camera không có video đang quay.');
       }
       final recording = await controller.stopVideoRecording();
+      _handmarkStreamingDuringRecording = false;
       // Chờ CameraX gắn lại ImageAnalysis trước khi cho phép lượt kế tiếp;
       // nếu chạy nền, nút "Luyện lại" có thể bắt đầu ghi đúng lúc stream đang
       // khởi tạo và làm cả camera lẫn handmark rơi vào trạng thái lỗi.
@@ -628,6 +651,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
         _quotaRemaining = attempt.quotaRemaining;
       }
     } catch (error) {
+      _handmarkStreamingDuringRecording = false;
       if (controller != null) await _startHandmarkStream(controller);
       assessment = AiAssessmentResult(
         isCorrect: false,
@@ -1493,13 +1517,14 @@ class _PracticePageState extends ConsumerState<PracticePage>
   }
 
   Widget _buildCameraCallPane() {
+    final handmarkSnapshot = _visibleHandmarkSnapshot;
     return Stack(
       fit: StackFit.expand,
       children: [
         _buildCameraFeed(),
         Positioned.fill(
           child: IgnorePointer(
-            child: CustomPaint(painter: HandmarkPainter(_handmarkSnapshot)),
+            child: CustomPaint(painter: HandmarkPainter(handmarkSnapshot)),
           ),
         ),
         CustomPaint(
@@ -1524,14 +1549,18 @@ class _PracticePageState extends ConsumerState<PracticePage>
             top: 10,
             right: 10,
             child: _CallLabel(
-              icon: _handmarkSnapshot?.visibleHandCount == 2
+              icon: handmarkSnapshot?.visibleHandCount == 2
                   ? Icons.pan_tool_alt_rounded
                   : Icons.back_hand_outlined,
-              text: _handmarkError != null
+              text:
+                  _phase == PracticePhase.recording &&
+                      !_handmarkStreamingDuringRecording
+                  ? 'Handmark tạm dừng'
+                  : _handmarkError != null
                   ? 'Handmark lỗi'
-                  : _handmarkSnapshot?.visibleHandCount == 2
+                  : handmarkSnapshot?.visibleHandCount == 2
                   ? 'Handmark · 2 tay'
-                  : _handmarkSnapshot?.visibleHandCount == 1
+                  : handmarkSnapshot?.visibleHandCount == 1
                   ? 'Handmark · 1 tay'
                   : 'Handmark · chưa thấy tay',
               compact: true,
@@ -1561,6 +1590,16 @@ class _PracticePageState extends ConsumerState<PracticePage>
           ),
       ],
     );
+  }
+
+  HandmarkSnapshot? get _visibleHandmarkSnapshot {
+    if (_phase != PracticePhase.recording) return _handmarkSnapshot;
+    if (!_handmarkStreamingDuringRecording) return null;
+
+    // Không vẽ một bộ xương tay cũ nếu callback frame bị ngắt.
+    final ageMs =
+        DateTime.now().millisecondsSinceEpoch - _lastHandmarkUpdateAtMs;
+    return ageMs <= 600 ? _handmarkSnapshot : null;
   }
 
   /// Card kết quả nhận diện chuẩn theo giao diện Web (Image #44)
