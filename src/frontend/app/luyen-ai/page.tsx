@@ -18,6 +18,12 @@ import {
   TARGET_SAMPLE_FPS,
 } from "@/lib/holistic/featureSchema";
 import type { LocalInferenceResult } from "@/lib/ai/localRecognizer";
+import type { HolisticLandmarker, HolisticLandmarkerResult } from "@mediapipe/tasks-vision";
+import {
+  clearHandmarkOverlay,
+  drawHandmarkOverlay,
+  type HandmarkVisibility,
+} from "@/lib/holistic/handmarkOverlay";
 import {
   preferredRecordingMimeType,
   serverVideoEnabled,
@@ -93,6 +99,10 @@ function AiPracticeContent() {
     && Boolean(requestedSignId && requestedLessonId && returnTo);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const handmarkCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const handmarkRafRef = useRef<number | null>(null);
+  const handmarkVisibilityRef = useRef<HandmarkVisibility>("none");
+  const deviceRecordingActiveRef = useRef(false);
   const recorderRef = useRef<import("@/lib/holistic/extractor").SignSequenceRecorder | null>(null);
   const rafRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -113,6 +123,7 @@ function AiPracticeContent() {
   const [processingMode, setProcessingMode] = useState<ProcessingMode>("device");
   const [serverConsent, setServerConsent] = useState(false);
   const [serverDiagnostics, setServerDiagnostics] = useState<ServerVideoResponse<AttemptResult> | null>(null);
+  const [handmarkVisibility, setHandmarkVisibility] = useState<HandmarkVisibility>("none");
   const savedAttemptRef = useRef<string | null>(null);
 
   const capabilities = useQuery({
@@ -155,6 +166,9 @@ function AiPracticeContent() {
   const stopCamera = useCallback(() => {
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
+    if (handmarkRafRef.current !== null) cancelAnimationFrame(handmarkRafRef.current);
+    handmarkRafRef.current = null;
+    deviceRecordingActiveRef.current = false;
     const mediaRecorder = mediaRecorderRef.current;
     if (mediaRecorder && mediaRecorder.state !== "inactive") {
       mediaRecorder.stop();
@@ -164,6 +178,9 @@ function AiPracticeContent() {
     serverFinishingRef.current = false;
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
+    clearHandmarkOverlay(handmarkCanvasRef.current);
+    handmarkVisibilityRef.current = "none";
+    setHandmarkVisibility("none");
   }, []);
 
   useEffect(() => stopCamera, [stopCamera]);
@@ -192,6 +209,46 @@ function AiPracticeContent() {
     setLocalInference(null);
     setServerDiagnostics(null);
     setError(null);
+  }
+
+  function renderHandmark(result: HolisticLandmarkerResult) {
+    const video = videoRef.current;
+    if (!video) return;
+    const visibility = drawHandmarkOverlay(handmarkCanvasRef.current, video, result);
+    if (visibility !== handmarkVisibilityRef.current) {
+      handmarkVisibilityRef.current = visibility;
+      setHandmarkVisibility(visibility);
+    }
+  }
+
+  function startHandmarkPreview(landmarker: HolisticLandmarker) {
+    if (handmarkRafRef.current !== null) cancelAnimationFrame(handmarkRafRef.current);
+    let lastSampleAt = 0;
+    let lastTimestamp = 0;
+    const previewIntervalMs = 1000 / 12;
+
+    const tick = () => {
+      const video = videoRef.current;
+      const now = performance.now();
+      if (
+        !deviceRecordingActiveRef.current &&
+        video &&
+        now - lastSampleAt >= previewIntervalMs &&
+        video.readyState >= 2 &&
+        video.videoWidth > 0
+      ) {
+        lastSampleAt = now;
+        const frameTime = Math.max(now, lastTimestamp + 1);
+        lastTimestamp = frameTime;
+        try {
+          renderHandmark(landmarker.detectForVideo(video, frameTime));
+        } catch (frameError) {
+          console.warn("Lỗi handmark preview:", frameError);
+        }
+      }
+      handmarkRafRef.current = requestAnimationFrame(tick);
+    };
+    handmarkRafRef.current = requestAnimationFrame(tick);
   }
 
   async function startCamera() {
@@ -228,6 +285,7 @@ function AiPracticeContent() {
       if (!landmarkerResult || !recognizerResult) {
         throw new Error("Không tải được mô hình nhận dạng.");
       }
+      startHandmarkPreview(landmarkerResult);
       setPhase("ready");
     } catch (caught) {
       stopCamera();
@@ -257,6 +315,7 @@ function AiPracticeContent() {
       setError("Mô hình luyện tập chưa sẵn sàng. Hãy khởi động camera trước.");
       return;
     }
+    deviceRecordingActiveRef.current = true;
     setPhase("recording");
 
     try {
@@ -294,7 +353,9 @@ function AiPracticeContent() {
         const frameTime = Math.max(now, lastTimestamp + 1);
         lastTimestamp = frameTime;
         try {
-          recorder.addFrame(landmarker.detectForVideo(video, frameTime));
+          const landmarkResult = landmarker.detectForVideo(video, frameTime);
+          recorder.addFrame(landmarkResult);
+          renderHandmark(landmarkResult);
         } catch (frameErr) {
           console.warn("Lỗi MediaPipe detectForVideo:", frameErr);
         }
@@ -310,6 +371,7 @@ function AiPracticeContent() {
 
       rafRef.current = requestAnimationFrame(tick);
     } catch (caught) {
+      deviceRecordingActiveRef.current = false;
       setPhase("ready");
       setError(caught instanceof Error ? caught.message : "Không tải được mô hình luyện tập.");
     }
@@ -415,6 +477,7 @@ function AiPracticeContent() {
     }
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
+    deviceRecordingActiveRef.current = false;
 
     const recorder = recorderRef.current;
     if (!recorder) return;
@@ -704,8 +767,8 @@ function AiPracticeContent() {
         </section>
 
         <section className="card overflow-hidden p-3" aria-labelledby="cam-title">
-          <div className="flex items-center justify-between px-2 pb-3 pt-1">
-            <h2 id="cam-title" className="text-sm font-bold text-grape-600">
+          <div className="flex flex-wrap items-center gap-2 px-2 pb-3 pt-1">
+            <h2 id="cam-title" className="mr-auto text-sm font-bold text-grape-600">
               Camera của bạn
             </h2>
             {phase === "recording" && (
@@ -713,6 +776,23 @@ function AiPracticeContent() {
                 <span className="h-2 w-2 animate-pulse rounded-full bg-danger-500" aria-hidden="true" />
                 {/* Đồng hồ đếm để người học biết nhịp độ mong đợi (~2 giây) — BR-A120. */}
                 Đang ghi {(elapsedMs / 1000).toFixed(1)}s
+              </span>
+            )}
+            {processingMode === "device" && phase !== "idle" && phase !== "loading-model" && (
+              <span
+                className={`chip ${
+                  handmarkVisibility === "two"
+                    ? "bg-success-50 text-success-700"
+                    : handmarkVisibility === "one"
+                      ? "bg-sun-50 text-sun-800"
+                      : "bg-ink-100 text-ink-600"
+                }`}
+              >
+                {handmarkVisibility === "two"
+                  ? "Handmark · 2 tay"
+                  : handmarkVisibility === "one"
+                    ? "Handmark · 1 tay"
+                    : "Handmark · chưa thấy tay"}
               </span>
             )}
           </div>
@@ -733,6 +813,11 @@ function AiPracticeContent() {
               muted
               playsInline
               className="h-full w-full scale-x-[-1] rounded-3xl object-cover"
+            />
+            <canvas
+              ref={handmarkCanvasRef}
+              className="pointer-events-none absolute inset-0 h-full w-full scale-x-[-1]"
+              aria-hidden="true"
             />
             {phase === "idle" && (
               <div className="absolute inset-0 grid place-items-center">

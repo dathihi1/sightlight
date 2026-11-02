@@ -218,7 +218,7 @@ sequenceDiagram
     API->>API: 1) kiểm quyền  2) kiểm hạn mức (FR-30)<br/>3) kiểm targetSignId ∈ vốn AI (BR-A111)
     API->>AI: POST /infer {features}   [timeout 5s + circuit breaker]
     AI-->>API: {label, confidence, top3, status}
-    API->>API: đối chiếu nhãn ↔ sign.id, áp ngưỡng<br/>+ biên tin cậy (BR-A112/113)
+    API->>API: đối chiếu Top-1 ↔ sign.id<br/>khớp = đúng; không khớp mới áp ngưỡng/biên (BR-A112/113)
     API->>DB: ghi sign_attempt (CHỈ số liệu)
     API->>DB: cập nhật user_sign_knowledge (SM-2)
     API-->>BR: {verified, status, confidence, top3, qualityHints}
@@ -387,13 +387,12 @@ PostgreSQL. **Không** cần đổi kiến trúc trong cả ba bước.
   2. **Nhánh dự phòng (Server Fallback - Phương án B):** Duy trì dịch vụ AI Python FastAPI (`POST /api/infer/features`) trên mạng nội bộ Docker. Backend Java gọi sang dịch vụ này khi client cần đối soát hoặc khi thiết bị người dùng không hỗ trợ WASM SIMD.
 
 - **ADR-09 — 🤖 Backend Java quyết định đúng/sai, dịch vụ AI chỉ trả nhãn.** *(mới ở v0.2)*
-  *Bối cảnh:* "đúng hay sai" phụ thuộc ngưỡng tin cậy, biên giữa top1/top2, và ký hiệu mục tiêu — đều là
-  **luật nghiệp vụ** có thể phải điều chỉnh mà không huấn luyện lại mô hình.
+  *Bối cảnh:* "đúng hay sai" lấy nhãn Top-1 so với ký hiệu mục tiêu; ngưỡng và biên chỉ phân loại phản hồi
+  khi Top-1 không khớp. Đây là **luật nghiệp vụ** có thể phải điều chỉnh mà không huấn luyện lại mô hình.
   *Quyết định:* dịch vụ AI trả `{label, confidence, top3, status}`; backend áp `BR-A112`/`BR-A113` và quyết
   định `verified`.
-  *Hệ quả:* hiệu chỉnh ngưỡng chỉ cần đổi cấu hình backend (quan trọng vì ngưỡng **chắc chắn phải chỉnh**
-  sau khi đo trên webcam thật — rủi ro R-02); đổi lại logic bị chia giữa hai tiến trình nên **phải viết rõ
-  ranh giới** và có test hai phía.
+  *Hệ quả:* Top-1 khớp luôn được xác nhận kể cả confidence thấp; hiệu chỉnh ngưỡng chỉ thay đổi thông điệp
+  của các lượt Top-1 không khớp. Logic bị chia giữa hai tiến trình nên **phải viết rõ ranh giới** và có test hai phía.
 
 - **ADR-10 — 🤖 Dịch vụ AI không có trạng thái và không có CSDL.** *(mới ở v0.2)*
   *Bối cảnh:* muốn scale ngang được, thay mô hình dễ, và không tạo ra nguồn sự thật thứ hai.

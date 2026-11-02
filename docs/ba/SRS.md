@@ -943,7 +943,8 @@ flowchart LR
   - 4a. **Không thấy bàn tay** trong > 50% số khung → dừng, không gửi suy luận, hiện gợi ý chất lượng (FR-42).
   - 5a. **Quá ngắn** (< 8 khung hữu ích hoặc < 0,8 giây) → trạng thái `too_short`, không tính vào hạn mức.
   - 5b. **Quá dài** (> 5 giây) → tự dừng và xử lý phần đã thu.
-  - 6a. **Độ tin cậy dưới ngưỡng** → trạng thái `low_confidence`, coi là **chưa đúng**, kèm gợi ý.
+  - 6a. Khi Top-1 **không khớp mục tiêu** và độ tin cậy dưới ngưỡng → trạng thái `low_confidence`, coi là
+    **chưa đúng**, kèm gợi ý. Nếu Top-1 khớp mục tiêu thì luôn tính đúng, không phụ thuộc confidence.
   - 6b. **Nhận đúng nhưng là ký hiệu khác** với mục tiêu → trạng thái `wrong_target`, nêu rõ "Hệ thống thấy
     bạn đang ký hiệu *{X}*" — phản hồi này có giá trị dạy học cao hơn chỉ nói "sai".
   - 6c. Dịch vụ AI không phản hồi / lỗi → thông báo thân thiện + nút thử lại; **không tính** vào hạn mức;
@@ -964,12 +965,10 @@ flowchart LR
 - **Quy tắc nghiệp vụ:**
   - **BR-A111:** chỉ hiện chức năng chấm AI cho ký hiệu **có trong vốn AI**. Vốn này lấy từ
     `GET /ai/labels` của dịch vụ AI, **cache và làm mới khi đổi phiên bản mô hình** (FR-44).
-  - **BR-A112 — ngưỡng chấp nhận:** đúng khi `confidence ≥ ngưỡng cấu hình` **và** nhãn dự đoán khớp
-    `targetSignId`. Ngưỡng **để trong cấu hình, không hard-code** — repo dùng `confidence_threshold = 0.55`
-    trong config nhưng khuyến nghị **0.25 kèm biên 0.03** khi chạy demo thực tế. **Phải hiệu chỉnh lại
-    trên webcam thật trước GATE-4** (rủi ro R-02 của BRD).
-  - **BR-A113 — biên tin cậy:** nếu `confidence(top1) − confidence(top2) < biên cấu hình` → coi là
-    `uncertain_intent`, **không** tính là đúng, vì mô hình đang phân vân giữa hai ký hiệu.
+  - **BR-A112 — Top-1 quyết định:** nếu nhãn Top-1 khớp `targetSignId` thì `verified = true` bất kể
+    confidence cao hay thấp. Ngưỡng cấu hình chỉ dùng để phân loại phản hồi khi Top-1 không khớp.
+  - **BR-A113 — biên tin cậy:** khi Top-1 không khớp, nếu `confidence(top1) − confidence(top2) < biên
+    cấu hình` → coi là `uncertain_intent`. Luật biên không được phủ định một Top-1 đã khớp mục tiêu.
   - **BR-A114:** kết quả AI **không bao giờ** làm người học **mất** tiến độ đã có. Thử sai chỉ khiến lịch ôn
     tập đưa ký hiệu đó lại sớm hơn (FR-17), không trừ điểm, không hạ sao.
   - **BR-A115:** `SIGN_PERFORMANCE` trong bài học **không ảnh hưởng điểm bài mốc** (cùng lý do BR-A22): vì
@@ -981,7 +980,8 @@ flowchart LR
   - **AC-41.1:** Given ký hiệu "Cái bàn" (có trong vốn AI) và người học thực hiện đúng — When chấm — Then `verified = true`, ghi 1 `sign_attempt`, `confidence` được lưu.
   - **AC-41.2:** Given ký hiệu **không** nằm trong vốn AI — When mở bài luyện — Then **không có** nút chấm AI, chỉ có chế độ Gương.
   - **AC-41.3:** Given người học thực hiện ký hiệu **khác** với mục tiêu — When chấm — Then trạng thái `wrong_target` và thông điệp nêu **tên ký hiệu hệ thống nhận được**.
-  - **AC-41.4:** Given độ tin cậy top1 = 0.30 và top2 = 0.29 (biên 0.01 < 0.03) — When chấm — Then `uncertain_intent`, **không** tính đúng.
+  - **AC-41.4:** Given Top-1 không khớp mục tiêu, độ tin cậy top1 = 0.30 và top2 = 0.29 (biên 0.01 < 0.03)
+    — When chấm — Then `uncertain_intent`, **không** tính đúng. Nếu Top-1 khớp mục tiêu thì `ok`.
   - **AC-41.5:** Given động tác chỉ dài 0,5 giây — When kết thúc — Then `too_short`, **không** trừ hạn mức lượt thử.
   - **AC-41.6:** Given dịch vụ AI trả lỗi 500 — When người học thử — Then thông báo thân thiện, **không** trừ hạn mức, **không** đánh dấu ký hiệu là sai.
   - **AC-41.7:** Given thử sai 5 lần liên tiếp một ký hiệu — When xem tiến độ — Then **không** mất sao, **không** mất streak; ký hiệu đó được xếp ôn lại sớm hơn.
@@ -1019,6 +1019,8 @@ flowchart LR
   - **AC-42.2:** Given ghi liên tục 6 giây — When quan sát — Then tự dừng ở **5 giây** và xử lý phần đã thu.
   - **AC-42.3:** Given đang ghi — When quan sát giao diện — Then có đồng hồ đếm thời lượng.
   - **AC-42.4:** Given chỉ thu được 6 khung hữu ích — When kết thúc — Then `not_enough_frames` kèm gợi ý "Thực hiện trọn động tác trong khoảng hai giây."
+  - **AC-42.5:** Given xử lý trên thiết bị và camera đang bật — When đưa một/hai tay vào khung — Then
+    giao diện vẽ handmark khớp vị trí bàn tay và báo trạng thái 1 tay/2 tay theo thời gian thực.
 
 ---
 

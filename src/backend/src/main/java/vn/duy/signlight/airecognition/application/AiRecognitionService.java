@@ -306,11 +306,11 @@ public class AiRecognitionService {
      * Áp luật nghiệp vụ lên xác suất của mô hình.
      *
      * <ul>
-     *   <li>BR-A112 — đúng khi {@code confidence >= ngưỡng} <b>và</b> nhãn khớp mục tiêu;</li>
-     *   <li>BR-A113 — {@code top1 − top2 < biên} thì coi là {@code uncertain_intent}, dù top1 cao.</li>
+     *   <li>Nhãn Top-1 khớp mục tiêu thì đúng, không phụ thuộc confidence hay biên Top-1/Top-2;</li>
+     *   <li>Ngưỡng confidence và biên chỉ phân loại phản hồi khi Top-1 không khớp mục tiêu.</li>
      * </ul>
      */
-    private Verdict decide(AiModelVersion version, AiSignLabel target,
+    Verdict decide(AiModelVersion version, AiSignLabel target,
             AiInferenceClient.InferenceResponse inference) {
         List<AiInferenceClient.Prediction> predictions =
                 inference.top3() == null ? List.of() : inference.top3();
@@ -349,14 +349,14 @@ public class AiRecognitionService {
         double minMargin = version.getConfidenceMargin().doubleValue();
 
         String status;
-        if (margin < minMargin) {
+        if (matchesTarget) {
+            status = STATUS_OK;
+        } else if (margin < minMargin) {
             status = STATUS_UNCERTAIN_INTENT;
         } else if (confidence < threshold) {
             status = STATUS_LOW_CONFIDENCE;
-        } else if (!matchesTarget) {
-            status = STATUS_WRONG_TARGET;
         } else {
-            status = STATUS_OK;
+            status = STATUS_WRONG_TARGET;
         }
 
         return new Verdict(status, STATUS_OK.equals(status), predictedSignId, top1.label(),
@@ -553,7 +553,7 @@ public class AiRecognitionService {
     }
 
     /** Kết luận nội bộ trước khi dựng DTO. */
-    private record Verdict(
+    record Verdict(
             String status,
             boolean verified,
             UUID predictedSignId,

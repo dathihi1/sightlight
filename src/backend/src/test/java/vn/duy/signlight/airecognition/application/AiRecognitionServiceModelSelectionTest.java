@@ -14,6 +14,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import vn.duy.signlight.airecognition.domain.AiModelVersion;
+import vn.duy.signlight.airecognition.domain.AiSignLabel;
 import vn.duy.signlight.airecognition.repository.AiDailyQuotaRepository;
 import vn.duy.signlight.airecognition.repository.AiSignLabelRepository;
 import vn.duy.signlight.airecognition.repository.SignAttemptRepository;
@@ -30,6 +31,7 @@ class AiRecognitionServiceModelSelectionTest {
     private static final String MODEL_400 = "vsl-mvp400-v2-lite-transformer";
 
     private AiModelSyncService modelSyncService;
+    private AiSignLabelRepository labelRepository;
     private AuthService authService;
     private AiRecognitionService service;
     private UUID userId;
@@ -37,11 +39,12 @@ class AiRecognitionServiceModelSelectionTest {
     @BeforeEach
     void setUp() {
         modelSyncService = mock(AiModelSyncService.class);
+        labelRepository = mock(AiSignLabelRepository.class);
         authService = mock(AuthService.class);
         service = new AiRecognitionService(
                 mock(AiInferenceClient.class),
                 modelSyncService,
-                mock(AiSignLabelRepository.class),
+                labelRepository,
                 mock(SignAttemptRepository.class),
                 mock(AiDailyQuotaRepository.class),
                 mock(ContentTreeService.class),
@@ -85,6 +88,42 @@ class AiRecognitionServiceModelSelectionTest {
         assertEquals(MODEL_30, compact.modelVersion());
         assertEquals(List.of(30), compact.availableModelSizes());
         assertEquals("10101", error.getErrorCode());
+    }
+
+    @Test
+    void matchingTop1IsVerifiedEvenBelowThresholdAndMargin() {
+        AiModelVersion version = model(MODEL_30, 30);
+        UUID signId = UUID.randomUUID();
+        AiSignLabel target = AiSignLabel.builder()
+                .id(UUID.randomUUID())
+                .modelVersionId(version.getId())
+                .labelIndex((short) 0)
+                .rawLabel("Anh")
+                .stableSignId("anh")
+                .signId(signId)
+                .enabled(true)
+                .build();
+        when(labelRepository.findByModelVersionId(version.getId())).thenReturn(List.of(target));
+
+        var inference = new AiInferenceClient.InferenceResponse(
+                "ok",
+                "Anh",
+                "anh",
+                0.21,
+                List.of(
+                        new AiInferenceClient.Prediction("Anh", "anh", 0.21),
+                        new AiInferenceClient.Prediction("Bạn", "ban", 0.20)),
+                null,
+                10.0,
+                false,
+                false);
+
+        var verdict = service.decide(version, target, inference);
+
+        assertEquals(true, verdict.verified());
+        assertEquals("ok", verdict.status());
+        assertEquals(signId, verdict.predictedSignId());
+        assertEquals(BigDecimal.valueOf(0.210).setScale(3), verdict.confidence());
     }
 
     private AiModelVersion model(String versionCode, int classes) {

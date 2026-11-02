@@ -242,8 +242,8 @@ Bộ case này phủ **FR-01 → FR-46** và **75 endpoint**. Nguồn suy:
 | TC-FR41-08 | FR-41 / AC-41.2 | Ký hiệu **ngoài** 30 nhãn (ví dụ "Xin chào") | 1) Mở trang chi tiết ký hiệu đó | — | **Không** có nút "Luyện với AI"; chỉ có chế độ Gương + chú thích "chưa có chấm tự động" | | | Critical |
 | TC-FR41-09 | FR-41 / AC-41.2 | Như trên | 1) Gọi thẳng `POST /ai/attempts` với `targetSignId` đó | — | `10201` | | | Blocker |
 | TC-FR41-10 | FR-41 / AC-41.3 | Đang luyện "Cái bàn" | 1) Cố tình thực hiện ký hiệu "Cái cửa" | — | `status = wrong_target`; phản hồi **nêu tên** "Cái cửa"; có `top3` | | | Critical |
-| TC-FR41-11 | FR-41 / AC-41.4 (biên) | Bật giả lập trả top1 = 0.30, top2 = 0.29 | 1) Luyện 1 lượt | biên = 0.01 < 0.03 | `status = uncertain_intent`; `verified = false` | | | Critical |
-| TC-FR41-12 | FR-41 / BR-A112 (biên) | `confidence_threshold = 0.55` | 1) Giả lập `confidence` lần lượt 0.54 · 0.55 · 0.56 với nhãn **đúng** | — | 0.54 → `low_confidence`; **0.55 và 0.56 → `ok`** | | | Critical |
+| TC-FR41-11 | FR-41 / AC-41.4 (biên) | Bật giả lập trả Top-1 **không khớp mục tiêu**, top1 = 0.30, top2 = 0.29 | 1) Luyện 1 lượt | biên = 0.01 < 0.03 | `status = uncertain_intent`; `verified = false` | | | Critical |
+| TC-FR41-12 | FR-41 / BR-A112 | `confidence_threshold = 0.55` | 1) Giả lập `confidence` lần lượt 0.21 · 0.54 · 0.56 với nhãn Top-1 **đúng** | — | Cả ba → `status = ok`, `verified = true`; confidence vẫn được lưu để chẩn đoán | | | Critical |
 | TC-FR41-13 | FR-41 / AC-41.7 | Tài khoản có streak = 5, sao mốc = 12 | 1) Thử sai ký hiệu **5 lần liên tiếp**; 2) Kiểm trang tiến độ | — | streak **vẫn 5**, sao **vẫn 12**; ký hiệu đó có `due_at` sớm hơn trước | | | Critical |
 | TC-FR41-14 | FR-41 / AC-41.8 | — | 1) Mở SCR-31; 2) Rà toàn bộ nội dung chữ trên màn | — | Thấy **cả hai**: "không phải thông dịch viên" **và** dòng ghi nguồn VSL400 CC BY 4.0 | | | Critical |
 | TC-FR41-15 | FR-41 / BR-A115 | Bài mốc có chứa bước `SIGN_PERFORMANCE` | 1) Làm bài mốc, cố tình để bước AI sai; 2) Kiểm số sao | — | Bước AI **không ảnh hưởng** số sao của bài mốc | | | Major |
@@ -251,6 +251,7 @@ Bộ case này phủ **FR-01 → FR-46** và **75 endpoint**. Nguồn suy:
 | TC-FR41-17 | FR-41 / AC-44.4 | Client gửi `modelVersion` cũ | 1) Gọi `POST /ai/attempts` | `vsl-mvp30-v1` | `10101` + yêu cầu tải lại trang | | | Major |
 | TC-FR42-01 | FR-42 / AC-42.1 | Camera bật, **để tay ngoài khung** | 1) Bấm "Bắt đầu quay"; 2) Giữ 3 giây; 3) Bấm "Kết thúc"; 4) Theo dõi Network | — | `no_hand` hiển thị **tại chỗ**; **KHÔNG** có request `POST /ai/attempts`; hạn mức **không** giảm | | | Critical |
 | TC-FR42-02 | FR-42 / AC-42.2 (biên) | Đang ghi | 1) Ghi liên tục **6 giây** | — | Tự dừng ở **5 giây**, xử lý phần đã thu | | | Major |
+| TC-FR42-05 | FR-42 / AC-42.5 | Chọn xử lý trên thiết bị, camera đã bật | 1) Đưa một tay vào khung; 2) Đưa cả hai tay vào khung; 3) Di chuyển sát mép vùng crop | — | Handmark bám đúng bàn tay; trạng thái lần lượt báo 1 tay/2 tay; overlay vẫn thẳng hàng khi camera dùng `object-cover` và selfie mirror | | | Major |
 | TC-FR42-03 | FR-42 / AC-42.3 | Đang ghi | 1) Quan sát giao diện | — | Có đồng hồ đếm thời lượng đang chạy | | | Minor |
 | TC-FR42-04 | FR-42 / AC-42.4 (biên) | — | 1) Thu **7** khung hữu ích; 2) Thu **8** khung | — | 7 → `not_enough_frames` + gợi ý "trong khoảng hai giây"; 8 → xử lý bình thường | | | Major |
 | TC-FR42-05 | FR-42 / bảng trạng thái | — | 1) Lần lượt tạo 7 trạng thái ở bảng FR-42; 2) Kiểm cột `counted_against_quota` | — | Đúng bảng: `ok`/`wrong_target`/`low_confidence`/`uncertain_intent` → trừ; `no_hand`/`too_short`/`service_error` → **không** trừ | | | Critical |
