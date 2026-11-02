@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:dio/dio.dart';
@@ -8,9 +9,11 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:sightlight_flutter/core/constants/api_constants.dart';
+import 'package:sightlight_flutter/core/ai/handmark_tracker.dart';
 import 'package:sightlight_flutter/data/models/practice/practice_model.dart';
 import 'package:sightlight_flutter/presentation/providers/practice_provider.dart';
 import 'package:sightlight_flutter/presentation/widgets/sign_video_player.dart';
+import 'package:sightlight_flutter/presentation/widgets/handmark_painter.dart';
 
 /// Practice sign data representation matching web AI vocabulary items.
 class PracticeSignItem {
@@ -191,8 +194,14 @@ class _PracticePageState extends ConsumerState<PracticePage>
   int? _quotaRemaining;
   bool _quotaUnlimited = false;
   PracticeCallLayout _callLayout = PracticeCallLayout.split;
+  double _demoAspectRatio = 16 / 9;
   String _sessionId = 'ai-practice-session-001';
   String _modelVersion = 'vsl-mvp30-v2-lite-transformer';
+  late final HandmarkTracker _handmarkTracker;
+  HandmarkSnapshot? _handmarkSnapshot;
+  String? _handmarkError;
+  bool _sampleHandmarkEnabled = false;
+  int _sampleHandmarkCount = 0;
 
   // Chỉ bật lại khi Flutter đã có MediaPipe Holistic native và tạo đúng
   // v2_holistic_subset 64x327. Không được dùng tensor tổng hợp từ pixel motion.
@@ -219,6 +228,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _handmarkTracker = HandmarkTracker();
     _scanController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
@@ -350,6 +360,9 @@ class _PracticePageState extends ConsumerState<PracticePage>
       camera,
       ResolutionPreset.medium,
       enableAudio: false,
+      imageFormatGroup: Platform.isAndroid
+          ? ImageFormatGroup.nv21
+          : ImageFormatGroup.bgra8888,
     );
 
     await oldController?.dispose();
@@ -363,6 +376,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
           _isCameraLoading = false;
           _cameraErrorMessage = null;
         });
+        await _startHandmarkStream(newController);
       }
     } catch (e) {
       await newController.dispose();
@@ -387,7 +401,59 @@ class _PracticePageState extends ConsumerState<PracticePage>
     _timer?.cancel();
     _scanController.dispose();
     _cameraController?.dispose();
+    unawaited(_handmarkTracker.close());
     super.dispose();
+  }
+
+  Future<void> _startHandmarkStream([CameraController? camera]) async {
+    final controller = camera ?? _cameraController;
+    if (controller == null ||
+        !controller.value.isInitialized ||
+        controller.value.isRecordingVideo ||
+        controller.value.isStreamingImages) {
+      return;
+    }
+    try {
+      await controller.startImageStream(
+        (image) => unawaited(_processHandmarkFrame(image, controller)),
+      );
+    } catch (error) {
+      if (mounted) setState(() => _handmarkError = error.toString());
+    }
+  }
+
+  Future<void> _stopHandmarkStream(CameraController controller) async {
+    if (!controller.value.isStreamingImages ||
+        controller.value.isRecordingVideo) {
+      return;
+    }
+    try {
+      await controller.stopImageStream();
+    } catch (_) {
+      // Camera có thể đã tự dừng stream khi đổi lens hoặc đổi lifecycle.
+    }
+  }
+
+  Future<void> _processHandmarkFrame(
+    CameraImage image,
+    CameraController controller,
+  ) async {
+    try {
+      final snapshot = await _handmarkTracker.process(
+        image,
+        controller.description,
+        controller.value.deviceOrientation,
+      );
+      if (!mounted || snapshot == null || controller != _cameraController) {
+        return;
+      }
+      setState(() {
+        _handmarkSnapshot = snapshot;
+        _handmarkError = null;
+      });
+    } catch (error) {
+      if (mounted) setState(() => _handmarkError = error.toString());
+    }
   }
 
   Future<void> _startPractice() async {
@@ -419,8 +485,13 @@ class _PracticePageState extends ConsumerState<PracticePage>
       }
       if (_useServerVideoForSession) {
         try {
-          await controller.startVideoRecording();
+          await _stopHandmarkStream(controller);
+          await controller.startVideoRecording(
+            onAvailable: (image) =>
+                unawaited(_processHandmarkFrame(image, controller)),
+          );
         } catch (error) {
+          await _startHandmarkStream(controller);
           _showMessage('Không thể bắt đầu quay video: $error');
           return;
         }
@@ -500,6 +571,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
         throw StateError('Camera không có video đang quay.');
       }
       final recording = await controller.stopVideoRecording();
+      unawaited(_startHandmarkStream(controller));
       if (!mounted) return;
       setState(() => _isAnalyzing = true);
       final bytes = await recording.readAsBytes();
@@ -519,6 +591,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
         _quotaRemaining = attempt.quotaRemaining;
       }
     } catch (error) {
+      if (controller != null) unawaited(_startHandmarkStream(controller));
       assessment = AiAssessmentResult(
         isCorrect: false,
         statusTitle: 'Chưa thể xử lý video',
@@ -1114,74 +1187,86 @@ class _PracticePageState extends ConsumerState<PracticePage>
               ],
             ),
             const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: AspectRatio(
-                aspectRatio: 3 / 4,
-                child: ColoredBox(
-                  color: const Color(0xFF080B12),
-                  child: split
-                      ? LayoutBuilder(
-                          builder: (context, constraints) {
-                            const dividerHeight = 2.0;
-                            final paneHeight =
-                                (constraints.maxHeight - dividerHeight) / 2;
-                            return Column(
+            LayoutBuilder(
+              builder: (context, stageConstraints) {
+                const dividerHeight = 2.0;
+                final stageWidth = stageConstraints.maxWidth;
+                final maxPaneHeight = MediaQuery.sizeOf(context).height * 0.70;
+                final webStylePaneHeight = (stageWidth / _demoAspectRatio)
+                    .clamp(180.0, maxPaneHeight);
+                final stageHeight = split
+                    ? (webStylePaneHeight * 2) + dividerHeight
+                    : stageWidth * 4 / 3;
+
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: stageHeight,
+                    child: ColoredBox(
+                      color: const Color(0xFF080B12),
+                      child: split
+                          ? LayoutBuilder(
+                              builder: (context, constraints) {
+                                final paneHeight = webStylePaneHeight;
+                                return Column(
+                                  children: [
+                                    SizedBox(
+                                      key: const ValueKey('split-demo-pane'),
+                                      width: double.infinity,
+                                      height: paneHeight,
+                                      child: ClipRect(
+                                        key: const ValueKey(
+                                          'split-demo-paint-clip',
+                                        ),
+                                        child: _buildDemoCallPane(currentSign),
+                                      ),
+                                    ),
+                                    Container(
+                                      height: dividerHeight,
+                                      color: Colors.white.withAlpha(30),
+                                    ),
+                                    SizedBox(
+                                      key: const ValueKey('split-camera-pane'),
+                                      width: double.infinity,
+                                      height: paneHeight,
+                                      child: ClipRect(
+                                        key: const ValueKey(
+                                          'split-camera-paint-clip',
+                                        ),
+                                        child: _buildCameraCallPane(),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            )
+                          : Stack(
+                              fit: StackFit.expand,
                               children: [
-                                SizedBox(
-                                  key: const ValueKey('split-demo-pane'),
-                                  width: double.infinity,
-                                  height: paneHeight,
-                                  child: ClipRect(
-                                    key: const ValueKey(
-                                      'split-demo-paint-clip',
+                                _buildCameraCallPane(),
+                                Positioned(
+                                  top: 14,
+                                  right: 14,
+                                  width: 132,
+                                  height: 176,
+                                  child: Material(
+                                    elevation: 10,
+                                    color: Colors.black,
+                                    borderRadius: BorderRadius.circular(16),
+                                    clipBehavior: Clip.antiAlias,
+                                    child: _buildDemoCallPane(
+                                      currentSign,
+                                      compact: true,
                                     ),
-                                    child: _buildDemoCallPane(currentSign),
-                                  ),
-                                ),
-                                Container(
-                                  height: dividerHeight,
-                                  color: Colors.white.withAlpha(30),
-                                ),
-                                SizedBox(
-                                  key: const ValueKey('split-camera-pane'),
-                                  width: double.infinity,
-                                  height: paneHeight,
-                                  child: ClipRect(
-                                    key: const ValueKey(
-                                      'split-camera-paint-clip',
-                                    ),
-                                    child: _buildCameraCallPane(),
                                   ),
                                 ),
                               ],
-                            );
-                          },
-                        )
-                      : Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            _buildCameraCallPane(),
-                            Positioned(
-                              top: 14,
-                              right: 14,
-                              width: 132,
-                              height: 176,
-                              child: Material(
-                                elevation: 10,
-                                color: Colors.black,
-                                borderRadius: BorderRadius.circular(16),
-                                clipBehavior: Clip.antiAlias,
-                                child: _buildDemoCallPane(
-                                  currentSign,
-                                  compact: true,
-                                ),
-                              ),
                             ),
-                          ],
-                        ),
-                ),
-              ),
+                    ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 12),
             Row(
@@ -1220,6 +1305,36 @@ class _PracticePageState extends ConsumerState<PracticePage>
                   ),
                 ],
               ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => setState(() {
+                  _sampleHandmarkEnabled = !_sampleHandmarkEnabled;
+                  if (!_sampleHandmarkEnabled) _sampleHandmarkCount = 0;
+                }),
+                icon: Icon(
+                  _sampleHandmarkEnabled
+                      ? Icons.visibility_off_outlined
+                      : Icons.back_hand_outlined,
+                  size: 18,
+                ),
+                label: Text(
+                  _sampleHandmarkEnabled
+                      ? 'Tắt handmark video mẫu'
+                      : 'Bật handmark video mẫu',
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: _sampleHandmarkEnabled
+                      ? const Color(0xFF2563EB)
+                      : null,
+                  padding: const EdgeInsets.symmetric(vertical: 11),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 12),
             Container(
@@ -1297,6 +1412,21 @@ class _PracticePageState extends ConsumerState<PracticePage>
               videoUrl: currentSign.videoUrl,
               height: constraints.maxHeight,
               compact: compact,
+              handmarkEnabled: _sampleHandmarkEnabled,
+              onHandmarkCountChanged: (count) {
+                if (!mounted || count == _sampleHandmarkCount) return;
+                setState(() => _sampleHandmarkCount = count);
+              },
+              onAspectRatioChanged: compact
+                  ? null
+                  : (aspectRatio) {
+                      if (!mounted ||
+                          aspectRatio <= 0 ||
+                          (aspectRatio - _demoAspectRatio).abs() < 0.01) {
+                        return;
+                      }
+                      setState(() => _demoAspectRatio = aspectRatio);
+                    },
             ),
             Positioned(
               top: compact ? 7 : 10,
@@ -1307,6 +1437,18 @@ class _PracticePageState extends ConsumerState<PracticePage>
                 compact: compact,
               ),
             ),
+            if (_sampleHandmarkEnabled)
+              Positioned(
+                top: compact ? 7 : 10,
+                right: compact ? 7 : 10,
+                child: _CallLabel(
+                  icon: Icons.back_hand_outlined,
+                  text: _sampleHandmarkCount > 0
+                      ? 'HM · $_sampleHandmarkCount tay'
+                      : 'HM · đang tìm tay',
+                  compact: compact,
+                ),
+              ),
           ],
         );
       },
@@ -1318,6 +1460,11 @@ class _PracticePageState extends ConsumerState<PracticePage>
       fit: StackFit.expand,
       children: [
         _buildCameraFeed(),
+        Positioned.fill(
+          child: IgnorePointer(
+            child: CustomPaint(painter: HandmarkPainter(_handmarkSnapshot)),
+          ),
+        ),
         CustomPaint(
           painter: _ViewfinderPainter(
             isRecording: _phase == PracticePhase.recording,
@@ -1335,6 +1482,24 @@ class _PracticePageState extends ConsumerState<PracticePage>
           left: 10,
           child: _CallLabel(icon: Icons.videocam_rounded, text: 'Bạn'),
         ),
+        if (_isCameraInitialized)
+          Positioned(
+            top: 10,
+            right: 10,
+            child: _CallLabel(
+              icon: _handmarkSnapshot?.visibleHandCount == 2
+                  ? Icons.pan_tool_alt_rounded
+                  : Icons.back_hand_outlined,
+              text: _handmarkError != null
+                  ? 'Handmark lỗi'
+                  : _handmarkSnapshot?.visibleHandCount == 2
+                  ? 'Handmark · 2 tay'
+                  : _handmarkSnapshot?.visibleHandCount == 1
+                  ? 'Handmark · 1 tay'
+                  : 'Handmark · chưa thấy tay',
+              compact: true,
+            ),
+          ),
         if (_phase == PracticePhase.idle && _isCameraInitialized)
           Positioned(
             bottom: 12,

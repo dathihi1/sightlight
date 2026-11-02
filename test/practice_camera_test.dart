@@ -86,7 +86,12 @@ void main() {
         expect(find.text('Bạn'), findsOneWidget);
         expect(find.text('Chia đôi'), findsOneWidget);
         expect(find.text('Khung nhỏ'), findsOneWidget);
+        expect(find.text('Bật handmark video mẫu'), findsOneWidget);
         expect(find.textContaining('On-device chưa sẵn sàng'), findsOneWidget);
+
+        await tester.tap(find.text('Bật handmark video mẫu'));
+        await tester.pump();
+        expect(find.text('Tắt handmark video mẫu'), findsOneWidget);
 
         // Verify single "Bắt đầu ký hiệu" button
         expect(find.text('Bắt đầu ký hiệu'), findsOneWidget);
@@ -106,7 +111,7 @@ void main() {
       },
     );
 
-    testWidgets('Split layout gives demo and user video equal height', (
+    testWidgets('Split layout matches web aspect ratio and equal heights', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(1080, 2400);
@@ -140,6 +145,7 @@ void main() {
       expect(demoSize.width, cameraSize.width);
       expect(demoSize.height, closeTo(cameraSize.height, 0.01));
       expect(demoSize.height, greaterThan(0));
+      expect(demoSize.width / demoSize.height, closeTo(16 / 9, 0.01));
       expect(demoClipRect, demoPaneRect);
       expect(cameraClipRect, cameraPaneRect);
       expect(cameraPaneRect.top, closeTo(demoPaneRect.bottom + 2, 0.01));

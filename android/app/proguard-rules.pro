@@ -6,9 +6,14 @@
 -keep class io.flutter.**  { *; }
 -keep class io.flutter.plugins.**  { *; }
 
-## Google ML Kit - Keep text recognition classes
--keep class com.google.mlkit.vision.text.** { *; }
--dontwarn com.google.mlkit.vision.text.**
+## Google ML Kit Pose Detection — chỉ giữ API pose mà ứng dụng thực sự dùng.
+-keep class com.google.mlkit.vision.pose.** { *; }
+-dontwarn com.google.mlkit.vision.pose.**
+
+## Flutter chỉ tham chiếu Play Core cho deferred components; app không dùng tính năng này.
+-dontwarn com.google.android.play.core.splitcompat.SplitCompatApplication
+-dontwarn com.google.android.play.core.splitinstall.**
+-dontwarn com.google.android.play.core.tasks.**
 
 ## WebView
 -keep class * extends android.webkit.WebViewClient { *; }

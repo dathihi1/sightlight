@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'dictionary/dictionary_page.dart';
-import 'practice/webview_practice_page.dart';
+import 'practice/practice_page.dart';
 
 class MainNavigationPage extends StatefulWidget {
   const MainNavigationPage({super.key, this.initialIndex = 0});
@@ -15,7 +15,7 @@ class MainNavigationPage extends StatefulWidget {
 class _MainNavigationPageState extends State<MainNavigationPage> {
   late int _currentIndex;
 
-  final _pages = const [DictionaryPage(), WebViewPracticePage()];
+  final _pages = const [DictionaryPage(), PracticePage()];
 
   @override
   void initState() {
