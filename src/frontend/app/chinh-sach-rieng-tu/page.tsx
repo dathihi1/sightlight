@@ -20,7 +20,7 @@ const sections = [
   {
     title: "3. Luyện tập bằng camera",
     content:
-      "Khi bạn chủ động bật tính năng luyện cử chỉ, ứng dụng sẽ cần quyền truy cập camera để thực hiện chức năng đó. Bạn có thể tắt quyền camera bất cứ lúc nào trong trình duyệt hoặc thiết bị của mình.",
+      "Khi bạn chủ động bật tính năng luyện cử chỉ, ứng dụng cần quyền truy cập camera. Mặc định, trình duyệt trích xuất landmark trên thiết bị và chỉ gửi dữ liệu số để chấm. Nếu bạn chọn \"Xử lý trên server\" và đánh dấu đồng ý, video ngắn sẽ được truyền qua HTTPS để xử lý tạm thời; video không được lưu vào database hoặc kho đối tượng và file tạm được xóa sau khi trích xuất. Kết quả, thông số kỹ thuật và tiến độ học vẫn có thể được lưu. Bạn có thể quay lại chế độ trên thiết bị hoặc tắt quyền camera bất cứ lúc nào.",
   },
   {
     title: "4. Chia sẻ và bảo vệ dữ liệu",
@@ -48,7 +48,7 @@ export default function PrivacyPolicyPage() {
       <article className="mt-5 rounded-3xl border border-ink-200 bg-white p-6 shadow-sm sm:p-10">
         <p className="text-sm font-bold uppercase tracking-wider text-brand-700">SignLight</p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink-900 sm:text-4xl">Chính sách riêng tư</h1>
-        <p className="mt-3 text-sm text-ink-600">Cập nhật lần cuối: 03/10/2026</p>
+        <p className="mt-3 text-sm text-ink-600">Cập nhật lần cuối: 02/11/2026</p>
         <p className="mt-8 text-base leading-7 text-ink-700">
           SignLight tôn trọng quyền riêng tư của bạn. Chính sách này giải thích cách chúng tôi xử lý dữ liệu khi bạn sử dụng nền tảng.
         </p>

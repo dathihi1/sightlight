@@ -1,0 +1,15 @@
+services:
+  video-processing:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      SPRING_BACKEND_BASE_URL: ${SPRING_BACKEND_BASE_URL:-http://host.docker.internal:8080}
+      HOLISTIC_MODEL_PATH: /app/models/holistic_landmarker.task
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      REQUIRE_HTTPS_BACKEND: ${REQUIRE_HTTPS_BACKEND:-false}
+      PROCESSING_CONCURRENCY: "1"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    mem_limit: 2g
+    cpus: 1.0

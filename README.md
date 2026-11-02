@@ -50,12 +50,14 @@ SignLight giải quyết đúng chỗ đó: **AI nhận diện ký hiệu độn
 Next.js 15 · Spring Boot 3.5 (Java 21) · PostgreSQL 17 · Redis · object storage/CDN ·
 **dịch vụ AI Python (FastAPI + ONNX Runtime)**.
 
-Trích đặc trưng chuyển động (MediaPipe Holistic) chạy **trong trình duyệt** → chỉ **tensor số** rời thiết
-bị, **không pixel nào**. Lý do chọn và các phương án đã loại: [`docs/sa/HLD.md`](docs/sa/HLD.md) §1 và 10 ADR.
+Mặc định, trích đặc trưng chuyển động (MediaPipe Holistic) chạy **trong trình duyệt** và chỉ tensor số rời
+thiết bị. Người dùng cũng có thể chủ động chọn chế độ xử lý trên server: video ngắn được gửi qua HTTPS,
+chỉ tồn tại trong RAM/file tạm khi tạo landmark rồi bị xóa. Lý do chọn và các phương án đã loại:
+[`docs/sa/HLD.md`](docs/sa/HLD.md) §1 và 10 ADR.
 
 ## Bảy bất biến — không được vi phạm ở bất kỳ đâu
 
-1. Hình ảnh camera **không bao giờ được lưu**; không pixel nào rời thiết bị.
+1. Hình ảnh camera **không bao giờ được lưu**; video chỉ rời thiết bị khi người dùng chọn chế độ server và đồng ý rõ ràng.
 2. Chấm bài **luôn ở server**; API không lộ đáp án đúng trước khi chấm.
 3. Paywall chặn **ở backend**, không chỉ ẩn nút.
 4. Không phân biệt được email tồn tại / không tồn tại.

@@ -32,6 +32,7 @@ __pycache__/
 
 # Trọng số mô hình AI — không commit nhị phân vào repo này
 src/ai/runs/**/*.onnx
+src/video_processing/models/
 # Các bản INT8 nhỏ là artifact production cho gói Free/Premium.
 !src/ai/runs/vsl_mvp30_v2_lite_transformer/model.int8.onnx
 !src/ai/runs/vsl_mvp400_v2_lite_transformer/model.int8.onnx

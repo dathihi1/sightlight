@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NEXT_PUBLIC_API_BASE_URL: https://signlight-api.thankfulocean-a6c2129d.eastasia.azurecontainerapps.io
+      NEXT_PUBLIC_SERVER_VIDEO_ENABLED: true
+      NEXT_PUBLIC_VIDEO_PROCESSING_BASE_URL: https://signlight-video-processing.thankfulocean-a6c2129d.eastasia.azurecontainerapps.io
       NEXT_PUBLIC_APP_URL: https://signlight.id.vn
     defaults:
       run:

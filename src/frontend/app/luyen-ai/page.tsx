@@ -18,6 +18,12 @@ import {
   TARGET_SAMPLE_FPS,
 } from "@/lib/holistic/featureSchema";
 import type { LocalInferenceResult } from "@/lib/ai/localRecognizer";
+import {
+  preferredRecordingMimeType,
+  serverVideoEnabled,
+  type ServerVideoResponse,
+  uploadServerVideo,
+} from "@/lib/serverVideo";
 
 interface Capabilities {
   modelVersion: string;
@@ -61,8 +67,9 @@ interface AttemptResult {
   stubMode: boolean;
 }
 
-type Phase = "idle" | "loading-model" | "ready" | "recording" | "scoring";
+type Phase = "idle" | "loading-model" | "ready" | "recording" | "uploading" | "scoring";
 type ModelSize = 30 | 400;
+type ProcessingMode = "device" | "server";
 
 export default function AiPracticePage() {
   return (
@@ -89,6 +96,9 @@ function AiPracticeContent() {
   const recorderRef = useRef<import("@/lib/holistic/extractor").SignSequenceRecorder | null>(null);
   const rafRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const serverRecordingPromiseRef = useRef<Promise<Blob> | null>(null);
+  const serverFinishingRef = useRef(false);
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [itemIndex, setItemIndex] = useState(0);
@@ -100,6 +110,9 @@ function AiPracticeContent() {
   const [showAdModal, setShowAdModal] = useState(false);
   const [preparationSave, setPreparationSave] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [selectedModelSize, setSelectedModelSize] = useState<ModelSize | null>(null);
+  const [processingMode, setProcessingMode] = useState<ProcessingMode>("device");
+  const [serverConsent, setServerConsent] = useState(false);
+  const [serverDiagnostics, setServerDiagnostics] = useState<ServerVideoResponse<AttemptResult> | null>(null);
   const savedAttemptRef = useRef<string | null>(null);
 
   const capabilities = useQuery({
@@ -142,6 +155,13 @@ function AiPracticeContent() {
   const stopCamera = useCallback(() => {
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
+    const mediaRecorder = mediaRecorderRef.current;
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+    }
+    mediaRecorderRef.current = null;
+    serverRecordingPromiseRef.current = null;
+    serverFinishingRef.current = false;
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
   }, []);
@@ -149,7 +169,7 @@ function AiPracticeContent() {
   useEffect(() => stopCamera, [stopCamera]);
 
   function selectModel(modelSize: ModelSize) {
-    if (modelSize === selectedModelSize || phase === "recording" || phase === "scoring") return;
+    if (modelSize === selectedModelSize || phase === "recording" || phase === "uploading" || phase === "scoring") return;
     stopCamera();
     recorderRef.current = null;
     setPhase("idle");
@@ -157,8 +177,21 @@ function AiPracticeContent() {
     setItemIndex(0);
     setResult(null);
     setLocalInference(null);
+    setServerDiagnostics(null);
     setError(null);
     setPreparationSave("idle");
+  }
+
+  function selectProcessingMode(mode: ProcessingMode) {
+    if (mode === processingMode || phase === "recording" || phase === "uploading" || phase === "scoring") return;
+    stopCamera();
+    recorderRef.current = null;
+    setProcessingMode(mode);
+    setPhase("idle");
+    setResult(null);
+    setLocalInference(null);
+    setServerDiagnostics(null);
+    setError(null);
   }
 
   async function startCamera() {
@@ -173,6 +206,13 @@ function AiPracticeContent() {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
+      }
+      if (processingMode === "server") {
+        if (!preferredRecordingMimeType()) {
+          throw new Error("Trình duyệt này chưa hỗ trợ định dạng ghi video WebM/MP4.");
+        }
+        setPhase("ready");
+        return;
       }
       const [{ loadHolisticLandmarker, SignSequenceRecorder }, { localRecognizer }] = await Promise.all([
         import("@/lib/holistic/extractor"),
@@ -195,7 +235,9 @@ function AiPracticeContent() {
       setError(
         caught instanceof DOMException && caught.name === "NotAllowedError"
           ? "Bạn cần cho phép truy cập camera để luyện ký hiệu."
-          : "Không khởi động được camera hoặc mô hình nhận dạng.",
+          : caught instanceof Error
+            ? caught.message
+            : "Không khởi động được camera hoặc mô hình nhận dạng.",
       );
     }
   }
@@ -205,7 +247,12 @@ function AiPracticeContent() {
     setResult(null);
     setPreparationSave("idle");
     setLocalInference(null);
+    setServerDiagnostics(null);
     setError(null);
+    if (processingMode === "server") {
+      startServerRecording();
+      return;
+    }
     if (!recorderRef.current) {
       setError("Mô hình luyện tập chưa sẵn sàng. Hãy khởi động camera trước.");
       return;
@@ -268,7 +315,104 @@ function AiPracticeContent() {
     }
   }
 
+  function startServerRecording() {
+    const stream = streamRef.current;
+    if (!stream || !item || !capabilities.data) return;
+    if (!serverConsent) {
+      setError("Bạn cần đồng ý gửi video ngắn lên server trước khi bắt đầu.");
+      return;
+    }
+    const mimeType = preferredRecordingMimeType();
+    if (!mimeType) {
+      setError("Trình duyệt này chưa hỗ trợ ghi video WebM/MP4 để gửi lên server.");
+      return;
+    }
+
+    const chunks: Blob[] = [];
+    let recorder: MediaRecorder;
+    try {
+      recorder = new MediaRecorder(stream, {
+        mimeType,
+        videoBitsPerSecond: 1_500_000,
+      });
+    } catch {
+      setError("Trình duyệt không thể khởi tạo bộ ghi video. Hãy thử Chrome/Safari mới hơn.");
+      return;
+    }
+    serverRecordingPromiseRef.current = new Promise<Blob>((resolve, reject) => {
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunks.push(event.data);
+      };
+      recorder.onerror = () => reject(new Error("Trình duyệt không thể ghi video camera."));
+      recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
+    });
+    mediaRecorderRef.current = recorder;
+    serverFinishingRef.current = false;
+    try {
+      recorder.start(250);
+    } catch {
+      mediaRecorderRef.current = null;
+      serverRecordingPromiseRef.current = null;
+      setError("Trình duyệt không thể bắt đầu ghi video camera.");
+      return;
+    }
+    setPhase("recording");
+
+    const beganAt = performance.now();
+    const tick = () => {
+      const elapsed = performance.now() - beganAt;
+      setElapsedMs(Math.round(elapsed));
+      if (elapsed >= MAX_RECORDING_MS) {
+        void finishRecording();
+        return;
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+  }
+
+  async function finishServerRecording() {
+    if (serverFinishingRef.current) return;
+    serverFinishingRef.current = true;
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    rafRef.current = null;
+    setPhase("uploading");
+
+    try {
+      const recorder = mediaRecorderRef.current;
+      const recording = serverRecordingPromiseRef.current;
+      if (!recorder || !recording || !item || !capabilities.data) {
+        throw new Error("Không tìm thấy video vừa ghi. Vui lòng thử lại.");
+      }
+      if (recorder.state !== "inactive") recorder.stop();
+      const blob = await recording;
+      if (blob.size < 1024) {
+        throw new Error("Video vừa ghi không có đủ dữ liệu để xử lý.");
+      }
+
+      const serverResult = await uploadServerVideo<AttemptResult>({
+        blob,
+        targetSignId: item.signId,
+        modelVersion: capabilities.data.modelVersion,
+        sessionId: session.data?.sessionId,
+      });
+      setServerDiagnostics(serverResult);
+      setResult(serverResult.attempt);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Máy chủ không xử lý được video này.");
+    } finally {
+      mediaRecorderRef.current = null;
+      serverRecordingPromiseRef.current = null;
+      serverFinishingRef.current = false;
+      setPhase("ready");
+    }
+  }
+
   async function finishRecording() {
+    if (processingMode === "server") {
+      await finishServerRecording();
+      return;
+    }
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
 
@@ -399,7 +543,7 @@ function AiPracticeContent() {
     <ModelSelector
       activeModelSize={activeModelSize}
       canUse400={canUse400}
-      disabled={phase === "recording" || phase === "scoring"}
+      disabled={phase === "recording" || phase === "uploading" || phase === "scoring"}
       onSelect={selectModel}
     />
   );
@@ -459,6 +603,47 @@ function AiPracticeContent() {
 
       <div className="mt-5">{modelSelector}</div>
 
+      <section className="mt-4 rounded-3xl border border-ink-200 bg-white p-4" aria-labelledby="processing-mode-title">
+        <h2 id="processing-mode-title" className="text-sm font-bold text-ink-900">Cách xử lý video</h2>
+        <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Cách xử lý video camera">
+          <button
+            type="button"
+            aria-pressed={processingMode === "device"}
+            disabled={phase === "recording" || phase === "uploading" || phase === "scoring"}
+            onClick={() => selectProcessingMode("device")}
+            className={processingMode === "device" ? "btn btn-primary btn-sm" : "btn btn-secondary btn-sm"}
+          >
+            Trên thiết bị
+          </button>
+          <button
+            type="button"
+            aria-pressed={processingMode === "server"}
+            disabled={!serverVideoEnabled || phase === "recording" || phase === "uploading" || phase === "scoring"}
+            onClick={() => selectProcessingMode("server")}
+            className={processingMode === "server" ? "btn btn-grape btn-sm" : "btn btn-secondary btn-sm"}
+          >
+            Trên server
+          </button>
+        </div>
+        {processingMode === "server" ? (
+          <label className="mt-3 flex items-start gap-3 rounded-2xl border border-sun-200 bg-sun-50 p-3 text-sm text-sun-900">
+            <input
+              type="checkbox"
+              checked={serverConsent}
+              disabled={phase === "recording" || phase === "uploading" || phase === "scoring"}
+              onChange={(event) => setServerConsent(event.target.checked)}
+              className="mt-1 h-4 w-4"
+            />
+            <span>
+              Tôi đồng ý gửi video camera ngắn qua HTTPS để server trích xuất landmark. Video chỉ được xử lý tạm
+              thời, không được lưu lại và không xuất hiện trong log.
+            </span>
+          </label>
+        ) : (
+          <p className="mt-3 text-sm text-ink-600">Video không rời khỏi thiết bị; trình duyệt tự trích xuất landmark.</p>
+        )}
+      </section>
+
       {!lessonPractice && <section className="mt-4 rounded-3xl border border-grape-200 bg-grape-50 p-4 sm:flex sm:items-end sm:justify-between sm:gap-5">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -470,7 +655,7 @@ function AiPracticeContent() {
           <select
             id="practice-sign"
             value={item.signId}
-            disabled={phase === "recording" || phase === "scoring"}
+            disabled={phase === "recording" || phase === "uploading" || phase === "scoring"}
             onChange={(event) => {
               const nextIndex = session.data?.items.findIndex((candidate) => candidate.signId === event.target.value) ?? -1;
               if (nextIndex >= 0) {
@@ -568,8 +753,13 @@ function AiPracticeContent() {
               </p>
             )}
             {phase === "ready" && (
-              <button type="button" onClick={startRecording} className="btn btn-primary w-full">
-                Bắt đầu ký hiệu
+              <button
+                type="button"
+                onClick={startRecording}
+                disabled={processingMode === "server" && !serverConsent}
+                className="btn btn-primary w-full"
+              >
+                {processingMode === "server" && !serverConsent ? "Hãy đồng ý gửi video" : "Bắt đầu ký hiệu"}
               </button>
             )}
             {phase === "recording" && (
@@ -582,12 +772,24 @@ function AiPracticeContent() {
                 Đang chấm…
               </p>
             )}
+            {phase === "uploading" && (
+              <p className="btn btn-secondary w-full cursor-wait" role="status">
+                Đang tải và xử lý video trên server…
+              </p>
+            )}
             <p className="mt-3 flex items-start gap-2 text-sm text-ink-600">
               <IconShield className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
-              <span>
-                Hình ảnh <strong className="font-bold text-ink-800">không rời khỏi máy bạn</strong> — trình duyệt chỉ
-                gửi một dãy số mô tả chuyển động.
-              </span>
+              {processingMode === "server" ? (
+                <span>
+                  Chỉ khi bạn đồng ý, video ngắn mới được gửi qua HTTPS, xử lý tạm thời rồi xóa. Server không lưu
+                  video.
+                </span>
+              ) : (
+                <span>
+                  Hình ảnh <strong className="font-bold text-ink-800">không rời khỏi máy bạn</strong> — trình duyệt
+                  chỉ gửi một dãy số mô tả chuyển động.
+                </span>
+              )}
             </p>
 
             {/* Banner xem video quảng cáo nhận lượt AI */}
@@ -623,6 +825,7 @@ function AiPracticeContent() {
         </div>
       )}
       {result && <AttemptFeedback result={result} targetLabel={item.label} onOpenAd={lessonPractice ? undefined : () => setShowAdModal(true)} />}
+      {serverDiagnostics && <ServerDiagnostics diagnostics={serverDiagnostics} />}
 
       {lessonPractice && result?.verified && preparationSave === "error" && (
         <div className="mt-6">
@@ -725,6 +928,47 @@ function ModelSelector({
         </div>
       </div>
     </section>
+  );
+}
+
+function ServerDiagnostics({ diagnostics }: { diagnostics: ServerVideoResponse<AttemptResult> }) {
+  const decoded = diagnostics.video.decodedFrames;
+  const sampled = diagnostics.video.sampledFrames;
+  const sampledPercent = decoded > 0 ? Math.round((sampled / decoded) * 100) : 0;
+  const extraction = diagnostics.extraction;
+  const handPercent = extraction ? `${Math.round(extraction.handFrameRatio * 100)}%` : "Chưa có";
+  const bothHandsPercent = extraction ? `${Math.round(extraction.bothHandsRatio * 100)}%` : "Chưa có";
+
+  return (
+    <section className="mt-6 rounded-3xl border border-sky-200 bg-sky-50 p-5" aria-labelledby="server-diagnostics-title">
+      <h2 id="server-diagnostics-title" className="text-lg font-bold text-sky-900">Chẩn đoán xử lý trên server</h2>
+      <p className="mt-1 text-sm text-sky-800">
+        Các chỉ số dưới đây chỉ là metadata kỹ thuật; video và ảnh khuôn mặt không được lưu.
+      </p>
+      <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+        <DiagnosticItem label="Video nguồn" value={`${decoded} frame · ${diagnostics.video.sourceFps} FPS`} />
+        <DiagnosticItem label="Frame được lấy mẫu" value={`${sampled}/${decoded} (${sampledPercent}%)`} />
+        <DiagnosticItem label="Frame có bàn tay" value={handPercent} />
+        <DiagnosticItem label="Có đủ hai tay" value={bothHandsPercent} />
+        <DiagnosticItem label="Pose cơ thể" value={extraction ? (extraction.poseDetected ? "Có" : "Không") : "Chưa có"} />
+        <DiagnosticItem label="Giải mã" value={`${Math.round(diagnostics.timings.videoDecodingMs)} ms`} />
+        <DiagnosticItem label="Trích xuất landmark" value={`${Math.round(diagnostics.timings.landmarkExtractionMs)} ms`} />
+        <DiagnosticItem label="Tổng server" value={`${Math.round(diagnostics.timings.totalMs)} ms`} />
+      </dl>
+      <p className="mt-4 text-xs font-semibold text-sky-800">
+        Frame không được lấy mẫu là giảm tải có chủ đích về {sampled} frame, không phải mất video khi truyền. Media
+        tạm đã được xóa: {diagnostics.retainedMedia ? "chưa xác nhận" : "đã xác nhận"}.
+      </p>
+    </section>
+  );
+}
+
+function DiagnosticItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-white p-3">
+      <dt className="text-xs font-bold text-ink-500">{label}</dt>
+      <dd className="mt-1 font-bold text-ink-900">{value}</dd>
+    </div>
   );
 }
 
