@@ -211,6 +211,7 @@ export function SignVideoPlayer({
         ref={videoRef}
         key={directSrc}
         src={directSrc || undefined}
+        crossOrigin={directSrc?.includes(".r2.dev/") ? "anonymous" : undefined}
         autoPlay={autoPlay}
         loop={isLooping}
         muted={muted}
