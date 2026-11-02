@@ -17,7 +17,8 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from fastapi import FastAPI, Header
+from fastapi import FastAPI, Header, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -86,6 +87,31 @@ app = FastAPI(
     redoc_url=None,
     openapi_url=None,
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_error(
+    _request: Request,
+    exc: RequestValidationError,
+) -> JSONResponse:
+    """Return validation metadata without ever logging the feature tensor.
+
+    FastAPI's default 422 body may echo the invalid input.  A feature tensor is
+    not media, but it is still user-derived biometric data, so production logs
+    and responses only expose the failing location and validator type.
+    """
+    issues = [
+        {
+            "type": str(error.get("type", "validation_error")),
+            "loc": [str(part) for part in error.get("loc", ())],
+        }
+        for error in exc.errors()
+    ]
+    log.warning("request_validation_failed issues=%s", issues)
+    return JSONResponse(
+        status_code=422,
+        content={"error": "request_validation_failed", "issues": issues},
+    )
 
 
 def _assert_disabled_integrations() -> None:

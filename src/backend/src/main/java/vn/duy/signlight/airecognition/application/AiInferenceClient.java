@@ -1,11 +1,15 @@
 package vn.duy.signlight.airecognition.application;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -25,6 +29,7 @@ import vn.duy.signlight.common.error.ErrorCode;
 public class AiInferenceClient {
 
     private static final Logger log = LoggerFactory.getLogger(AiInferenceClient.class);
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     private final RestClient restClient;
     private final String serviceToken;
@@ -78,6 +83,8 @@ public class AiInferenceClient {
         try {
             InferenceResponse response = restClient.post()
                     .uri("/api/infer/features")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.APPLICATION_JSON)
                     .body(new InferenceRequest(features, modelVersion))
                     .retrieve()
                     .body(InferenceResponse.class);
@@ -93,14 +100,40 @@ public class AiInferenceClient {
                     ? ErrorCode.AI_SERVICE_TIMEOUT
                     : ErrorCode.AI_SERVICE_UNAVAILABLE);
         } catch (org.springframework.web.client.RestClientResponseException ex) {
-            log.warn("ai_infer_rejected status={}", ex.getStatusCode().value());
+            String validation = validationSummary(ex.getResponseBodyAsString());
+            log.warn("ai_infer_rejected status={} validation={}",
+                    ex.getStatusCode().value(), validation);
             if (ex.getStatusCode().value() == 409) {
                 throw new BusinessException(ErrorCode.AI_MODEL_VERSION_UNSUPPORTED);
             }
-            if (ex.getStatusCode().value() == 400) {
+            if (ex.getStatusCode().value() == 400 || ex.getStatusCode().value() == 422) {
                 throw new BusinessException(ErrorCode.AI_FEATURES_INVALID);
             }
             throw new BusinessException(ErrorCode.AI_SERVICE_UNAVAILABLE);
+        }
+    }
+
+    /**
+     * Chỉ trích type/loc từ lỗi Pydantic; không bao giờ ghi input/tensor vào log.
+     */
+    private static String validationSummary(String responseBody) {
+        try {
+            JsonNode root = JSON.readTree(responseBody);
+            JsonNode issues = root.path("issues");
+            if (!issues.isArray()) {
+                issues = root.path("detail");
+            }
+            if (!issues.isArray()) {
+                return "none";
+            }
+            List<String> safe = new ArrayList<>();
+            for (JsonNode issue : issues) {
+                safe.add("type=" + issue.path("type").asText("unknown")
+                        + ",loc=" + issue.path("loc"));
+            }
+            return safe.toString();
+        } catch (Exception ignored) {
+            return "unparseable";
         }
     }
 
