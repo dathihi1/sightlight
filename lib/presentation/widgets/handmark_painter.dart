@@ -15,7 +15,12 @@ class HandmarkPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final value = snapshot;
-    if (value == null || value.poses.isEmpty) return;
+    if (value == null) return;
+    if (value.mediaPipeHands.isNotEmpty) {
+      _drawMediaPipeHands(canvas, size, value);
+      return;
+    }
+    if (value.poses.isEmpty) return;
     final landmarks = value.poses.first.landmarks;
     _drawHand(canvas, size, value, landmarks, const [
       PoseLandmarkType.leftWrist,
@@ -29,6 +34,99 @@ class HandmarkPainter extends CustomPainter {
       PoseLandmarkType.rightIndex,
       PoseLandmarkType.rightPinky,
     ], const Color(0xFFFBBF24));
+  }
+
+  static const _mediaPipeConnections = <(int, int)>[
+    (0, 1),
+    (1, 2),
+    (2, 3),
+    (3, 4),
+    (0, 5),
+    (5, 6),
+    (6, 7),
+    (7, 8),
+    (5, 9),
+    (9, 10),
+    (10, 11),
+    (11, 12),
+    (9, 13),
+    (13, 14),
+    (14, 15),
+    (15, 16),
+    (13, 17),
+    (0, 17),
+    (17, 18),
+    (18, 19),
+    (19, 20),
+  ];
+
+  void _drawMediaPipeHands(
+    Canvas canvas,
+    Size viewport,
+    HandmarkSnapshot frame,
+  ) {
+    final image = frame.imageSize;
+    final quarterTurn =
+        frame.sensorOrientation == 90 || frame.sensorOrientation == 270;
+    final orientedWidth = quarterTurn ? image.height : image.width;
+    final orientedHeight = quarterTurn ? image.width : image.height;
+    final scale = fit == BoxFit.contain
+        ? math.min(
+            viewport.width / orientedWidth,
+            viewport.height / orientedHeight,
+          )
+        : math.max(
+            viewport.width / orientedWidth,
+            viewport.height / orientedHeight,
+          );
+
+    canvas.save();
+    canvas.translate(viewport.width / 2, viewport.height / 2);
+    canvas.rotate(frame.sensorOrientation * math.pi / 180);
+    if (frame.lensDirection == CameraLensDirection.front) {
+      canvas.scale(-1, 1);
+      canvas.rotate(math.pi);
+    }
+    canvas.scale(scale);
+
+    for (
+      var handIndex = 0;
+      handIndex < frame.mediaPipeHands.length;
+      handIndex++
+    ) {
+      final hand = frame.mediaPipeHands[handIndex];
+      if (hand.length < 21) continue;
+      final color = handIndex.isEven
+          ? const Color(0xFF38BDF8)
+          : const Color(0xFFFBBF24);
+      final linePaint = Paint()
+        ..color = color
+        ..strokeWidth = 3 / scale
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke;
+      final pointPaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill;
+      final borderPaint = Paint()
+        ..color = color
+        ..strokeWidth = 2 / scale
+        ..style = PaintingStyle.stroke;
+
+      Offset pointAt(int index) => Offset(
+        (hand[index].x - 0.5) * image.width,
+        (hand[index].y - 0.5) * image.height,
+      );
+
+      for (final (start, end) in _mediaPipeConnections) {
+        canvas.drawLine(pointAt(start), pointAt(end), linePaint);
+      }
+      for (var index = 0; index < 21; index++) {
+        final point = pointAt(index);
+        canvas.drawCircle(point, 4.5 / scale, pointPaint);
+        canvas.drawCircle(point, 4.5 / scale, borderPaint);
+      }
+    }
+    canvas.restore();
   }
 
   void _drawHand(

@@ -1,8 +1,18 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
+import 'package:hand_landmarker/hand_landmarker.dart' as mediapipe;
+
+class HandmarkPoint {
+  const HandmarkPoint({required this.x, required this.y, required this.z});
+
+  final double x;
+  final double y;
+  final double z;
+}
 
 class HandmarkSnapshot {
   const HandmarkSnapshot({
@@ -10,30 +20,43 @@ class HandmarkSnapshot {
     required this.imageSize,
     required this.rotation,
     required this.lensDirection,
+    this.mediaPipeHands = const [],
+    this.sensorOrientation = 0,
   });
 
+  /// ML Kit Pose chỉ còn được dùng cho frame ảnh của video mẫu và iOS.
   final List<Pose> poses;
+
+  /// Camera Android dùng MediaPipe Hand Landmarker: đủ 21 điểm cho mỗi tay.
+  final List<List<HandmarkPoint>> mediaPipeHands;
   final Size imageSize;
   final InputImageRotation rotation;
   final CameraLensDirection lensDirection;
+  final int sensorOrientation;
 
-  bool get leftVisible => _handVisible(
-    PoseLandmarkType.leftWrist,
-    PoseLandmarkType.leftThumb,
-    PoseLandmarkType.leftIndex,
-    PoseLandmarkType.leftPinky,
-  );
+  bool get leftVisible =>
+      mediaPipeHands.isNotEmpty ||
+      _poseHandVisible(
+        PoseLandmarkType.leftWrist,
+        PoseLandmarkType.leftThumb,
+        PoseLandmarkType.leftIndex,
+        PoseLandmarkType.leftPinky,
+      );
 
-  bool get rightVisible => _handVisible(
-    PoseLandmarkType.rightWrist,
-    PoseLandmarkType.rightThumb,
-    PoseLandmarkType.rightIndex,
-    PoseLandmarkType.rightPinky,
-  );
+  bool get rightVisible =>
+      mediaPipeHands.length >= 2 ||
+      _poseHandVisible(
+        PoseLandmarkType.rightWrist,
+        PoseLandmarkType.rightThumb,
+        PoseLandmarkType.rightIndex,
+        PoseLandmarkType.rightPinky,
+      );
 
-  int get visibleHandCount => (leftVisible ? 1 : 0) + (rightVisible ? 1 : 0);
+  int get visibleHandCount => mediaPipeHands.isNotEmpty
+      ? mediaPipeHands.where((hand) => hand.length >= 21).length
+      : (leftVisible ? 1 : 0) + (rightVisible ? 1 : 0);
 
-  bool _handVisible(
+  bool _poseHandVisible(
     PoseLandmarkType wrist,
     PoseLandmarkType thumb,
     PoseLandmarkType index,
@@ -50,11 +73,11 @@ class HandmarkSnapshot {
   }
 }
 
-/// Chạy ML Kit Pose trên frame camera để cung cấp handmark hướng dẫn.
-/// Kết quả này chỉ dùng để vẽ tại chỗ, không quyết định đúng/sai và không tải ảnh lên.
+/// Camera Android dùng MediaPipe Tasks Hand Landmarker native (21 điểm/tay).
+/// ML Kit Pose được giữ cho video mẫu/iOS vì plugin MediaPipe chỉ nhận CameraImage Android.
 class HandmarkTracker {
   HandmarkTracker()
-    : _detector = PoseDetector(
+    : _poseDetector = PoseDetector(
         options: PoseDetectorOptions(
           model: PoseDetectionModel.base,
           mode: PoseDetectionMode.stream,
@@ -68,45 +91,136 @@ class HandmarkTracker {
     DeviceOrientation.landscapeRight: 270,
   };
 
-  final PoseDetector _detector;
-  bool _processing = false;
-  int _lastProcessedAtMs = 0;
+  final PoseDetector _poseDetector;
+  final StreamController<HandmarkSnapshot> _liveSnapshots =
+      StreamController<HandmarkSnapshot>.broadcast();
+  mediapipe.HandLandmarkerPlugin? _mediaPipe;
+  StreamSubscription<List<mediapipe.Hand>>? _mediaPipeSubscription;
+  _LiveFrameMetadata? _latestLiveFrame;
+  bool _poseProcessing = false;
+  bool _closed = false;
+  int _lastLiveFrameAtMs = 0;
+  int _lastFileFrameAtMs = 0;
 
-  Future<HandmarkSnapshot?> process(
+  Stream<HandmarkSnapshot> get liveSnapshots => _liveSnapshots.stream;
+
+  Future<void> startLive() async {
+    if (!Platform.isAndroid || _mediaPipe != null) return;
+
+    // CPU ổn định hơn GPU trên các máy Android cũ/giá rẻ. Pipeline được giới
+    // hạn khoảng 10 FPS nên vẫn đủ mượt cho lớp hướng dẫn handmark.
+    final plugin = mediapipe.HandLandmarkerPlugin.create(
+      numHands: 2,
+      minHandDetectionConfidence: 0.55,
+      delegate: mediapipe.HandLandmarkerDelegate.cpu,
+    );
+    _mediaPipeSubscription = plugin.landmarkStream.listen(
+      (hands) {
+        final metadata = _latestLiveFrame;
+        if (_closed || metadata == null) return;
+        _liveSnapshots.add(
+          HandmarkSnapshot(
+            poses: const [],
+            mediaPipeHands: hands
+                .map(
+                  (hand) => hand.landmarks
+                      .map(
+                        (point) =>
+                            HandmarkPoint(x: point.x, y: point.y, z: point.z),
+                      )
+                      .toList(growable: false),
+                )
+                .toList(growable: false),
+            imageSize: metadata.imageSize,
+            rotation:
+                InputImageRotationValue.fromRawValue(
+                  metadata.sensorOrientation,
+                ) ??
+                InputImageRotation.rotation0deg,
+            lensDirection: metadata.lensDirection,
+            sensorOrientation: metadata.sensorOrientation,
+          ),
+        );
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (!_closed) _liveSnapshots.addError(error, stackTrace);
+      },
+    );
+    _mediaPipe = plugin;
+  }
+
+  void processLiveFrame(
+    CameraImage image,
+    CameraDescription camera,
+    DeviceOrientation deviceOrientation,
+  ) {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastLiveFrameAtMs < 100) return;
+    _lastLiveFrameAtMs = now;
+
+    if (Platform.isAndroid) {
+      final plugin = _mediaPipe;
+      if (plugin == null) {
+        throw StateError('MediaPipe Hand Landmarker chưa được khởi tạo.');
+      }
+      if (image.planes.length < 3) {
+        throw StateError(
+          'MediaPipe cần camera YUV420 ba plane, nhận ${image.planes.length} plane.',
+        );
+      }
+      _latestLiveFrame = _LiveFrameMetadata(
+        imageSize: Size(image.width.toDouble(), image.height.toDouble()),
+        lensDirection: camera.lensDirection,
+        sensorOrientation: camera.sensorOrientation,
+      );
+      plugin.processFrame(image, camera.sensorOrientation);
+      return;
+    }
+
+    unawaited(_processPoseFrame(image, camera, deviceOrientation));
+  }
+
+  Future<void> _processPoseFrame(
     CameraImage image,
     CameraDescription camera,
     DeviceOrientation deviceOrientation,
   ) async {
-    final now = DateTime.now().millisecondsSinceEpoch;
-    if (_processing || now - _lastProcessedAtMs < 90) return null;
+    if (_poseProcessing) return;
     final converted = _inputImage(image, camera, deviceOrientation);
-    if (converted == null) return null;
+    if (converted == null) return;
 
-    _processing = true;
-    _lastProcessedAtMs = now;
+    _poseProcessing = true;
     try {
-      final poses = await _detector.processImage(converted.input);
-      return HandmarkSnapshot(
-        poses: poses,
-        imageSize: Size(image.width.toDouble(), image.height.toDouble()),
-        rotation: converted.rotation,
-        lensDirection: camera.lensDirection,
+      final poses = await _poseDetector.processImage(converted.input);
+      if (_closed) return;
+      _liveSnapshots.add(
+        HandmarkSnapshot(
+          poses: poses,
+          imageSize: Size(image.width.toDouble(), image.height.toDouble()),
+          rotation: converted.rotation,
+          lensDirection: camera.lensDirection,
+          sensorOrientation: camera.sensorOrientation,
+        ),
       );
+    } catch (error, stackTrace) {
+      if (!_closed) _liveSnapshots.addError(error, stackTrace);
     } finally {
-      _processing = false;
+      _poseProcessing = false;
     }
   }
 
-  /// Phân tích một ảnh chụp từ video mẫu. Luồng này chỉ chạy khi người dùng
-  /// chủ động bật handmark video mẫu, tránh tốn CPU mặc định trên máy yếu.
+  /// Phân tích ảnh chụp từ video mẫu. Luồng này chỉ chạy khi người dùng bật
+  /// handmark video mẫu, tránh tốn CPU mặc định trên máy yếu.
   Future<HandmarkSnapshot?> processFile(String path, Size imageSize) async {
     final now = DateTime.now().millisecondsSinceEpoch;
-    if (_processing || now - _lastProcessedAtMs < 250) return null;
+    if (_poseProcessing || now - _lastFileFrameAtMs < 250) return null;
 
-    _processing = true;
-    _lastProcessedAtMs = now;
+    _poseProcessing = true;
+    _lastFileFrameAtMs = now;
     try {
-      final poses = await _detector.processImage(InputImage.fromFilePath(path));
+      final poses = await _poseDetector.processImage(
+        InputImage.fromFilePath(path),
+      );
       return HandmarkSnapshot(
         poses: poses,
         imageSize: imageSize,
@@ -114,16 +228,24 @@ class HandmarkTracker {
         lensDirection: CameraLensDirection.back,
       );
     } finally {
-      _processing = false;
+      _poseProcessing = false;
     }
   }
 
   Future<void> close() async {
+    _closed = true;
+    await _mediaPipeSubscription?.cancel();
     try {
-      await _detector.close();
+      _mediaPipe?.dispose();
     } catch (_) {
-      // Unit tests và quá trình shutdown có thể không còn MethodChannel.
+      // Shutdown có thể diễn ra sau khi Flutter engine đã đóng JNI bridge.
     }
+    try {
+      await _poseDetector.close();
+    } catch (_) {
+      // Unit tests và shutdown có thể không còn MethodChannel.
+    }
+    await _liveSnapshots.close();
   }
 
   _ConvertedInput? _inputImage(
@@ -164,6 +286,18 @@ class HandmarkTracker {
       ),
     );
   }
+}
+
+class _LiveFrameMetadata {
+  const _LiveFrameMetadata({
+    required this.imageSize,
+    required this.lensDirection,
+    required this.sensorOrientation,
+  });
+
+  final Size imageSize;
+  final CameraLensDirection lensDirection;
+  final int sensorOrientation;
 }
 
 class _ConvertedInput {

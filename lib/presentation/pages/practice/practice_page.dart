@@ -200,6 +200,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
   String _sessionId = 'ai-practice-session-001';
   String _modelVersion = 'vsl-mvp30-v2-lite-transformer';
   late final HandmarkTracker _handmarkTracker;
+  StreamSubscription<HandmarkSnapshot>? _handmarkSubscription;
   HandmarkSnapshot? _handmarkSnapshot;
   String? _handmarkError;
   bool _sampleHandmarkEnabled = false;
@@ -231,6 +232,24 @@ class _PracticePageState extends ConsumerState<PracticePage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _handmarkTracker = HandmarkTracker();
+    _handmarkSubscription = _handmarkTracker.liveSnapshots.listen(
+      (snapshot) {
+        if (!mounted) return;
+        setState(() {
+          _handmarkSnapshot = snapshot;
+          _handmarkError = null;
+        });
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        developer.log(
+          'MediaPipe Hand Landmarker stream lỗi',
+          name: 'signlight.handmark',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        if (mounted) setState(() => _handmarkError = error.toString());
+      },
+    );
     _scanController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
@@ -363,10 +382,13 @@ class _PracticePageState extends ConsumerState<PracticePage>
       ResolutionPreset.medium,
       enableAudio: false,
       imageFormatGroup: Platform.isAndroid
-          ? ImageFormatGroup.nv21
+          ? ImageFormatGroup.yuv420
           : ImageFormatGroup.bgra8888,
     );
 
+    if (oldController != null && oldController.value.isInitialized) {
+      await _stopHandmarkStream(oldController);
+    }
     await oldController?.dispose();
 
     try {
@@ -407,6 +429,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
     _timer?.cancel();
     _scanController.dispose();
     _cameraController?.dispose();
+    unawaited(_handmarkSubscription?.cancel());
     unawaited(_handmarkTracker.close());
     super.dispose();
   }
@@ -420,8 +443,9 @@ class _PracticePageState extends ConsumerState<PracticePage>
       return;
     }
     try {
+      await _handmarkTracker.startLive();
       await controller.startImageStream(
-        (image) => unawaited(_processHandmarkFrame(image, controller)),
+        (image) => _processHandmarkFrame(image, controller),
       );
     } catch (error) {
       developer.log(
@@ -445,24 +469,14 @@ class _PracticePageState extends ConsumerState<PracticePage>
     }
   }
 
-  Future<void> _processHandmarkFrame(
-    CameraImage image,
-    CameraController controller,
-  ) async {
+  void _processHandmarkFrame(CameraImage image, CameraController controller) {
     try {
-      final snapshot = await _handmarkTracker.process(
+      _handmarkTracker.processLiveFrame(
         image,
         controller.description,
         controller.value.lockedCaptureOrientation ??
             controller.value.deviceOrientation,
       );
-      if (!mounted || snapshot == null || controller != _cameraController) {
-        return;
-      }
-      setState(() {
-        _handmarkSnapshot = snapshot;
-        _handmarkError = null;
-      });
     } catch (error) {
       developer.log(
         'Không thể xử lý frame handmark',

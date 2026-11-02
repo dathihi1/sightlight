@@ -161,14 +161,6 @@ class AppShell extends ConsumerWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.school_outlined),
-              title: Text(l10n.courses),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/courses');
-              },
-            ),
-            ListTile(
               leading: const Icon(Icons.menu_book_outlined),
               title: Text(l10n.dictionary),
               selected: navigationShell.currentIndex == 1,

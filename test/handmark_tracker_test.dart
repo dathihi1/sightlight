@@ -38,4 +38,22 @@ void main() {
 
     expect(frame.visibleHandCount, 2);
   });
+
+  test('reports full 21-point MediaPipe hands on Android camera frames', () {
+    final points = List.generate(
+      21,
+      (index) => HandmarkPoint(x: index / 20, y: index / 20, z: 0),
+    );
+    final frame = HandmarkSnapshot(
+      poses: const [],
+      mediaPipeHands: [points, points],
+      imageSize: const Size(640, 480),
+      rotation: InputImageRotation.rotation90deg,
+      lensDirection: CameraLensDirection.front,
+      sensorOrientation: 90,
+    );
+
+    expect(frame.visibleHandCount, 2);
+    expect(frame.mediaPipeHands.first, hasLength(21));
+  });
 }
