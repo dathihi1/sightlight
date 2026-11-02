@@ -30,7 +30,9 @@ class Settings:
     max_sampled_frames: int = 64
     processing_concurrency: int = 1
     acquire_timeout_seconds: float = 0.05
-    backend_timeout_seconds: float = 8.0
+    # Backend Spring Boot scale-to-zero can need ~45 seconds to wake on the
+    # first request. Eight seconds made a healthy cold backend look dead.
+    backend_timeout_seconds: float = 75.0
     request_cache_ttl_seconds: int = 120
     require_https_backend: bool = True
     log_level: str = "INFO"
@@ -64,7 +66,7 @@ class Settings:
             max_sampled_frames=int(os.getenv("MAX_SAMPLED_FRAMES", "64")),
             processing_concurrency=max(1, int(os.getenv("PROCESSING_CONCURRENCY", "1"))),
             acquire_timeout_seconds=float(os.getenv("ACQUIRE_TIMEOUT_SECONDS", "0.05")),
-            backend_timeout_seconds=float(os.getenv("BACKEND_TIMEOUT_SECONDS", "8")),
+            backend_timeout_seconds=float(os.getenv("BACKEND_TIMEOUT_SECONDS", "75")),
             request_cache_ttl_seconds=int(os.getenv("REQUEST_CACHE_TTL_SECONDS", "120")),
             require_https_backend=_bool("REQUIRE_HTTPS_BACKEND", False),
             log_level=os.getenv("LOG_LEVEL", "INFO").upper(),
