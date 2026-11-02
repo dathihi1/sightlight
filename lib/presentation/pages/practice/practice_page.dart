@@ -194,7 +194,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
   int? _quotaRemaining;
   bool _quotaUnlimited = false;
   PracticeCallLayout _callLayout = PracticeCallLayout.split;
-  double _demoAspectRatio = 16 / 9;
+  double _demoAspectRatio = 1;
   String _sessionId = 'ai-practice-session-001';
   String _modelVersion = 'vsl-mvp30-v2-lite-transformer';
   late final HandmarkTracker _handmarkTracker;

@@ -8,6 +8,18 @@ import 'package:sightlight_flutter/core/ai/handmark_tracker.dart';
 import 'package:sightlight_flutter/presentation/widgets/handmark_painter.dart';
 import 'package:video_player/video_player.dart';
 
+const _r2VideoRevision = '20261102-cors-v2';
+
+/// Đồng bộ với web: đổi query version để ExoPlayer không dùng lại object R2
+/// đã cache trước khi video/CORS được sửa.
+String withR2VideoRevision(String url) {
+  final uri = Uri.tryParse(url);
+  if (uri == null || !uri.host.endsWith('.r2.dev')) return url;
+  return uri
+      .replace(queryParameters: {...uri.queryParameters, 'v': _r2VideoRevision})
+      .toString();
+}
+
 class SignVideoPlayer extends StatefulWidget {
   const SignVideoPlayer({
     super.key,
@@ -81,7 +93,7 @@ class _SignVideoPlayerState extends State<SignVideoPlayer> {
     }
 
     try {
-      final uri = Uri.parse(widget.videoUrl);
+      final uri = Uri.parse(withR2VideoRevision(widget.videoUrl));
       _controller = VideoPlayerController.networkUrl(uri);
       await _controller!.initialize();
       final aspectRatio = _controller!.value.aspectRatio;
@@ -348,7 +360,7 @@ class _SignVideoPlayerState extends State<SignVideoPlayer> {
               child: AspectRatio(
                 aspectRatio: _controller!.value.aspectRatio > 0
                     ? _controller!.value.aspectRatio
-                    : 16 / 9,
+                    : 1,
                 child: VideoPlayer(_controller!),
               ),
             ),
