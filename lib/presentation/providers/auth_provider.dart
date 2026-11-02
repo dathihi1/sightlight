@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../../core/errors/app_exception.dart';
 import '../../core/network/dio_client.dart';
 import '../../core/storage/token_storage.dart';
 import '../../data/datasources/auth_remote_datasource.dart';
@@ -56,7 +58,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
       final user = await _repository.getCurrentUser();
       state = AsyncValue.data(user);
     } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
+      state = AsyncValue.error(_readableAuthError(e), stack);
     }
   }
 
@@ -66,8 +68,9 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
       final user = await _repository.login(email, password);
       state = AsyncValue.data(user);
     } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
-      rethrow;
+      final error = _readableAuthError(e);
+      state = AsyncValue.error(error, stack);
+      Error.throwWithStackTrace(error, stack);
     }
   }
 
@@ -82,8 +85,9 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
       state = const AsyncValue.data(null);
       return result;
     } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
-      rethrow;
+      final error = _readableAuthError(e);
+      state = AsyncValue.error(error, stack);
+      Error.throwWithStackTrace(error, stack);
     }
   }
 
@@ -116,8 +120,9 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
         throw Exception('Platform này không hỗ trợ Google Sign-In');
       }
     } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
-      rethrow;
+      final error = _readableAuthError(e);
+      state = AsyncValue.error(error, stack);
+      Error.throwWithStackTrace(error, stack);
     }
   }
 
@@ -130,8 +135,9 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
       await _repository.logout();
       state = const AsyncValue.data(null);
     } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
-      rethrow;
+      final error = _readableAuthError(e);
+      state = AsyncValue.error(error, stack);
+      Error.throwWithStackTrace(error, stack);
     }
   }
 
@@ -144,5 +150,11 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
     if (current != null) {
       state = AsyncValue.data(current.copyWith(isPremium: isPremium));
     }
+  }
+
+  Object _readableAuthError(Object error) {
+    if (error is! DioException) return error;
+    final mapped = error.error;
+    return mapped is AppException ? mapped : AppException.fromDio(error);
   }
 }

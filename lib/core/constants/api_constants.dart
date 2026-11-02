@@ -107,7 +107,10 @@ class ApiConstants {
   static const String aiCapabilities = '$apiPrefix/ai/capabilities';
 
   // Timeouts
-  static const Duration connectTimeout = Duration(seconds: 30);
-  static const Duration receiveTimeout = Duration(seconds: 90);
-  static const Duration sendTimeout = Duration(seconds: 60);
+  // Azure Container Apps đang scale-to-zero để giữ chi phí thấp. Spring Boot
+  // cần khoảng 45 giây để khởi động lạnh, vì vậy timeout kết nối 30 giây làm
+  // lần đăng nhập đầu tiên và lượt gửi video đầu tiên thất bại dù server khỏe.
+  static const Duration connectTimeout = Duration(seconds: 75);
+  static const Duration receiveTimeout = Duration(seconds: 150);
+  static const Duration sendTimeout = Duration(seconds: 90);
 }

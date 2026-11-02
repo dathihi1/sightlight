@@ -5,6 +5,7 @@ import 'package:camera/camera.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
@@ -369,6 +370,10 @@ class _PracticePageState extends ConsumerState<PracticePage>
 
     try {
       await newController.initialize();
+      // CameraPreview ưu tiên lockedCaptureOrientation. Nếu không khóa, một
+      // số máy Android báo landscape khi điện thoại vẫn dựng đứng và preview
+      // bị xoay 90 độ ngay lúc bắt đầu quay.
+      await newController.lockCaptureOrientation(DeviceOrientation.portraitUp);
       if (mounted) {
         setState(() {
           _cameraController = newController;
@@ -442,7 +447,8 @@ class _PracticePageState extends ConsumerState<PracticePage>
       final snapshot = await _handmarkTracker.process(
         image,
         controller.description,
-        controller.value.deviceOrientation,
+        controller.value.lockedCaptureOrientation ??
+            controller.value.deviceOrientation,
       );
       if (!mounted || snapshot == null || controller != _cameraController) {
         return;
