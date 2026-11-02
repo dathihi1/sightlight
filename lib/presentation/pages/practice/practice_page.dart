@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:camera/camera.dart';
@@ -423,6 +424,11 @@ class _PracticePageState extends ConsumerState<PracticePage>
         (image) => unawaited(_processHandmarkFrame(image, controller)),
       );
     } catch (error) {
+      developer.log(
+        'Không thể khởi động luồng handmark',
+        name: 'signlight.handmark',
+        error: error,
+      );
       if (mounted) setState(() => _handmarkError = error.toString());
     }
   }
@@ -458,6 +464,11 @@ class _PracticePageState extends ConsumerState<PracticePage>
         _handmarkError = null;
       });
     } catch (error) {
+      developer.log(
+        'Không thể xử lý frame handmark',
+        name: 'signlight.handmark',
+        error: error,
+      );
       if (mounted) setState(() => _handmarkError = error.toString());
     }
   }
@@ -492,10 +503,13 @@ class _PracticePageState extends ConsumerState<PracticePage>
       if (_useServerVideoForSession) {
         try {
           await _stopHandmarkStream(controller);
-          await controller.startVideoRecording(
-            onAvailable: (image) =>
-                unawaited(_processHandmarkFrame(image, controller)),
-          );
+          // CameraX trên một số máy Samsung xoay preview 90 độ và làm ML Kit
+          // lỗi khi phải chạy đồng thời Preview + VideoCapture + ImageAnalysis.
+          // Handmark đã được cập nhật liên tục ở màn hình chờ; trong 3 giây ghi
+          // hình ta giữ overlay cuối cùng, rồi bật lại stream ngay khi dừng quay.
+          await controller.lockCaptureOrientation(DeviceOrientation.portraitUp);
+          await controller.startVideoRecording();
+          if (mounted) setState(() => _handmarkError = null);
         } catch (error) {
           await _startHandmarkStream(controller);
           _showMessage('Không thể bắt đầu quay video: $error');
@@ -577,7 +591,10 @@ class _PracticePageState extends ConsumerState<PracticePage>
         throw StateError('Camera không có video đang quay.');
       }
       final recording = await controller.stopVideoRecording();
-      unawaited(_startHandmarkStream(controller));
+      // Chờ CameraX gắn lại ImageAnalysis trước khi cho phép lượt kế tiếp;
+      // nếu chạy nền, nút "Luyện lại" có thể bắt đầu ghi đúng lúc stream đang
+      // khởi tạo và làm cả camera lẫn handmark rơi vào trạng thái lỗi.
+      await _startHandmarkStream(controller);
       if (!mounted) return;
       setState(() => _isAnalyzing = true);
       final bytes = await recording.readAsBytes();
@@ -597,7 +614,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
         _quotaRemaining = attempt.quotaRemaining;
       }
     } catch (error) {
-      if (controller != null) unawaited(_startHandmarkStream(controller));
+      if (controller != null) await _startHandmarkStream(controller);
       assessment = AiAssessmentResult(
         isCorrect: false,
         statusTitle: 'Chưa thể xử lý video',
