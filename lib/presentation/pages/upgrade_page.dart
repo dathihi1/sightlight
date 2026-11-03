@@ -22,6 +22,7 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
   final _currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
 
   Future<void> _handleCheckout() async {
+    if (_selectedPlanId.isEmpty) return;
     final billingNotifier = ref.read(billingStateProvider.notifier);
 
     // Deep link return URL for payOS
@@ -43,6 +44,15 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
         context,
         title: 'Lỗi thanh toán',
         message: errorMsg.replaceAll('Exception: ', ''),
+      );
+    } else if (session != null && session.isCompleted && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Gói Tri Ân đã được kích hoạt. Cảm ơn bạn đã đồng hành cùng SignLight!',
+          ),
+          backgroundColor: Colors.green,
+        ),
       );
     }
   }
@@ -96,6 +106,11 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
           if (effectivePlans.isEmpty) {
             return Center(child: Text('Hiện chưa có gói Premium nào đang mở.'));
           }
+
+          final selectedPlan = effectivePlans.firstWhere(
+            (plan) => plan.id == _selectedPlanId,
+            orElse: () => effectivePlans.first,
+          );
 
           return SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -164,10 +179,17 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
                         : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.lock_outline_rounded, size: 20),
+                              Icon(
+                                selectedPlan.isFree
+                                    ? Icons.card_giftcard_rounded
+                                    : Icons.lock_outline_rounded,
+                                size: 20,
+                              ),
                               const SizedBox(width: 8),
                               Text(
-                                l10n.payWithPayOS,
+                                selectedPlan.isFree
+                                    ? 'Nhận gói Tri Ân miễn phí'
+                                    : l10n.payWithPayOS,
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -350,88 +372,94 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
               width: isSelected ? 2 : 1,
             ),
           ),
-          child: Column(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Radio<String>(value: plan.id),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              plan.name,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+              Radio<String>(value: plan.id),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      plan.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (plan.isAppreciation ||
+                        plan.isPopular ||
+                        plan.isLifetime) ...[
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          if (plan.isAppreciation)
+                            _buildPlanTag(
+                              'TRI ÂN 0Đ',
+                              Colors.green.shade100,
+                              Colors.green.shade900,
                             ),
-                            if (plan.isPopular) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange.shade100,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  l10n.popular,
-                                  style: TextStyle(
-                                    color: Colors.orange.shade900,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                            if (plan.isLifetime) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.purple.shade100,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  l10n.lifetime,
-                                  style: TextStyle(
-                                    color: Colors.purple.shade900,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        Text(
-                          plan.description,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
+                          if (plan.isPopular)
+                            _buildPlanTag(
+                              l10n.popular,
+                              Colors.orange.shade100,
+                              Colors.orange.shade900,
+                            ),
+                          if (plan.isLifetime)
+                            _buildPlanTag(
+                              l10n.lifetime,
+                              Colors.purple.shade100,
+                              Colors.purple.shade900,
+                            ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 6),
+                    Text(
+                      plan.description,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                  Text(
-                    _currencyFormat.format(plan.price),
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
+                    const SizedBox(height: 10),
+                    Text(
+                      plan.isFree
+                          ? 'Miễn phí'
+                          : _currencyFormat.format(plan.price),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: plan.isFree
+                            ? Colors.green.shade700
+                            : theme.colorScheme.primary,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlanTag(String label, Color background, Color foreground) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: foreground,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

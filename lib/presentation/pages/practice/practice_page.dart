@@ -12,6 +12,8 @@ import 'package:uuid/uuid.dart';
 
 import 'package:sightlight_flutter/core/constants/api_constants.dart';
 import 'package:sightlight_flutter/core/ai/handmark_tracker.dart';
+import 'package:sightlight_flutter/core/ai/local_recognizer.dart';
+import 'package:sightlight_flutter/core/ai/mediapipe_extractor.dart';
 import 'package:sightlight_flutter/data/models/practice/practice_model.dart';
 import 'package:sightlight_flutter/presentation/providers/practice_provider.dart';
 import 'package:sightlight_flutter/presentation/widgets/sign_video_player.dart';
@@ -200,6 +202,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
   String _sessionId = 'ai-practice-session-001';
   String _modelVersion = 'vsl-mvp30-v2-lite-transformer';
   late final HandmarkTracker _handmarkTracker;
+  late final MediaPipeExtractor _onDeviceExtractor;
   StreamSubscription<HandmarkSnapshot>? _handmarkSubscription;
   HandmarkSnapshot? _handmarkSnapshot;
   int _lastHandmarkUpdateAtMs = 0;
@@ -207,10 +210,6 @@ class _PracticePageState extends ConsumerState<PracticePage>
   String? _handmarkError;
   bool _sampleHandmarkEnabled = false;
   int _sampleHandmarkCount = 0;
-
-  // Chỉ bật lại khi Flutter đã có MediaPipe Holistic native và tạo đúng
-  // v2_holistic_subset 64x327. Không được dùng tensor tổng hợp từ pixel motion.
-  static const bool _onDeviceLandmarkPipelineReady = false;
 
   bool get _serverVideoAvailable =>
       widget.serverVideoEnabled ?? ApiConstants.useServerVideoProcessing;
@@ -234,9 +233,13 @@ class _PracticePageState extends ConsumerState<PracticePage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _handmarkTracker = HandmarkTracker();
+    _onDeviceExtractor = MediaPipeExtractor();
     _handmarkSubscription = _handmarkTracker.liveSnapshots.listen(
       (snapshot) {
         if (!mounted) return;
+        if (_phase == PracticePhase.recording) {
+          _onDeviceExtractor.addHandmarkSnapshot(snapshot);
+        }
         setState(() {
           _handmarkSnapshot = snapshot;
           _lastHandmarkUpdateAtMs = DateTime.now().millisecondsSinceEpoch;
@@ -273,6 +276,8 @@ class _PracticePageState extends ConsumerState<PracticePage>
       _isLoading = true;
       _sessionError = null;
     });
+
+    unawaited(LocalRecognizer.instance.load(modelSize: targetSize));
 
     try {
       final repository = ref.read(practiceRepositoryProvider);
@@ -334,6 +339,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
 
     if (state == AppLifecycleState.inactive) {
       _timer?.cancel();
+      _handmarkStreamingDuringRecording = false;
       camera.dispose();
       _isCameraInitialized = false;
     } else if (state == AppLifecycleState.resumed) {
@@ -434,6 +440,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
     _cameraController?.dispose();
     unawaited(_handmarkSubscription?.cancel());
     unawaited(_handmarkTracker.close());
+    _onDeviceExtractor.dispose();
     super.dispose();
   }
 
@@ -492,18 +499,14 @@ class _PracticePageState extends ConsumerState<PracticePage>
 
   Future<void> _startPractice() async {
     if (_isFinishing || _isAnalyzing) return;
-    if (!_useServerVideoForSession && !_onDeviceLandmarkPipelineReady) {
-      _showMessage(
-        'Nhận diện trên thiết bị đang được hoàn thiện. Vui lòng chọn xử lý trên server.',
-      );
+    final controller = _cameraController;
+    if (controller == null || !controller.value.isInitialized) {
+      _showMessage('Camera chưa sẵn sàng. Vui lòng thử lại.');
       return;
     }
-    final controller = _cameraController;
+    _onDeviceExtractor.start();
+
     if (_useServerVideoForSession) {
-      if (controller == null || !controller.value.isInitialized) {
-        _showMessage('Camera chưa sẵn sàng. Vui lòng thử lại.');
-        return;
-      }
       if (!_serverVideoConsentGranted) {
         final consent = await _requestServerVideoConsent();
         if (!mounted) return;
@@ -512,43 +515,25 @@ class _PracticePageState extends ConsumerState<PracticePage>
         } else {
           setState(() => _serverVideoDeclined = true);
           _showMessage(
-            'Video chưa được gửi. Nhận diện trên thiết bị hiện chưa khả dụng.',
+            'Đã chuyển sang xử lý trên thiết bị; video không được tải lên.',
           );
-          return;
         }
       }
       if (_useServerVideoForSession) {
         try {
           await _stopHandmarkStream(controller);
-          // Dừng ImageAnalysis độc lập trước, sau đó khởi động VideoCapture
-          // kèm callback frame. Đây là luồng được camera 0.12.x hỗ trợ để
-          // Preview + VideoCapture + ImageAnalysis dùng chung một CameraX session;
-          // nếu chỉ gọi startVideoRecording() thì handmark sẽ giữ nguyên frame cuối.
           await controller.lockCaptureOrientation(DeviceOrientation.portraitUp);
-          try {
-            await controller.startVideoRecording(
-              onAvailable: (image) => _processHandmarkFrame(image, controller),
-            );
-            _handmarkStreamingDuringRecording = true;
-          } catch (simultaneousError, stackTrace) {
-            // Một số camera không hỗ trợ bộ ba ImageCapture +
-            // VideoCapture + ImageAnalysis. Khi đó quay theo luồng tương
-            // thích cũ và ẩn overlay thay vì giữ cứng handmark cuối.
-            developer.log(
-              'Camera không hỗ trợ vừa quay vừa chạy handmark; dùng fallback',
-              name: 'signlight.handmark',
-              error: simultaneousError,
-              stackTrace: stackTrace,
-            );
-            _handmarkStreamingDuringRecording = false;
-            _handmarkSnapshot = null;
-            await controller.startVideoRecording();
-          }
+          // Camera2 ghi video và stream frame trong cùng session. Callback này
+          // là nguồn frame thật cho handmark trong toàn bộ lúc người dùng quay.
+          await controller.startVideoRecording(
+            onAvailable: (image) => _processHandmarkFrame(image, controller),
+          );
+          _handmarkStreamingDuringRecording = true;
           if (mounted) setState(() => _handmarkError = null);
         } catch (error) {
           _handmarkStreamingDuringRecording = false;
           await _startHandmarkStream(controller);
-          _showMessage('Không thể bắt đầu quay video: $error');
+          _showMessage('Thiết bị không thể vừa quay vừa quét handmark: $error');
           return;
         }
       }
@@ -591,15 +576,67 @@ class _PracticePageState extends ConsumerState<PracticePage>
       }
       return;
     }
-    final assessment = AiAssessmentResult(
-      isCorrect: false,
-      statusTitle: 'On-device chưa sẵn sàng',
-      confidencePercent: 0,
-      targetWord: sign.label,
-      feedbackNote: 'Ứng dụng chưa có MediaPipe Holistic trên thiết bị nên không tạo kết quả giả. Vui lòng chọn xử lý trên server.',
-      candidates: const [],
-      hasMotion: false,
-    );
+    final rawFrameCount = _onDeviceExtractor.usefulFrameCount;
+    final extraction = _onDeviceExtractor.finish();
+    if (mounted) setState(() => _isAnalyzing = true);
+
+    AiAssessmentResult assessment;
+    if (rawFrameCount < MediaPipeExtractor.MIN_USEFUL_FRAMES ||
+        extraction.quality.handFrameRatio < 0.2) {
+      assessment = AiAssessmentResult(
+        isCorrect: false,
+        statusTitle: 'Không phát hiện đủ bàn tay',
+        confidencePercent: 0,
+        targetWord: sign.label,
+        feedbackNote:
+            'Chỉ thu được $rawFrameCount frame handmark. Hãy giữ tay trong khung hình suốt động tác rồi thử lại.',
+        candidates: const [],
+        hasMotion: false,
+      );
+    } else {
+      if (!LocalRecognizer.instance.isReady) {
+        await LocalRecognizer.instance.load(modelSize: _selectedModelSize);
+      }
+      final localResult = await LocalRecognizer.instance.infer(
+        extraction.features,
+      );
+      if (localResult == null || localResult.top3.isEmpty) {
+        assessment = AiAssessmentResult(
+          isCorrect: false,
+          statusTitle: 'Chưa thể chạy AI trên thiết bị',
+          confidencePercent: 0,
+          targetWord: sign.label,
+          feedbackNote: 'Không nạp được model on-device. Vui lòng thử lại hoặc chọn xử lý trên server.',
+          candidates: const [],
+        );
+      } else {
+        final top1 = localResult.top3.first;
+        final isCorrect =
+            top1.label.trim().toLowerCase() == sign.label.trim().toLowerCase();
+        assessment = AiAssessmentResult(
+          isCorrect: isCorrect,
+          statusTitle: isCorrect
+              ? 'Chính xác! (On-device)'
+              : 'AI nhận ra: ${top1.label}',
+          confidencePercent: (top1.confidence * 100).round(),
+          targetWord: sign.label,
+          feedbackNote:
+              'Đã quét $rawFrameCount frame handmark và nhận diện ngay trên thiết bị trong ${localResult.latencyMs}ms.',
+          candidates: localResult.top3
+              .map(
+                (candidate) => AiRecognitionCandidate(
+                  word: candidate.label,
+                  probability: (candidate.confidence * 100).round(),
+                  isTarget:
+                      candidate.label.trim().toLowerCase() ==
+                      sign.label.trim().toLowerCase(),
+                ),
+              )
+              .toList(growable: false),
+        );
+        unawaited(_syncOnDeviceAttempt(sign, extraction));
+      }
+    }
 
     if (mounted) {
       setState(() {
@@ -617,6 +654,33 @@ class _PracticePageState extends ConsumerState<PracticePage>
       // Safe fallback when storage provider is not initialized
     }
     _isFinishing = false;
+  }
+
+  Future<void> _syncOnDeviceAttempt(
+    PracticeSignItem sign,
+    ExtractionResult extraction,
+  ) async {
+    try {
+      final attempt = await ref
+          .read(practiceRepositoryProvider)
+          .submitAiAttempt(
+            targetSignId: sign.id,
+            modelVersion: _modelVersion,
+            features: extraction.features,
+            frameCount: extraction.frameCount,
+            durationMs: extraction.durationMs,
+            handFrameRatio: extraction.quality.handFrameRatio,
+            sessionId: _sessionId,
+          );
+      if (!mounted || attempt?.quotaRemaining == null) return;
+      setState(() => _quotaRemaining = attempt!.quotaRemaining);
+    } catch (error) {
+      developer.log(
+        'On-device đã chấm xong nhưng chưa đồng bộ được lượt luyện',
+        name: 'signlight.on_device',
+        error: error,
+      );
+    }
   }
 
   Future<void> _finishServerVideoRecording(PracticeSignItem sign) async {
@@ -937,11 +1001,9 @@ class _PracticePageState extends ConsumerState<PracticePage>
                 children: [
                   ChoiceChip(
                     avatar: const Icon(Icons.phone_android_rounded, size: 18),
-                    label: const Text('Trên thiết bị (đang hoàn thiện)'),
+                    label: const Text('Trên thiết bị'),
                     selected: !_useServerVideoForSession,
-                    onSelected:
-                        _phase == PracticePhase.recording ||
-                            !_onDeviceLandmarkPipelineReady
+                    onSelected: _phase == PracticePhase.recording
                         ? null
                         : (_) => setState(() {
                             _serverVideoDeclined = true;
@@ -959,15 +1021,6 @@ class _PracticePageState extends ConsumerState<PracticePage>
                   ),
                 ],
               ),
-              if (!_onDeviceLandmarkPipelineReady) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'On-device tạm khóa để tránh kết quả sai. Hiện chỉ server trích xuất landmarks thật.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
               const SizedBox(height: 12),
             ],
 
@@ -1442,9 +1495,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
                   child: Text(
                     _useServerVideoForSession
                         ? 'Chỉ khi bạn đồng ý, video ngắn mới được gửi qua HTTPS, xử lý tạm thời rồi xóa; máy chủ không lưu video.'
-                        : _onDeviceLandmarkPipelineReady
-                        ? 'Hình ảnh không rời khỏi máy bạn — ứng dụng chỉ gửi dãy số mô tả chuyển động.'
-                        : 'On-device chưa sẵn sàng; ứng dụng sẽ không tạo kết quả nhận diện giả.',
+                        : 'AI chạy ngay trên thiết bị; video không rời khỏi máy. Ứng dụng chỉ đồng bộ dãy số landmark để lưu tiến độ.',
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark ? Colors.white60 : Colors.black54,
@@ -1552,12 +1603,16 @@ class _PracticePageState extends ConsumerState<PracticePage>
               icon: handmarkSnapshot?.visibleHandCount == 2
                   ? Icons.pan_tool_alt_rounded
                   : Icons.back_hand_outlined,
-              text:
-                  _phase == PracticePhase.recording &&
-                      !_handmarkStreamingDuringRecording
-                  ? 'Handmark tạm dừng'
-                  : _handmarkError != null
+              text: _handmarkError != null
                   ? 'Handmark lỗi'
+                  : _phase == PracticePhase.recording &&
+                        handmarkSnapshot?.visibleHandCount == 2
+                  ? 'Đang quét · 2 tay'
+                  : _phase == PracticePhase.recording &&
+                        handmarkSnapshot?.visibleHandCount == 1
+                  ? 'Đang quét · 1 tay'
+                  : _phase == PracticePhase.recording
+                  ? 'Đang quét handmark'
                   : handmarkSnapshot?.visibleHandCount == 2
                   ? 'Handmark · 2 tay'
                   : handmarkSnapshot?.visibleHandCount == 1
@@ -1593,10 +1648,12 @@ class _PracticePageState extends ConsumerState<PracticePage>
   }
 
   HandmarkSnapshot? get _visibleHandmarkSnapshot {
-    if (_phase != PracticePhase.recording) return _handmarkSnapshot;
+    if (_phase != PracticePhase.recording || !_useServerVideoForSession) {
+      return _handmarkSnapshot;
+    }
     if (!_handmarkStreamingDuringRecording) return null;
 
-    // Không vẽ một bộ xương tay cũ nếu callback frame bị ngắt.
+    // Không vẽ lại bộ xương của một frame cũ nếu camera ngắt callback.
     final ageMs =
         DateTime.now().millisecondsSinceEpoch - _lastHandmarkUpdateAtMs;
     return ageMs <= 600 ? _handmarkSnapshot : null;
@@ -1878,13 +1935,14 @@ class _PracticePageState extends ConsumerState<PracticePage>
       );
     }
 
-    final previewSize = _cameraController!.value.previewSize;
+    final controller = _cameraController!;
+    final previewSize = controller.value.previewSize;
     return FittedBox(
       fit: BoxFit.cover,
       child: SizedBox(
         width: previewSize != null ? previewSize.height : 480,
         height: previewSize != null ? previewSize.width : 640,
-        child: CameraPreview(_cameraController!),
+        child: CameraPreview(controller),
       ),
     );
   }

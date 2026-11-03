@@ -87,7 +87,10 @@ void main() {
         expect(find.text('Chia đôi'), findsOneWidget);
         expect(find.text('Khung nhỏ'), findsOneWidget);
         expect(find.text('Bật handmark video mẫu'), findsOneWidget);
-        expect(find.textContaining('On-device chưa sẵn sàng'), findsOneWidget);
+        expect(
+          find.textContaining('AI chạy ngay trên thiết bị'),
+          findsOneWidget,
+        );
 
         await tester.ensureVisible(find.text('Bật handmark video mẫu'));
         await tester.tap(find.text('Bật handmark video mẫu'));
@@ -153,7 +156,7 @@ void main() {
     });
 
     testWidgets(
-      'Does not fabricate a local score without MediaPipe landmarks',
+      'Requires a ready camera before starting local landmark capture',
       (tester) async {
         tester.view.physicalSize = const Size(1080, 2400);
         tester.view.devicePixelRatio = 2.0;
@@ -171,10 +174,7 @@ void main() {
         await tester.tap(startButton);
         await tester.pump();
 
-        expect(
-          find.textContaining('Nhận diện trên thiết bị đang được hoàn thiện'),
-          findsOneWidget,
-        );
+        expect(find.textContaining('Camera chưa sẵn sàng'), findsOneWidget);
         expect(find.textContaining('Độ tin cậy'), findsNothing);
         expect(find.text('Bắt đầu ký hiệu'), findsOneWidget);
       },
@@ -193,15 +193,12 @@ void main() {
       await tester.pump();
 
       expect(find.text('Cách xử lý video'), findsOneWidget);
-      expect(find.text('Trên thiết bị (đang hoàn thiện)'), findsOneWidget);
+      expect(find.text('Trên thiết bị'), findsOneWidget);
       expect(find.text('Trên server'), findsOneWidget);
       expect(
         tester
             .widget<ChoiceChip>(
-              find.widgetWithText(
-                ChoiceChip,
-                'Trên thiết bị (đang hoàn thiện)',
-              ),
+              find.widgetWithText(ChoiceChip, 'Trên thiết bị'),
             )
             .selected,
         isFalse,
@@ -215,13 +212,10 @@ void main() {
       expect(
         tester
             .widget<ChoiceChip>(
-              find.widgetWithText(
-                ChoiceChip,
-                'Trên thiết bị (đang hoàn thiện)',
-              ),
+              find.widgetWithText(ChoiceChip, 'Trên thiết bị'),
             )
             .onSelected,
-        isNull,
+        isNotNull,
       );
     });
   });

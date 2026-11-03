@@ -11,16 +11,10 @@ class GamificationRemoteDataSource {
   final Dio _dio;
 
   Future<TransactionResponse<ProgressStatsDto>> getProgressOverview() async {
-    Response response;
-    try {
-      response = await _dio.get(ApiConstants.progressOverview);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        response = await _dio.get(ApiConstants.gamificationSummary);
-      } else {
-        rethrow;
-      }
-    }
+    // Production exposes the consolidated gamification summary. The legacy
+    // /progress/overview path is not registered and is mapped to HTTP 500 by
+    // Spring's global handler, so probing it first breaks both mobile pages.
+    final response = await _dio.get(ApiConstants.gamificationSummary);
 
     final data = response.data is Map<String, dynamic>
         ? response.data as Map<String, dynamic>
@@ -36,87 +30,50 @@ class GamificationRemoteDataSource {
 
   Future<TransactionResponse<List<ActivityDayDto>>>
   getProgressActivity() async {
-    Response response;
-    try {
-      response = await _dio.get(ApiConstants.progressActivity);
-      final data = response.data is Map<String, dynamic>
-          ? response.data as Map<String, dynamic>
-          : <String, dynamic>{'result': response.data};
-
-      return TransactionResponse<List<ActivityDayDto>>.fromJson(data, (json) {
-        final list = json is List ? json : [];
-        return list
-            .map((e) => ActivityDayDto.fromJson(e as Map<String, dynamic>))
-            .toList();
-      });
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        // Fallback to gamification summary
-        final summaryResp = await _dio.get(ApiConstants.gamificationSummary);
-        final sumData = summaryResp.data is Map<String, dynamic>
-            ? summaryResp.data as Map<String, dynamic>
-            : <String, dynamic>{'result': summaryResp.data};
-        final stats = ProgressStatsDto.fromJson(
-          (sumData['result'] as Map<String, dynamic>?) ?? {},
-        );
-        return TransactionResponse<List<ActivityDayDto>>(
-          errorCode: '00000',
-          result: stats.recentActivities,
-        );
-      }
-      rethrow;
-    }
+    final response = await _dio.get(ApiConstants.gamificationSummary);
+    final data = response.data is Map<String, dynamic>
+        ? response.data as Map<String, dynamic>
+        : <String, dynamic>{'result': response.data};
+    return TransactionResponse<List<ActivityDayDto>>.fromJson(data, (json) {
+      final stats = ProgressStatsDto.fromJson(
+        json is Map<String, dynamic> ? json : <String, dynamic>{},
+      );
+      return stats.recentActivities;
+    });
   }
 
   Future<TransactionResponse<List<BadgeItemDto>>> getAwards() async {
-    Response response;
-    try {
-      response = await _dio.get(ApiConstants.awards);
-      final data = response.data is Map<String, dynamic>
-          ? response.data as Map<String, dynamic>
-          : <String, dynamic>{'result': response.data};
+    // Awards are the BADGE entries from the deployed EXP store catalog.
+    final response = await _dio.get(ApiConstants.gamificationStore);
+    final data = response.data is Map<String, dynamic>
+        ? response.data as Map<String, dynamic>
+        : <String, dynamic>{'result': response.data};
 
-      return TransactionResponse<List<BadgeItemDto>>.fromJson(data, (json) {
-        final list = json is List
-            ? json
-            : (json is Map && json['badges'] is List)
-            ? json['badges'] as List
-            : (json is Map && json['items'] is List)
-            ? json['items'] as List
-            : [];
-        return list
-            .map((e) => BadgeItemDto.fromJson(e as Map<String, dynamic>))
-            .toList();
-      });
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        // Fallback to store
-        response = await _dio.get(ApiConstants.gamificationStore);
-        final data = response.data is Map<String, dynamic>
-            ? response.data as Map<String, dynamic>
-            : <String, dynamic>{'result': response.data};
-
-        return TransactionResponse<List<BadgeItemDto>>.fromJson(data, (json) {
-          final list = (json is Map && json['items'] is List)
-              ? (json['items'] as List)
-                    .where((item) => item is Map && item['itemType'] == 'BADGE')
-                    .map(
-                      (item) => <String, dynamic>{
-                        ...(item as Map).cast<String, dynamic>(),
-                        // The deployed backend has no award celebration
-                        // endpoint; store ownership is already final state.
-                        'isCelebrated': true,
-                      },
-                    )
-                    .toList()
-              : [];
-          return list
-              .map((e) => BadgeItemDto.fromJson(e as Map<String, dynamic>))
-              .toList();
-        });
-      }
-      rethrow;
-    }
+    return TransactionResponse<List<BadgeItemDto>>.fromJson(data, (json) {
+      final list = (json is Map && json['items'] is List)
+          ? (json['items'] as List)
+                .where((item) => item is Map && item['itemType'] == 'BADGE')
+                .map((item) {
+                  final badge = (item as Map).cast<String, dynamic>();
+                  final isOwned = badge['isOwned'] as bool? ?? false;
+                  return <String, dynamic>{
+                    ...badge,
+                    'category': 'Huy hiệu EXP',
+                    'maxLevel': 1,
+                    'currentValue': isOwned ? 1 : 0,
+                    'targetValue': 1,
+                    'isUnlocked': isOwned,
+                    // Store ownership is already the final state; production
+                    // has no separate celebration endpoint for these badges.
+                    'isCelebrated': true,
+                  };
+                })
+                .toList()
+          : [];
+      return list
+          .map((e) => BadgeItemDto.fromJson(e as Map<String, dynamic>))
+          .toList();
+    });
   }
 
   Future<TransactionResponse<void>> celebrateAward(String code) async {

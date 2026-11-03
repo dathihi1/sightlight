@@ -22,6 +22,22 @@ void main() {
       expect(plan.id, 'PREMIUM_1M');
       expect(plan.price, 59000);
       expect(plan.durationMonths, 1);
+      expect(plan.isFree, isFalse);
+      expect(plan.isAppreciation, isFalse);
+    });
+
+    test('Tri An plan is recognized as a free direct activation', () {
+      const plan = Plan(
+        id: 'PREMIUM_TRIAN_1M',
+        name: 'SignLight Premium Tri Ân',
+        description: 'Gói tri ân 1 tháng',
+        price: 0,
+        durationMonths: 1,
+        features: ['Premium 30 ngày'],
+      );
+
+      expect(plan.isFree, isTrue);
+      expect(plan.isAppreciation, isTrue);
     });
 
     test('CheckoutRequest serializes properly to JSON', () {
@@ -61,6 +77,7 @@ void main() {
       expect(entity, isA<CheckoutSession>());
       expect(entity.orderCode, 123456);
       expect(entity.checkoutUrl, 'https://pay.payos.vn/web/test-url');
+      expect(entity.isCompleted, isFalse);
     });
 
     test('CheckoutSessionModel parses nested data format gracefully', () {
@@ -76,6 +93,7 @@ void main() {
       expect(model.orderCode, 987654);
       expect(model.checkoutUrl, 'https://pay.payos.vn/web/nested-url');
       expect(model.status, 'PAID');
+      expect(model.toEntity().isCompleted, isTrue);
     });
   });
 

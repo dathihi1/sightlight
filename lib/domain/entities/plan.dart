@@ -18,4 +18,7 @@ class Plan {
   final List<String> features;
   final bool isPopular;
   final bool isLifetime;
+
+  bool get isFree => price == 0;
+  bool get isAppreciation => id == 'PREMIUM_TRIAN_1M';
 }

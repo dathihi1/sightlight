@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:dio/dio.dart';
+import 'package:sightlight_flutter/data/datasources/gamification_remote_datasource.dart';
 import 'package:sightlight_flutter/data/models/gamification/award_dto.dart';
 import 'package:sightlight_flutter/data/models/gamification/progress_stats_dto.dart';
 import 'package:sightlight_flutter/data/models/user/user_profile_dto.dart';
@@ -150,6 +152,79 @@ void main() {
       expect(badge.progressRatio, 0.8);
       expect(badge.isUnlocked, true);
       expect(badge.expReward, 200);
+    });
+
+    test('store badge ownership maps to an unlocked achievement', () {
+      final badge = BadgeItemDto.fromJson({
+        'itemKey': 'BADGE_AMBASSADOR',
+        'title': 'Huy hiệu Đại sứ VSL',
+        'description': 'Huy hiệu danh dự',
+        'isOwned': true,
+        'costExp': 150,
+      }).toEntity();
+
+      expect(badge.code, 'BADGE_AMBASSADOR');
+      expect(badge.isUnlocked, isTrue);
+    });
+  });
+
+  group('Deployed gamification API contract', () {
+    test('uses summary and store endpoints available in production', () async {
+      final requestedPaths = <String>[];
+      final dio = Dio();
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            requestedPaths.add(options.path);
+            if (options.path.endsWith('/summary')) {
+              handler.resolve(
+                Response(
+                  requestOptions: options,
+                  statusCode: 200,
+                  data: {
+                    'errorCode': '00000',
+                    'result': {'streakDays': 4, 'recentActivities': []},
+                  },
+                ),
+              );
+              return;
+            }
+            handler.resolve(
+              Response(
+                requestOptions: options,
+                statusCode: 200,
+                data: {
+                  'errorCode': '00000',
+                  'result': {
+                    'items': [
+                      {
+                        'itemKey': 'BADGE_AMBASSADOR',
+                        'itemType': 'BADGE',
+                        'title': 'Huy hiệu Đại sứ VSL',
+                        'description': 'Huy hiệu danh dự',
+                        'costExp': 150,
+                        'isOwned': true,
+                      },
+                    ],
+                  },
+                },
+              ),
+            );
+          },
+        ),
+      );
+      final remote = GamificationRemoteDataSource(dio);
+
+      final progress = await remote.getProgressOverview();
+      final awards = await remote.getAwards();
+
+      expect(progress.result?.streakDays, 4);
+      expect(awards.result, hasLength(1));
+      expect(awards.result?.single.isUnlocked, isTrue);
+      expect(requestedPaths, [
+        '/api/v1/gamification/summary',
+        '/api/v1/gamification/store',
+      ]);
     });
   });
 

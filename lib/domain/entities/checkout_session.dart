@@ -12,4 +12,11 @@ class CheckoutSession {
   final String? status;
   final String? planId;
   final int? amount;
+
+  bool get isCompleted {
+    final normalized = status?.toUpperCase();
+    return normalized == 'PAID' ||
+        normalized == 'SUCCESS' ||
+        normalized == 'COMPLETED';
+  }
 }

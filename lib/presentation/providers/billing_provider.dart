@@ -49,7 +49,12 @@ class BillingNotifier extends StateNotifier<AsyncValue<CheckoutSession?>> {
       );
       state = AsyncValue.data(session);
 
-      if (session.checkoutUrl.isNotEmpty) {
+      if (session.isCompleted) {
+        // Gói Tri Ân 0đ được backend kích hoạt trực tiếp, không mở
+        // payOS. Cập nhật ngay tài khoản mobile để giao diện không
+        // tiếp tục hiển thị gói Free sau khi nhận thành công.
+        _ref.read(authStateProvider.notifier).updatePremiumStatus(true);
+      } else if (session.checkoutUrl.isNotEmpty) {
         await openPayOS(session.checkoutUrl);
       }
       return session;

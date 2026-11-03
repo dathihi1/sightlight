@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.8+9
+version: 1.0.9+10
 
 environment:
   sdk: ^3.13.3
@@ -59,6 +59,9 @@ dependencies:
   video_player: ^2.14.1
   google_sign_in: ^7.2.0
   camera: ^0.12.2
+  # Camera2 giữ preview đúng chiều và hỗ trợ vừa quay vừa stream frame.
+  # CameraX hiện còn lỗi xoay 90° với startVideoRecording(onAvailable: ...).
+  camera_android: ^0.10.12
   onnxruntime: ^1.4.1
   hand_landmarker: ^3.1.0
   google_mlkit_pose_detection: ^0.16.1

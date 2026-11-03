@@ -1,10 +1,12 @@
 import 'dart:typed_data';
 import 'dart:math';
+
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:google_mlkit_commons/google_mlkit_commons.dart';
 import 'package:flutter/foundation.dart' show WriteBuffer;
 import 'package:flutter/painting.dart' show Size;
+import 'package:sightlight_flutter/core/ai/handmark_tracker.dart';
 
 /// MediaPipe feature extractor - port từ web extractor.ts
 /// Trích xuất 327 chiều features theo schema v2_holistic_subset
@@ -30,9 +32,7 @@ class MediaPipeExtractor {
   String? lastError;
 
   MediaPipeExtractor() {
-    _poseDetector = PoseDetector(
-      options: PoseDetectorOptions(),
-    );
+    _poseDetector = PoseDetector(options: PoseDetectorOptions());
     _isInitialized = true;
   }
 
@@ -55,7 +55,9 @@ class MediaPipeExtractor {
     try {
       final inputImage = _convertCameraImage(cameraImage);
 
-      print('[MediaPipe] Processing image: ${cameraImage.width}x${cameraImage.height}, format: ${cameraImage.format.group}');
+      print(
+        '[MediaPipe] Processing image: ${cameraImage.width}x${cameraImage.height}, format: ${cameraImage.format.group}',
+      );
 
       final poses = await _poseDetector.processImage(inputImage);
 
@@ -63,12 +65,15 @@ class MediaPipeExtractor {
 
       // Store for debug visualization
       lastDetectedPoses = poses;
-      lastImageSize = Size(cameraImage.width.toDouble(), cameraImage.height.toDouble());
+      lastImageSize = Size(
+        cameraImage.width.toDouble(),
+        cameraImage.height.toDouble(),
+      );
       lastError = null;
 
       // Extract landmarks
       // Hand detection not available in google_ml_kit - stub with zeros
-      final leftHand = List<double>.filled(63, 0.0);  // 21 landmarks × 3
+      final leftHand = List<double>.filled(63, 0.0); // 21 landmarks × 3
       final rightHand = List<double>.filled(63, 0.0); // 21 landmarks × 3
       final pose = _extractPoseLandmarks(poses);
       final face = List<double>.filled(123, 0.0); // Face mesh not available
@@ -94,13 +99,15 @@ class MediaPipeExtractor {
         1.0, // face_missing_rate = 1.0
       ];
 
-      _rawFrames.add(_RawFrame(
-        leftHand: leftHand,
-        rightHand: rightHand,
-        pose: pose,
-        face: face,
-        quality: quality,
-      ));
+      _rawFrames.add(
+        _RawFrame(
+          leftHand: leftHand,
+          rightHand: rightHand,
+          pose: pose,
+          face: face,
+          quality: quality,
+        ),
+      );
     } catch (e, stackTrace) {
       lastError = e.toString();
       print('[MediaPipe] ERROR: $e');
@@ -109,6 +116,69 @@ class MediaPipeExtractor {
     } finally {
       _isProcessing = false;
     }
+  }
+
+  /// Thu đặc trưng trực tiếp từ MediaPipe Hand Landmarker đang vẽ handmark.
+  /// Nhờ dùng chung một kết quả landmark, giao diện và suy luận on-device luôn
+  /// đánh giá đúng những frame mà người dùng nhìn thấy trong lúc thực hiện.
+  void addHandmarkSnapshot(HandmarkSnapshot snapshot) {
+    if (isFull || !_isInitialized) return;
+
+    final hands = snapshot.mediaPipeHands
+        .where((hand) => hand.length >= 21)
+        .take(2)
+        .toList(growable: false);
+
+    List<HandmarkPoint>? left;
+    List<HandmarkPoint>? right;
+    if (hands.length == 1) {
+      // Đa số ký hiệu một tay trong bộ MVP dùng tay thuận bên phải.
+      right = hands.first;
+    } else if (hands.length >= 2) {
+      final ordered = [...hands]
+        ..sort((a, b) => a.first.x.compareTo(b.first.x));
+      if (snapshot.lensDirection == CameraLensDirection.front) {
+        // Buffer camera trước không mirror; tay phải của người tập nằm phía
+        // trái ảnh dù preview đã được mirror cho cảm giác như soi gương.
+        right = ordered.first;
+        left = ordered.last;
+      } else {
+        left = ordered.first;
+        right = ordered.last;
+      }
+    }
+
+    final hasLeft = left != null;
+    final hasRight = right != null;
+    final hasAnyHand = hasLeft || hasRight;
+    if (hasAnyHand) _handFrames++;
+    if (hasLeft && hasRight) _bothHandFrames++;
+
+    _rawFrames.add(
+      _RawFrame(
+        leftHand: _flattenHand(left),
+        rightHand: _flattenHand(right),
+        pose: List<double>.filled(36, 0.0),
+        face: List<double>.filled(123, 0.0),
+        quality: [
+          hasLeft ? 1.0 : 0.0,
+          hasRight ? 1.0 : 0.0,
+          0.0,
+          0.0,
+          hasAnyHand ? 1.0 : 0.0,
+          hasLeft && hasRight ? 1.0 : 0.0,
+          hasAnyHand ? 0.0 : 1.0,
+          1.0,
+        ],
+      ),
+    );
+  }
+
+  List<double> _flattenHand(List<HandmarkPoint>? hand) {
+    if (hand == null) return List<double>.filled(63, 0.0);
+    return [
+      for (final point in hand.take(21)) ...[point.x, point.y, point.z],
+    ];
   }
 
   ExtractionResult finish() {
@@ -132,9 +202,7 @@ class MediaPipeExtractor {
       );
     }
 
-    final validCount = _rawFrames
-        .where((f) => f.quality[4] > 0.5)
-        .length;
+    final validCount = _rawFrames.where((f) => f.quality[4] > 0.5).length;
 
     // Build base sequence (285 chiều: hands + pose + face)
     List<List<double>> baseSeq = _rawFrames.map((f) {
@@ -173,9 +241,11 @@ class MediaPipeExtractor {
     // Concatenate: base(285) + motion(18) + geometry(16) + quality(8) = 327
     final features = <List<double>>[];
     for (int t = 0; t < SEQUENCE_LENGTH; t++) {
-      final row = [...baseSeq[t], ...derived[t], ...qualitySeq[t]]
-          .map(_clampValue)
-          .toList();
+      final row = [
+        ...baseSeq[t],
+        ...derived[t],
+        ...qualitySeq[t],
+      ].map(_clampValue).toList();
       features.add(row);
     }
 
@@ -186,8 +256,11 @@ class MediaPipeExtractor {
     final poseRatio =
         qualitySeq.fold(0.0, (sum, q) => sum + q[2]) / SEQUENCE_LENGTH;
 
-    final effectiveFrameCount = (validCount > 0 ? validCount : _rawFrames.length)
-        .clamp(MIN_USEFUL_FRAMES, MAX_USEFUL_FRAMES);
+    final effectiveFrameCount =
+        (validCount > 0 ? validCount : _rawFrames.length).clamp(
+          MIN_USEFUL_FRAMES,
+          MAX_USEFUL_FRAMES,
+        );
 
     return ExtractionResult(
       features: features,
@@ -307,7 +380,8 @@ class MediaPipeExtractor {
         if (q[1] > 0.5) {
           for (int i = 0; i < 21; i++) {
             base[t][63 + i * 3] = (base[t][63 + i * 3] - centerX) / scale;
-            base[t][63 + i * 3 + 1] = (base[t][63 + i * 3 + 1] - centerY) / scale;
+            base[t][63 + i * 3 + 1] =
+                (base[t][63 + i * 3 + 1] - centerY) / scale;
             base[t][63 + i * 3 + 2] = base[t][63 + i * 3 + 2] / scale;
           }
         }
@@ -351,8 +425,9 @@ class MediaPipeExtractor {
 
       final row = <double>[];
       for (int d = 0; d < numDims; d++) {
-        row.add(sequence[lower][d] * (1.0 - weight) +
-            sequence[upper][d] * weight);
+        row.add(
+          sequence[lower][d] * (1.0 - weight) + sequence[upper][d] * weight,
+        );
       }
       output.add(row);
     }
@@ -423,7 +498,8 @@ class MediaPipeExtractor {
       final rsX = poseValid && rsVis > 0.2 ? base[t][126 + 8] : 0.0;
       final rsY = poseValid && rsVis > 0.2 ? base[t][126 + 8 + 1] : 0.0;
 
-      final chestValid = (lsX != 0.0 || lsY != 0.0) && (rsX != 0.0 || rsY != 0.0);
+      final chestValid =
+          (lsX != 0.0 || lsY != 0.0) && (rsX != 0.0 || rsY != 0.0);
       final chestX = chestValid ? (lsX + rsX) / 2.0 : 0.0;
       final chestY = chestValid ? (lsY + rsY) / 2.0 : 0.0;
 
@@ -548,10 +624,10 @@ class MediaPipeExtractor {
     final tipIndices = [4, 8, 12, 16, 20];
     final xs = tipIndices.map((i) => frame[offset + i * 3]).toList();
     final ys = tipIndices.map((i) => frame[offset + i * 3 + 1]).toList();
-    final dx = xs.reduce((a, b) => a > b ? a : b) -
-        xs.reduce((a, b) => a < b ? a : b);
-    final dy = ys.reduce((a, b) => a > b ? a : b) -
-        ys.reduce((a, b) => a < b ? a : b);
+    final dx =
+        xs.reduce((a, b) => a > b ? a : b) - xs.reduce((a, b) => a < b ? a : b);
+    final dy =
+        ys.reduce((a, b) => a > b ? a : b) - ys.reduce((a, b) => a < b ? a : b);
     return _hypot(dx, dy);
   }
 
@@ -589,7 +665,10 @@ class MediaPipeExtractor {
     }
     final bytes = allBytes.done().buffer.asUint8List();
 
-    final Size imageSize = Size(image.width.toDouble(), image.height.toDouble());
+    final Size imageSize = Size(
+      image.width.toDouble(),
+      image.height.toDouble(),
+    );
     final InputImageRotation imageRotation = InputImageRotation.rotation0deg;
     final InputImageFormat inputImageFormat = InputImageFormat.nv21;
 
@@ -609,10 +688,7 @@ class MediaPipeExtractor {
       bytesPerRow: image.planes.first.bytesPerRow,
     );
 
-    return InputImage.fromBytes(
-      bytes: bytes,
-      metadata: metadata,
-    );
+    return InputImage.fromBytes(bytes: bytes, metadata: metadata);
   }
 
   void dispose() {

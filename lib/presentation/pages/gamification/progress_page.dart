@@ -155,11 +155,17 @@ class ProgressPage extends ConsumerWidget {
       ),
       body: statsState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(
+        error: (_, _) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('Lỗi: $err'),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  'Chưa thể tải tiến độ học tập. Vui lòng thử lại.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: () =>
